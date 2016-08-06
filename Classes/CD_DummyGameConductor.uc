@@ -4,7 +4,7 @@
 // Lobotomized game conductor
 //=============================================================================
 
-class CD_DummyGameConductor extends KFGameConductor within KFGameInfo;
+class CD_DummyGameConductor extends KFGameConductor within CD_Survival;
 
 var float SpawnMod;
 
@@ -13,7 +13,7 @@ function TimerUpdate()
 {
 	CurrentSpawnRateModification = SpawnMod;
 	CurrentAIMovementSpeedMod = DifficultyInfo.GetAIGroundSpeedMod();
-	`log("Dummy SpawnMod = "$CurrentSpawnRateModification$" AIMoveSpeedMod = "$CurrentAIMovementSpeedMod, bLogGameConductor);
+	`log("(GameConductor woken up) ControlledDifficulty forcing SpawnMod = "$CurrentSpawnRateModification$" AIMoveSpeedMod = "$CurrentAIMovementSpeedMod, Outer.bLogControlledDifficulty);
 }
 
 /**
@@ -38,10 +38,5 @@ function EvaluateAIMovementSpeedModification()
 function SetSpawnMod( float csp )
 {
 	SpawnMod = csp;
-	`log("Set Dummy SpawnMod = "$SpawnMod);
-}
-
-defaultproperties
-{
-	//bLogGameConductor=true
+	`log("Set Dummy SpawnMod = "$SpawnMod, Outer.bLogControlledDifficulty);
 }

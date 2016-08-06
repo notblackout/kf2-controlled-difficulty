@@ -5,7 +5,7 @@
 // zed health or zed head health
 //=============================================================================
 
-class CD_DifficultyInfo extends KFDifficultyInfo config(Game);
+class CD_DifficultyInfo extends KFDifficultyInfo within CD_Survival;
 
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at
@@ -32,8 +32,20 @@ var int TraderTime;
 /** Returns adjusted total num AI modifier for this wave's player num */
 function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 {
-	`log("Applying FakePlayers = "$FakePlayers$" to GetPlayerNumAIMaxModifier");
-	return GetNumPlayersModifier( NumPlayers_WaveSize, NumLivingPlayers + FakePlayers );
+	local int sum;
+
+	sum = NumLivingPlayers + FakePlayers;
+
+	`log("Adding ControlledDifficulty FakePlayers = "$FakePlayers$" to NumLivingPlayers = "$NumLivingPlayers$" in GetPlayerNumAIMaxModifier", Outer.bLogControlledDifficulty);
+	`log("Final GetPlayerNumMaxAIModifier = "$sum, Outer.bLogControlledDifficulty);
+	
+	if ( 6 < sum )
+	{
+		// This does not respect Outer.bLogControlledDifficulty (intentionally)
+		`log("WARNING: FakePlayers ("$FakePlayers$") + NumLivingPlayers ("$NumLivingPlayers$") is greater than 6! This is more players than the vanilla game supports. Keeping this sum at or below 6 is recommended.");
+	}
+
+	return GetNumPlayersModifier( NumPlayers_WaveSize, sum );
 }
 
 /** Get the custom trader time, or the difficulty's default TT if no custom TT is set */
@@ -50,11 +62,11 @@ function float GetTraderTimeByDifficulty()
 function SetFakePlayers( int fpc )
 {
 	FakePlayers = fpc;
-	`log("Set FakePlayers = "$FakePlayers);
+	`log("Set FakePlayers = "$FakePlayers, Outer.bLogControlledDifficulty);
 }
 
 function SetTraderTime( int tt )
 {
 	TraderTime = tt;
-	`log("Set TraderTime = "$TraderTime);
+	`log("Set TraderTime = "$TraderTime, Outer.bLogControlledDifficulty);
 }

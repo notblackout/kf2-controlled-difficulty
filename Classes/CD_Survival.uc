@@ -24,6 +24,9 @@ var config int TraderTime;
 // Below 0.75 is spawn intensity unseen in the vanilla game.
 var config float SpawnMod;
 
+// true to log some internal state specific to this mod
+var config bool bLogControlledDifficulty;
+
 event InitGame( string Options, out string ErrorMessage )
 {
 	local int FakePlayersFromGameOptions;
@@ -35,7 +38,9 @@ event InitGame( string Options, out string ErrorMessage )
 	FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
 	TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
 	SpawnModFromGameOptions = GetFloatOption( Options, "SpawnMod", 1.f );
-	`log("SpawnModFromGameOptions = "$SpawnModFromGameOptions);
+	`log("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+	`log("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+	`log("SpawnModFromGameOptions = "$SpawnModFromGameOptions$" (1.0=default)", bLogControlledDifficulty);
 
 	if (0 <= FakePlayersFromGameOptions)
 	{
@@ -55,7 +60,7 @@ event InitGame( string Options, out string ErrorMessage )
 	FakePlayers = Clamp(FakePlayers, 0, 5);
 	// TT is not clamped
 	SpawnMod = FClamp(SpawnMod, 0.f, 1.f);
-	`log("FClamped SpawnMod = "$SpawnMod);
+	`log("FClamped SpawnMod = "$SpawnMod, bLogControlledDifficulty);
 
 	SaveConfig();
 }
@@ -74,6 +79,7 @@ event PreBeginPlay()
 	customDifficulty.SetTraderTime( TraderTime );
         DifficultyInfo = customDifficulty;
 	DifficultyInfo.SetDifficultySettings( GameDifficulty );
+	`log("Instantiated and configured CD_DifficultyInfo = "$customDifficulty, bLogControlledDifficulty);
 
 	MyKFGRI = KFGameReplicationInfo(GameReplicationInfo);
 	InitGRIVariables();
@@ -92,6 +98,13 @@ event PreBeginPlay()
 
 	InitSpawnManager();
 	UpdateGameSettings();
+}
+
+exec function logControlledDifficulty( bool enabled )
+{
+	bLogControlledDifficulty = enabled;
+	`log("Set bLogControlledDifficulty = "$bLogControlledDifficulty);
+	SaveConfig();
 }
 
 defaultproperties
