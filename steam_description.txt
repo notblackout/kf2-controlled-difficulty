@@ -1,7 +1,7 @@
 [h1]Summary[/h1]
 
 [b]Last tested on[/b]: KF2 EA version 1040 / Aug 6 2016
-[b]Mod Version[/b]: 3aae6be built 2016-08-06
+[b]Mod Version[/b]:  c0f63e1 built 2016-08-06
 
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
 
@@ -68,6 +68,13 @@ To disable any of these three customizations from turning on in the ControlledDi
 * no faked players
 * standard trader time for the difficulty level
 * SpawnMod = 1.0
+
+[h1]Logging[/h1]
+
+Configure logging by either:
+
+* Setting bLogControlledDifficulty=<true|false> in KFGame.ini's [ControlledDifficulty.CD_Survival] KFGame.ini section
+* Running logControlledDifficulty <true|false> in game
 
 [h1]Internals Discussion[/h1]
 
