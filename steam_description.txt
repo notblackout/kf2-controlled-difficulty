@@ -1,16 +1,18 @@
 [h1]Summary[/h1]
 
 [b]Last tested on[/b]: KF2 EA version 1040 / Aug 6 2016
-[b]Mod Version[/b]: 849795b built 2016-08-06
+[b]Mod Version[/b]: 3aae6be built 2016-08-06
 
-This mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
+This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
 
 * Disables the game conductor's variation of the zed spawnrate and move speed
 * Supports 'faking' players; this increases the zed count (but not zed health) as though additional players were present
 * Supports setting an arbitrary fixed spawnrate, without conductor interference
 * Supports setting an arbitrary trader time
 
-This mod is somewhat similar to, but less powerful than, Skell's Project One mod.  I made this because I think Project One has not been updated in a while -- not after the introduction of the Game Conductor, at least.  I'm deliberately trying to keep this mod small in scope so that it will be easy to maintain as future KF2 patches inevitably break it.  This mod is pretty much just meant for solo faked-player HOE attempts.
+Source: https://github.com/notblackout/kf2-controlled-difficulty
+
+This mod is somewhat similar to, but less powerful than, Skell's Project One mod.  I made this because I think Project One has not been updated in a while -- not since December 2015, I think.  I'm deliberately trying to keep this mod small in scope so that it will be easy to maintain as future KF2 patches inevitably break it.  This mod is pretty much just meant for solo faked-player HOE attempts.
 
 Aside from faking players, this mod lets you precisely control spawn intensity.  In the vanilla game, the Game Conductor controls this value.  The vanilla GC varies this value dynamically based on some crude heuristics about how well the player is supposedly doing, making the spawn rate feel unpredictable and encouraging dumb strategies like intentionally missing shots or kiting zeds so that their average lifetime value goes up.  In this mod, you set an exact spawn intensity value, expressed as a floating point number.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this intensity measure between 1.0 and 0.75, where 1.0 is lowest HOE intensity and 0.75 is highest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity. 
 
