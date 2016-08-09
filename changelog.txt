@@ -1,0 +1,17 @@
+b334b8e built 2016-08-09
+------------------------
+* stopped scaling down per-zed dosh kill rewards in the presence of faked
+players; each zed's kill award is now the identical to the award given if the
+faked players had been real
+
+c0f63e1 built 2016-08-06 
+------------------------
+* added logging statements around fake player counts
+* added bLogControlledDifficulty=bool KFGame.ini option
+* added `logControlledDifficulty bool` console command
+
+(unnamed initial version) 2016-08-06
+------------------------------------
+* support player faking
+* support trader time configuration
+* support spawnmod configuration

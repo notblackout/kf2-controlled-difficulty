@@ -1,20 +1,24 @@
 [h1]Summary[/h1]
 
 [b]Last tested on[/b]: KF2 EA version 1040 / Aug 6 2016
-[b]Mod Version[/b]:  c0f63e1 built 2016-08-06
+[b]Mod Version[/b]:  b334b8e (built 2016-08-09)
 
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
 
-* Disables the game conductor's variation of the zed spawnrate and move speed
+* Disables the game conductor's variation of the zed spawn intensity and move speed
 * Supports 'faking' players; this increases the zed count (but not zed health) as though additional players were present
-* Supports setting an arbitrary fixed spawnrate, without conductor interference
+* Supports setting an arbitrary, fixed spawn intensity, without conductor interference
 * Supports setting an arbitrary trader time
 
 Source: https://github.com/notblackout/kf2-controlled-difficulty
 
-This mod is somewhat similar to, but less powerful than, Skell's Project One mod.  I made this because I think Project One has not been updated in a while -- not since December 2015, I think.  I'm deliberately trying to keep this mod small in scope so that it will be easy to maintain as future KF2 patches inevitably break it.  This mod is pretty much just meant for solo faked-player HOE attempts.
+This mod is pretty much just meant for solo faked-player HOE attempts.
 
-Aside from faking players, this mod lets you precisely control spawn intensity.  In the vanilla game, the Game Conductor controls this value.  The vanilla GC varies this value dynamically based on some crude heuristics about how well the player is supposedly doing, making the spawn rate feel unpredictable and encouraging dumb strategies like intentionally missing shots or kiting zeds so that their average lifetime value goes up.  In this mod, you set an exact spawn intensity value, expressed as a floating point number.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this intensity measure between 1.0 and 0.75, where 1.0 is lowest HOE intensity and 0.75 is highest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity. 
+This mod is somewhat similar to, but less comprehensive than, Skell's Project One mod.  I made this because I think Project One has not been updated in a while (December 2015 atm).  I'm trying to keep the scope focused so that it will be simple to fix as future KF2 patches inevitably break it.
+
+When you add fake players, the zed count goes up as if they were human, but their HP and head HP remain at solo levels.  Since version b334b8e (built 2016-08-09), rewards you receive for killing zeds are computed as though faked players were real players.  In older versions of this mod, zed kill rewards scaled down so that each human player received a solo per-wave dosh budget regardless of zedcount, which made some attempts unnecessarily annoying or impossible.  Now you can choose not to buy if you want to restrain your economy.
+
+Aside from faking players, this mod lets you precisely control spawn intensity.  In the vanilla game, the Game Conductor controls intensity, which is expressed as a floating point number.  The vanilla GC varies the intensity value based on some crude heuristics about how well the player is supposedly doing, making the spawn rate feel unpredictable and encouraging dumb strategies like intentionally missing shots or kiting zeds so that their average lifetime value goes up.  In this mod, you set an exact spawn intensity.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this intensity measure between 1.0 and 0.75, where 1.0 is lowest HOE intensity and 0.75 is highest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity. 
 
 This mod persists the last settings used to KFGame.ini under the [ControlledDifficulty.CD_Survival] section.  All mod options can be specified through parameters to the 'open' console command; the KFGame.ini section merely remembers the last options explicitly specified this way, so that you don't have to repeatedly type parameters that you never change.  It does not require .ini edits to get started.  You can paste one of the console commands listed below to get started.
 
@@ -34,8 +38,8 @@ The easiest way to get started is to open the KF2 console (using the ` or ~ key 
 open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1
 
 // Same as above, except the SpawnMod is set to 0.75.
-// SpawnMod influences the time between zed spawns.
-// For more info about what SpawnMod does, see the first section.
+// SpawnMod is the "spawn intensity" described in the summary section.
+// For more info about what SpawnMod does, see that section.
 open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?SpawnMod=0.75
 
 GameLength values:
@@ -56,14 +60,14 @@ Recommended SpawnMod values:
 
 Editing KFGame.ini before using the mod is supported but unnecessary.  See the previous section for sample console commands that start a game using the mod.  The mod will automatically write its KFGame.ini section with the configuration values that you last provided on the console.
 
-KFGame.ini is in <your homedir>\Documents\My Games\KillingFloor2\KFGame\Config.
+KFGame.ini is in <your homedir>\Documents\My Games\KillingFloor2\KFGame\Config, e.g.
 
 [ControlledDifficulty.CD_Survival]
 FakePlayers=1
 TraderTime=25
 SpawnMod=1.0
 
-To disable any of these three customizations from turning on in the ControlledDifficulty.CD_Survival mode by default, delete the associated line from KFGame.ini.  If the ControlledDifficulty.CD_Survival gamemode sees no configuration settings in its KFGame.ini section, then it assumes:
+To disable any of these three customizations from turning on in the ControlledDifficulty.CD_Survival mode by default, delete the associated line from KFGame.ini.  If the KFGame.ini section is missing or incomplete,  ControlledDifficulty.CD_Survival assumes:
 
 * no faked players
 * standard trader time for the difficulty level
@@ -74,29 +78,12 @@ To disable any of these three customizations from turning on in the ControlledDi
 Configure logging by either:
 
 * Setting bLogControlledDifficulty=<true|false> in KFGame.ini's [ControlledDifficulty.CD_Survival] KFGame.ini section
-* Running logControlledDifficulty <true|false> in game
+* Running logControlledDifficulty <true|false> in the console
 
-[h1]Internals Discussion[/h1]
+[h1]Changelog & Internals[/h1]
 
-This game mode replaces the standard KFGameConductor class provided by Tripwire with a new subclass called CD_DummyGameConductor.  KFGameConductor defines a method called TimerUpdate() which CD_DummyGameConductor overrides.  TimerUpdate() is called once a second and is the primary entry point for Game Conductor to influence the game difficulty.  In KFGameConductor, this method updates some difficulty variables (including spawnrate) in response to some barbaric heuristics about how well the player is supposedly doing.  In CD_DummyGameConductor, this method does the following:
+These files are externally maintained because Steam imposes a stiff size limit on workshop item descriptions.
 
-* set CurrentSpawnRateModification to SpawnMod (which is defined in KFGame.ini or console command)
-* set CurrentAIMovementSpeedMod to DifficultyInfo.GetAIGroundSpeedMod()
-* (nothing else)
+Changelog: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/changelog.txt
 
-Note that this makes CD_DummyGameConductor more generous to the player, by default, than KFGameConductor on HOE.  KFGameConductor is free to vary CurrentSpawnRateModification between 0.75 and 1.0 on HOE, and if you kill zeds well below par lifetime (17s) with headshots on a small map like KF-Hillside, you will drive the spawn mod down to 0.75 well before getting 10 kills.  CD_DummyGameConductor allows configuring CurrentSpawnRateModification, but it defaults to 1.0, the gentlest value available to KFGameConductor's HOE settings.  Note that CurrentSpawnRateModification is a misnomer inherited from Tripwire code.  It does not really modify the rate of spawn, but rather the time interval between spawns. Smaller numbers means tougher gameplay, even though you would guess the exact opposite from the variable name.  In other words, 0.75 is a zerg rush, and 1.0 is a slow trickle.
-
-This game mode also replaces KFDifficultyInfo with a new subclass called CD_DifficultyInfo.  CD_DifficultyInfo overrides a pair of methods:
-
-* GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
-* GetTraderTimeByDifficulty()
-
-GetPlayerNumMaxAIModifier controls two things:
-
-1. Wave size increases attributable to player count
-2. The amount of dosh rewarded for killing a zed
-
-Point 2 may sound a bit odd, but it's consistent with the ordinary game; the mod's not giving out free candy.  Recall that a six player game does not have zedcount = (number of zeds in a one player game) * 6.  It has far fewer zeds than that (4.5x on HOE).  The game quietly increases the dosh rewarded for killing zeds on higher player counts to give everyone, on average, the same amount they would get solo.  So, on 6p HOE, zeds give 33% more dosh than on solo.  The mod just continues this behavior.
-
-GetTraderTimeByDifficulty just checks for the presence of the TraderTime override, and, if it is not found or is not a positive number, uses the default value for the appropriate difficulty level instead.
-
+Internals: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/internals.txt
