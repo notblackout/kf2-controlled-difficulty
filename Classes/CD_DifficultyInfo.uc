@@ -59,6 +59,11 @@ function float GetTraderTimeByDifficulty()
 	return super.GetTraderTimeByDifficulty();
 }
 
+function float GetNumFakePlayers()
+{
+	return FakePlayers;
+}
+
 function SetFakePlayers( int fpc )
 {
 	FakePlayers = fpc;

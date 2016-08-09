@@ -27,6 +27,8 @@ var config float SpawnMod;
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
 
+var CD_DifficultyInfo CustomDifficultyInfo;
+
 event InitGame( string Options, out string ErrorMessage )
 {
 	local int FakePlayersFromGameOptions;
@@ -67,19 +69,18 @@ event InitGame( string Options, out string ErrorMessage )
 
 event PreBeginPlay()
 {
-	local CD_DifficultyInfo customDifficulty;
 	local CD_DummyGameConductor customConductor;
 
 	WorldInfo.TWApplyTweaks();
 
 	super.PreBeginPlay();
 
-	customDifficulty = new(self) class'CD_DifficultyInfo'(DifficultyTemplate);
-	customDifficulty.SetFakePlayers( FakePlayers );
-	customDifficulty.SetTraderTime( TraderTime );
-        DifficultyInfo = customDifficulty;
+	CustomDifficultyInfo = new(self) class'CD_DifficultyInfo'(DifficultyTemplate);
+	CustomDifficultyInfo.SetFakePlayers( FakePlayers );
+	CustomDifficultyInfo.SetTraderTime( TraderTime );
+        DifficultyInfo = CustomDifficultyInfo;
 	DifficultyInfo.SetDifficultySettings( GameDifficulty );
-	`log("Instantiated and configured CD_DifficultyInfo = "$customDifficulty, bLogControlledDifficulty);
+	`log("Instantiated and configured CD_DifficultyInfo = "$CustomDifficultyInfo, bLogControlledDifficulty);
 
 	MyKFGRI = KFGameReplicationInfo(GameReplicationInfo);
 	InitGRIVariables();
@@ -98,6 +99,31 @@ event PreBeginPlay()
 
 	InitSpawnManager();
 	UpdateGameSettings();
+}
+
+function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
+{
+	local float DoshMod;
+	local int LocalNumPlayers;
+	local int LocalNumFakes;
+	local float LocalMaxAIMod;
+
+	LocalNumPlayers = GetNumPlayers();
+	LocalNumFakes = CustomDifficultyInfo.GetNumFakePlayers();
+	// Only pass actual players to GetPlayerNumMaxAIModifier -- it adds fakes internally
+	LocalMaxAIMod = DifficultyInfo.GetPlayerNumMaxAIModifier(LocalNumPlayers);
+
+	`log("NumPlayers = "$LocalNumPlayers, bLogControlledDifficulty);
+	`log("NumFakes = "$LocalNumFakes, bLogControlledDifficulty);
+	`log("DifficultyInfo.GetPlayerNumMaxAIModifier(NumPlayers) = "$LocalMaxAIMod$"; this is fake-count-adjusted", bLogControlledDifficulty);
+
+	DoshMod = (LocalNumPlayers + LocalNumFakes) / LocalMaxAIMod;
+
+	`log("Starting Dosh Bounty: "$ModifiedValue$" DoshMod: "$DoshMod, bLogControlledDifficulty);
+
+	ModifiedValue *= DoshMod;
+
+	`log("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
 }
 
 exec function logControlledDifficulty( bool enabled )
