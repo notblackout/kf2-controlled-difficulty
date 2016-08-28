@@ -5,7 +5,7 @@
 // zed health or zed head health
 //=============================================================================
 
-class CD_DifficultyInfo extends KFDifficultyInfo within CD_Survival;
+class CD_DifficultyInfo extends KFGameDifficulty_Survival within CD_Survival;
 
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at

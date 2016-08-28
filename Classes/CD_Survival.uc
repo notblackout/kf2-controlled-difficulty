@@ -67,38 +67,25 @@ event InitGame( string Options, out string ErrorMessage )
 	SaveConfig();
 }
 
-event PreBeginPlay()
+function InitGameConductor()
 {
 	local CD_DummyGameConductor customConductor;
-
-	WorldInfo.TWApplyTweaks();
-
-	super.PreBeginPlay();
-
-	CustomDifficultyInfo = new(self) class'CD_DifficultyInfo'(DifficultyTemplate);
-	CustomDifficultyInfo.SetFakePlayers( FakePlayers );
-	CustomDifficultyInfo.SetTraderTime( TraderTime );
-        DifficultyInfo = CustomDifficultyInfo;
-	DifficultyInfo.SetDifficultySettings( GameDifficulty );
-	`log("Instantiated and configured CD_DifficultyInfo = "$CustomDifficultyInfo, bLogControlledDifficulty);
-
-	MyKFGRI = KFGameReplicationInfo(GameReplicationInfo);
-	InitGRIVariables();
-
-	CreateTeam(0);
-	InitGameConductor();
-
+	super.InitGameConductor();
+	// the preceding call should have initialized GameConductor
 	customConductor = CD_DummyGameConductor(GameConductor);
 	customConductor.SetSpawnMod( SpawnMod );
+	GameConductor = customConductor;
+	`log("Finished instantiating and configuring CD_DummyGameConductor", bLogControlledDifficulty);
+}
 
-	InitAIDirector();
-	InitTraderList();
-	ReplicateWelcomeScreen();
-
-	WorldInfo.TWLogsInit();
-
-	InitSpawnManager();
-	UpdateGameSettings();
+function CreateDifficultyInfo(string Options)
+{
+	super.CreateDifficultyInfo(Options);
+	// the preceding call should have initialized DifficultyInfo
+	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
+	CustomDifficultyInfo.SetFakePlayers( FakePlayers );
+	CustomDifficultyInfo.SetTraderTime( TraderTime );
+	`log("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
 }
 
 function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
@@ -136,4 +123,5 @@ exec function logControlledDifficulty( bool enabled )
 defaultproperties
 {
 	GameConductorClass=class'ControlledDifficulty.CD_DummyGameConductor'
+	DifficultyInfoClass=class'ControlledDifficulty.CD_DifficultyInfo'
 }
