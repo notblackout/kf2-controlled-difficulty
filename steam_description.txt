@@ -1,7 +1,7 @@
 [h1]Summary[/h1]
 
-[b]Last tested on[/b]: KF2 EA version 1040 / Aug 6 2016
-[b]Mod Version[/b]:  b334b8e (built 2016-08-09)
+[b]Last tested on[/b]: KF2 EA version 1043 / Aug 28 2016
+[b]Mod version[/b]: 4dbb062 (built 2016-08-28)
 
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
 
@@ -38,7 +38,7 @@ The easiest way to get started is to open the KF2 console (using the ` or ~ key 
 open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1
 
 // Same as above, except the SpawnMod is set to 0.75.
-// SpawnMod is the "spawn intensity" described in the summary section.
+// SpawnMod is the 'spawn intensity' described in the summary section.
 // For more info about what SpawnMod does, see that section.
 open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?SpawnMod=0.75
 
@@ -80,6 +80,8 @@ Configure logging by either:
 * Setting bLogControlledDifficulty=<true|false> in KFGame.ini's [ControlledDifficulty.CD_Survival] KFGame.ini section
 * Running logControlledDifficulty <true|false> in the console
 
+To see this logging output in realtime, add "-log" to KF2's launch options. This makes KF2 open two windows instead of one: one white-on-black text terminal for logging output, one for the regular game.
+
 [h1]Changelog & Internals[/h1]
 
 These files are externally maintained because Steam imposes a stiff size limit on workshop item descriptions.
@@ -87,3 +89,4 @@ These files are externally maintained because Steam imposes a stiff size limit o
 Changelog: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/changelog.txt
 
 Internals: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/internals.txt
+
