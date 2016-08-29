@@ -1,3 +1,11 @@
+4dbb062 built 2016-08-28
+------------------------
+* updated to KF2 v1043
+* followed upstream restructuring of KFDifficultyInfo
+* rewrote CD_Survival's GameConductor and DifficultyInfo customization to
+override the InitGameConductor and CreateDifficultyInfo functions rather than
+overriding the entire PreBeginPlay event
+
 b334b8e built 2016-08-09
 ------------------------
 * stopped scaling down per-zed dosh kill rewards in the presence of faked
