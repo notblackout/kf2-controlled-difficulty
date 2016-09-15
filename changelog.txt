@@ -1,3 +1,88 @@
+7185b2a built 2016-09-15
+------------------------
+* fixed SpawnMod=0 handling
+    Prior to this commit, specifying SpawnMod=0 as a parameter to the open
+    command had unintuitive behavior that depended on whether a saved
+    SpawnMod value was present in KFGame.ini.
+
+    * If you ran `open ...?SpawnMod=0` and KFGame.ini had a
+      [ControlledDifficulty.CD_Survival] section with a SpawnMod value
+      (true if KFGame.ini is not readonly and you've played the mod
+      before), then the KFGame.ini value was used (which might not be 0!)
+
+    * If you ran `open ...?SpawnMod=0` and KFGame.ini had no SpawnMod
+      value (true if you never played the mod before or if KFGame.ini is
+      readonly), 0.0 was used
+
+    I recommended that people stick to the range [0.75, 1.0] in the mod
+    description, but I probably should have foreseen that people would try
+    0.0 even though it was not recommended.  I see that Kore and Fat Cat
+    have already tried SpawnMod=0, for instance.
+
+    The true SpawnMod value appears in the log, but people don't usually
+    run KF2 with the `-log` option, so that doesn't help them.
+
+    I've made a couple of changes to fix this.
+
+    1. I rewrote the parameter handling to avoid the KFGame.ini-dependence
+    mentioned above.  Now if you run `open ...?SpawnMod=0`, you will
+    actually get SpawnMod=0 regardless of KFGame.ini or anything else.
+    Note that the spawning subsytem in the base game still only spawns one
+    squad of zeds per second, and squads tend to be about 5 zeds in size,
+    give or take a couple.  So, even with SpawnMod=0, it could take
+    several seconds to reach the MaxMonsters limit.
+
+    2. I made the mod print its effective configuration values to the
+    console every time you run the `open` command (technically, this
+    happens in the `InitGame()` function).  So, when you open a map with
+    the mod, you now see something like printed to your console:
+
+    [ControlledDifficulty] FakePlayers=2
+    [ControlledDifficulty] TraderTime=45
+    [ControlledDifficulty] SpawnMod=0.75
+    [ControlledDifficulty] MaxMonsters=<unmodded default>
+
+    To those who set SpawnMod=0 and got burned by this weird
+    KFGame.ini-dependence, I apologize.  I hope the change above will make
+    the mod's effective values more transparent, in addition to just
+    fixing this specific problem.
+
+* added MaxMonsters param
+    Before this commit, the mod did not alter the vanilla game's
+    MaxMonsters logic.  MaxMonsters is an int correspoding to the maximum
+    amount of concurrent live zeds the spawning subsystem allows on a map.
+    In the vanilla game, dedicated servers use 32 (even if you play by
+    yourself on a dedicated server), whereas non-dedicated (NM_StandAlone)
+    use 16.  So, if you run KF2 and open a modded game from the main menu,
+    you had MaxMonsters=16, consistent with the vanilla game.
+
+    This is now configurable.  You can append ?MaxMonsters=32 or whatever
+    you like.  Values greater than zero are interpreted literally.  For
+    instance, if you specify ?MaxMonsters=32, you will see this printed to
+    the console after the map loads:
+
+    [ControlledDifficulty] MaxMonsters=32
+
+    Nonpositive values are interpreted to mean "use the vanilla game's
+    MaxMonsters" (which will be 16 if you play non-dedicated solo).  For
+    instance, if you specify ?MaxMonsters=0 or ?MaxMonsters=-1 (or any
+    other negative value), you will see this printed to the console after
+    the map loads:
+
+    [ControlledDifficulty] MaxMonsters=<unmodded default>
+
+* fixed delayed param handling on FakePlayers and TraderTime
+    mike5879 noticed that changes to the FakePlayers and TraderTime
+    options only take effect after running the open command twice.  It was
+    as though changes to these values were delayed by one invocation of
+    `open` command.  Fortunately, this only affected FakePlayers and
+    TraderTime, which are easy to check.  It did not affect SpawnMod.
+
+    This was caused by an ordering bug in my config handling code.  This
+    is now fixed.  All options specified on the `open` command line should
+    take effect immediately (and they will also be saved to KFGame.ini if
+    it is not readonly, as happens already).
+
 4dbb062 built 2016-08-28
 ------------------------
 * updated to KF2 v1043
