@@ -1,86 +1,135 @@
 [h1]Summary[/h1]
 
-[b]Last tested on[/b]: KF2 EA version 1043 / Aug 28 2016
-[b]Mod version[/b]: 4dbb062 (built 2016-08-28)
+[b]Last tested on[/b]: KF2 EA version 1043 / Sep 15 2016
+[b]Mod version[/b]: e048b0e (built 2016-09-15)
 
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
 
 * Disables the game conductor's variation of the zed spawn intensity and move speed
 * Supports 'faking' players; this increases the zed count (but not zed health) as though additional players were present
 * Supports setting an arbitrary, fixed spawn intensity, without conductor interference
-* Supports setting an arbitrary trader time
+* Supports setting the max amount live zeds
+* Supports setting trader time
 
 Source: https://github.com/notblackout/kf2-controlled-difficulty
 
-This mod is pretty much just meant for solo faked-player HOE attempts.
+This mod is intended to support solo faked-player HOE challenges.
 
-This mod is somewhat similar to, but less comprehensive than, Skell's Project One mod.  I made this because I think Project One has not been updated in a while (December 2015 atm).  I'm trying to keep the scope focused so that it will be simple to fix as future KF2 patches inevitably break it.
+In the vanilla game, the Game Conductor controls spawn intensity. This is expressed as a floating point number, where smaller numbers result in more frequent zed spawns and larger numbers result in less frequent zed spawns.
 
-When you add fake players, the zed count goes up as if they were human, but their HP and head HP remain at solo levels.  Since version b334b8e (built 2016-08-09), rewards you receive for killing zeds are computed as though faked players were real players.  In older versions of this mod, zed kill rewards scaled down so that each human player received a solo per-wave dosh budget regardless of zedcount, which made some attempts unnecessarily annoying or impossible.  Now you can choose not to buy if you want to restrain your economy, but the mod gives you a full budget to work with.
+The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  This makes the spawn rate feel unpredictable and theoretically encourages dumb strategies like intentionally missing (head)shots or kiting zeds so that their average lifetime value goes up, tricking the conductor into reducing intensity.  In this mod, you set an exact spawn intensity from the console.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this intensity measure between 1.0 and 0.75, where 1.0 is easiest HOE intensity and 0.75 is toughest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity.  Values down to and including zero are supported (since version e048b0e, built 2016-09-15).
 
-Aside from faking players, this mod lets you precisely control spawn intensity.  In the vanilla game, the Game Conductor controls intensity, which is expressed as a floating point number.  The vanilla GC varies the intensity value based on some crude heuristics about how well the player is supposedly doing, making the spawn rate feel unpredictable and encouraging dumb strategies like intentionally missing shots or kiting zeds so that their average lifetime value goes up.  In this mod, you set an exact spawn intensity.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this intensity measure between 1.0 and 0.75, where 1.0 is lowest HOE intensity and 0.75 is highest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity. 
+[h1]Installation[/h1]
 
-This mod persists the last settings used to KFGame.ini under the [ControlledDifficulty.CD_Survival] section.  All mod options can be specified through parameters to the 'open' console command; the KFGame.ini section merely remembers the last options explicitly specified this way, so that you don't have to repeatedly type parameters that you never change.  It does not require .ini edits to get started.  You can paste one of the console commands listed below to get started.
+Click subscribe.  Restart the game if it is running (to make the game sync workshop items).  That's it.  You don't have to edit any files or manually download anything.
 
-The intended audience for this mod is solo HOE players.  I recommend against running it on a public server.
+To play, paste one of the console commands listed in the next section.  You can run those commands from KF2's main menu.
 
-This mod only activates when you run an 'open' console command and specify the '?game=ControlledDifficulty.CD_Survival' parameter as shown in the next section.  This mod does not alter the vanilla game.  Games started through the GUI menus or without that parameter will continue to use vanilla difficulty settings.
+This mod only activates when you run an 'open' console command and specify the '?game=ControlledDifficulty.CD_Survival' parameter as shown in the next section.  This mod does not alter the vanilla game.  Games started through the GUI menus or without that parameter will continue to use vanilla difficulty settings.  Subscribing to the mod will not mess with your regular, menu-initiated solo games or games on servers you join.
 
 [h1]Console Command Examples (Start Here)[/h1]
 
-The easiest way to get started is to open the KF2 console (using the ` or ~ key on US keyboards) and to paste one of the following commands.  Change the map name to whatever you want.
+The easiest way to get started is to open the KF2 console at the main menu (using the ` or ~ key on US keyboards) and to paste one of the following commands.  Change the map name to whatever you want.
 
-// One faked player (assuming solo play, that makes two total), 30
-// second trader time, HOE difficulty, Long duration game, SpawnMod
-// either defaults to 1.0 or is read from KFGame.ini if defined under
-// the [ControlledDifficulty.CD_Survival] section.
+// One faked player (assuming solo play, that makes two total), 30 second trader time,
+// HOE difficulty, Long duration game, SpawnMod 0.85, MaxMonsters is 32.
+// SpawnMod is the "spawn intensity" described in preceding sections.
 // Map is KF-Hillside-B3.
-open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1
+[code]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?MaxMonsters=32?SpawnMod=0.85[/code]
 
-// Same as above, except the SpawnMod is set to 0.75.
-// SpawnMod is the 'spawn intensity' described in the summary section.
-// For more info about what SpawnMod does, see that section.
-open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?SpawnMod=0.75
+// Five faked players, SpawnMod 0.75, MaxMonsters 24.  Length/Diff same as above.
+// TraderTime is set to the last value you explicitly specified (if KFGame.ini is not readonly),
+// or defaults to the vanilla game's value of 60 sec if you've never run the mod or if
+// KFGame.ini is readonly.  Same map.
+[code]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?FakePlayers=5?SpawnMod=0.75?MaxMonsters=24[/code]
 
 GameLength values:
-0 = Short
-1 = Medium
-2 = Long
+* 0 = Short
+* 1 = Medium
+* 2 = Long
 
 Difficulty values:
-0 = Normal
-1 = Hard
-2 = Suicidal
-3 = HOE
+* 0 = Normal
+* 1 = Hard
+* 2 = Suicidal
+* 3 = HOE
 
-Recommended SpawnMod values:
-(harder) 0.75 ... 1.0 (easier)
+TraderTime values:
+* any value in seconds
+* 0 means use the default (0 does not disable trader time)
 
-[h1]KFGame.ini Sample[/h1]
+FakePlayers values:
+* 0 to 5, inclusive
 
-Editing KFGame.ini before using the mod is supported but unnecessary.  See the previous section for sample console commands that start a game using the mod.  The mod will automatically write its KFGame.ini section with the configuration values that you last provided on the console.
+SpawnMod values: 
+* Multiplies the time spent waiting between zed spawns
+* Smaller values are harder (less time between spawns)
+* Bigger values are easier (more time between spawns)
+* Recommended value range: (HOE GC's hardest setting) 0.75 ... 1.0 (HOE GC's easiest setting)
+* Technical minimum: 0 (spawns one squad each second, extremely difficult)
+* Technical maximum: 1
 
-KFGame.ini is in <your homedir>\Documents\My Games\KillingFloor2\KFGame\Config, e.g.
+MaxMonsters values:
+* any positive value is taken literally
+* 0 or negative means use the unmodded game's default (usually 16 for solo)
+* note: multiplayer KF2 games use 32
 
+[h1]KFGame.ini Section: [ControlledDifficulty.CD_Survival][/h1]
+
+CD does not require .ini edits to get started.  You can paste one of the console commands listed in the preceding section if you just want to play.
+
+This mod persists the last settings used to KFGame.ini under the [ControlledDifficulty.CD_Survival] section.  All mod options can be specified through parameters to the 'open' console command.  The KFGame.ini section merely remembers the last options explicitly specified this way, so that you don't have to repeatedly type parameters that you never change.
+
+For instance, if you run
+
+[b]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?FakePlayers=5[/b]
+
+then FakePlayers=5 will be written to CD's section in KFGame.ini.
+
+If you subsequently run
+
+[b]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival[/b]
+
+then CD will read the saved FakePlayers=5 value from KFGame.ini and apply it automatically.  Likewise for the other CD options.
+
+KFGame.ini is usually in [b]<your homedir>\Documents\My Games\KillingFloor2\KFGame\Config[/b].
+
+Here's an example snippet showing CD's settings:
+
+[code]
 [ControlledDifficulty.CD_Survival]
 FakePlayers=1
 TraderTime=25
 SpawnMod=1.0
+MaxMonsters=32
+[/code]
 
-To disable any of these three customizations from turning on in the ControlledDifficulty.CD_Survival mode by default, delete the associated line from KFGame.ini.  If the KFGame.ini section is missing or incomplete,  ControlledDifficulty.CD_Survival assumes:
+To disable any of these customizations, just delete the associated line from KFGame.ini.
+
+If the KFGame.ini section is missing or incomplete,  ControlledDifficulty.CD_Survival assumes:
 
 * no faked players
 * standard trader time for the difficulty level
+* standard MaxMonsters (usually 16 in standalone mode, 32 in dedicated)
 * SpawnMod = 1.0
 
 [h1]Logging[/h1]
 
-Configure logging by either:
+Configure Controlled Difficulty's logging output by either:
 
 * Setting bLogControlledDifficulty=<true|false> in KFGame.ini's [ControlledDifficulty.CD_Survival] KFGame.ini section
 * Running logControlledDifficulty <true|false> in the console
 
-To see this logging output in realtime, add "-log" to KF2's launch options. This makes KF2 open two windows instead of one: one white-on-black text terminal for logging output, one for the regular game.
+To see this logging output in realtime, add '-log' to KF2's launch options. This makes KF2 open two windows instead of one: one white-on-black text terminal for logging output, one for the regular game.
+
+If you are scrunitizing CD's logging output, then you might also find the base game's AISpawnManager logging output useful.  This is not part of CD proper; it just logs information about zeds and squads spawned by the game.  You can enable it by adding this to your KFGame.ini:
+
+[KFGame.KFAISpawnManager]
+bLogAISpawning=true
+
+[h1]How does CD relate to the Project One mod?[/h1]
+
+I made this because Project One has not been updated in a while (December 2015 atm).  I wasn't confident that a mod that old actually disabled the Game Conductor, and the source was not available for me to check.  So I made Controlled Difficulty.  I'm deliberately focusing CD on a narrower use-case than P1: solo faked player HOE games.  Keeping the focus narrow makes CD easier to fix after future KF2 patches inevitably break stuff.
 
 [h1]Changelog & Internals[/h1]
 
@@ -89,4 +138,5 @@ These files are externally maintained because Steam imposes a stiff size limit o
 Changelog: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/changelog.txt
 
 Internals: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/internals.txt
+
 
