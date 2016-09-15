@@ -35,8 +35,19 @@ function EvaluateAIMovementSpeedModification()
 	// do nothing
 }
 
-function SetSpawnMod( float csp )
+function SetSpawnMod( float csm )
 {
-	SpawnMod = csp;
+	local KFGameViewportClient GVC;
+
+	SpawnMod = csm;
 	`log("Set Dummy SpawnMod = "$SpawnMod, Outer.bLogControlledDifficulty);
+
+	// print SpawnMod to the console (most people never see the log)
+	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	GVC.ViewportConsole.OutputText("[ControlledDifficulty] SpawnMod="$SpawnMod);
+}
+
+function float GetSpawnMod()
+{
+	return SpawnMod;
 }

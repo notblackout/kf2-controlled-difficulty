@@ -30,6 +30,7 @@ var int FakePlayers;
 var int TraderTime;
 
 /** Returns adjusted total num AI modifier for this wave's player num */
+// This is invoked by the base game.
 function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 {
 	local int sum;
@@ -49,6 +50,7 @@ function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 }
 
 /** Get the custom trader time, or the difficulty's default TT if no custom TT is set */
+// This is invoked by the base game.
 function float GetTraderTimeByDifficulty()
 {
 	if ( 0 < TraderTime )
@@ -59,19 +61,40 @@ function float GetTraderTimeByDifficulty()
 	return super.GetTraderTimeByDifficulty();
 }
 
+// configuration getter
 function float GetNumFakePlayers()
 {
 	return FakePlayers;
 }
 
-function SetFakePlayers( int fpc )
+// configuration getter
+function float GetTraderTime()
 {
-	FakePlayers = fpc;
-	`log("Set FakePlayers = "$FakePlayers, Outer.bLogControlledDifficulty);
+	return TraderTime;
 }
 
+// configuration setter
+function SetFakePlayers( int fpc )
+{
+	local KFGameViewportClient GVC;
+
+	FakePlayers = fpc;
+	`log("Set FakePlayers = "$FakePlayers, Outer.bLogControlledDifficulty);
+
+	// print FakePlayers to the console (most people never see the log)
+        GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] FakePlayers="$FakePlayers);
+}
+
+// configuration setter
 function SetTraderTime( int tt )
 {
+	local KFGameViewportClient GVC;
+
 	TraderTime = tt;
 	`log("Set TraderTime = "$TraderTime, Outer.bLogControlledDifficulty);
+
+	// print TraderTime to the console (most people never see the log)
+        GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	GVC.ViewportConsole.OutputText("[ControlledDifficulty] TraderTime="$TraderTime);
 }
