@@ -95,6 +95,13 @@ function SetTraderTime( int tt )
 	`log("Set TraderTime = "$TraderTime, Outer.bLogControlledDifficulty);
 
 	// print TraderTime to the console (most people never see the log)
-        GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
-	GVC.ViewportConsole.OutputText("[ControlledDifficulty] TraderTime="$TraderTime);
+	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	if ( 0 < TraderTime )
+	{
+		GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] TraderTime="$TraderTime);
+	}
+	else
+	{
+		GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] TraderTime=<unmodded default>");
+	}
 }
