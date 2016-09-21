@@ -38,6 +38,10 @@ var float SpawnModFloat;
 // is set to a positive value, then it overrides the vanilla behavior.
 var config int MaxMonsters;
 
+// true to allow albino crawlers to spawn as they do in the unmodded game.
+// false to spawn regular crawlers in place of albino crawlers.
+var config bool AlbinoCrawlers;
+
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
 
@@ -46,7 +50,9 @@ var CD_DifficultyInfo CustomDifficultyInfo;
 event InitGame( string Options, out string ErrorMessage )
 {
 	local float SpawnModFromGameOptions;
+	local float SpawnModBeforeClamping;
 	local int MaxMonstersFromGameOptions;
+	local bool AlbinoCrawlersFromGameOptions;
 
  	Super.InitGame( Options, ErrorMessage );
 
@@ -73,33 +79,66 @@ event InitGame( string Options, out string ErrorMessage )
 		MaxMonsters = MaxMonstersFromGameOptions;
 	}
 
-	FakePlayers = Clamp(FakePlayers, 0, 5);
-	`log("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
-	// TT is not clamped
+	if ( HasOption(Options, "AlbinoCrawlers") )
+	{
+		AlbinoCrawlersFromGameOptions = GetBoolOption( Options, "AlbinoCrawlers", true );
+		`log("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlersFromGameOptions$" (true=default)", bLogControlledDifficulty);
+		AlbinoCrawlers = AlbinoCrawlersFromGameOptions;
+	}
+
+	// FClamp SpawnModFloat
+	SpawnModBeforeClamping = SpawnModFloat;
 	SpawnModFloat = FClamp(SpawnModFloat, 0.f, 1.f);
 	`log("FClamped SpawnMod = "$SpawnModFloat, bLogControlledDifficulty);
+
+	if ( SpawnModFloat == SpawnModBeforeClamping )
+	{
+		CDConsolePrint("SpawnMod="$SpawnModFloat);
+	}
+	else
+	{
+		CDConsolePrint("SpawnMod="$SpawnModFloat$" (clamped from "$SpawnModBeforeClamping$")");
+	}
+
+	// Assign SpawnMod before we save our config (SpawnModFloat is not saved, only its SpawnMod copy)
+	SpawnMod = string(SpawnModFloat);
 
 	SaveConfig();
 }
 
+static function bool GetBoolOption( string Options, string ParseString, bool CurrentValue )
+{
+	local string InOpt;
+
+	InOpt = ParseOption( Options, ParseString );
+	if ( InOpt != "" )
+	{
+		return bool(InOpt);
+	}
+
+	return CurrentValue;
+}
+
+
 function InitGameConductor()
 {
-	local CD_DummyGameConductor customConductor;
-
 	super.InitGameConductor();
-	// the preceding call should have initialized GameConductor
-	customConductor = CD_DummyGameConductor(GameConductor);
-	customConductor.SetSpawnMod( SpawnModFloat );
-	GameConductor = customConductor;
 
-	// log that we're done with GC (note that CD_DummyGameConductor logs SpawnMod inside SetSpawnMod())
-	`log("Finished instantiating and configuring CD_DummyGameConductor", bLogControlledDifficulty);
+	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
+	{
+		`log("Checked that GameConductor "$GameConductor$"is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
+	}
+	else
+	{
+		CDConsolePrint("WARNING: GameConductor "$GameConductor$" appears to be misconfigured! CD might not work correctly.");
+	}
 }
 
 
 function CreateDifficultyInfo(string Options)
 {
 	local int FakePlayersFromGameOptions;
+	local int FakePlayersBeforeClamping;
 	local int TraderTimeFromGameOptions;
 
 	super.CreateDifficultyInfo(Options);
@@ -107,7 +146,7 @@ function CreateDifficultyInfo(string Options)
 	// the preceding call should have initialized DifficultyInfo
 	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
 
-	// read command-line option values into our class variables
+	// Process FakePlayers command option, if present
 	if ( HasOption(Options, "FakePlayers") )
 	{
 		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
@@ -115,6 +154,22 @@ function CreateDifficultyInfo(string Options)
 		FakePlayers = FakePlayersFromGameOptions;
 	}
 
+	// Force FakePlayers onto the interval [0, 5]
+	FakePlayersBeforeClamping = FakePlayers;
+	FakePlayers = Clamp(FakePlayers, 0, 5);
+	`log("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
+
+	// Print FakePlayers to console
+	if ( FakePlayers != FakePlayersBeforeClamping )
+	{
+		CDConsolePrint("FakePlayers="$FakePlayers$" (clamped from "$FakePlayersBeforeClamping$")");
+	}
+	else
+	{
+		CDConsolePrint("FakePlayers="$FakePlayers);
+	}
+
+	// Process TraderTime command option, if present
 	if ( HasOption(Options, "TraderTime") )
 	{
 		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
@@ -122,12 +177,27 @@ function CreateDifficultyInfo(string Options)
 		TraderTime = TraderTimeFromGameOptions;
 	}
 
-	// pass options to the DI instance
-	CustomDifficultyInfo.SetFakePlayers( FakePlayers );
-	CustomDifficultyInfo.SetTraderTime( TraderTime );
+	// TraderTime is not clamped
+
+	// Print TraderTime to console
+	if ( 0 < TraderTime )
+	{
+		CDConsolePrint("TraderTime="$TraderTime);
+	}
+	else
+	{
+		CDConsolePrint("TraderTime=<unmodded default>");
+	}
 
 	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
 	`log("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
+}
+
+static function CDConsolePrint( string message )
+{
+	local KFGameViewportClient GVC;
+	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
 }
 
 function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
@@ -158,17 +228,27 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 /** Set up the spawning */
 function InitSpawnManager()
 {
-	local CDSpawnManager cdsm;
-
 	super.InitSpawnManager();
 
-	// the super method initializes our SpawnManager var
-	// it should be an instance of CDSpawnManager or something has gone awry
-	cdsm = CDSpawnManager( SpawnManager );
-	cdsm.SetCustomMaxMonsters( MaxMonsters );
+	if ( SpawnManager.isA( 'CDSpawnManager' ) )
+	{
+		`log("Checked that SpawnManager "$SpawnManager$"is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
+	}
+	else
+	{
+		CDConsolePrint("WARNING: SpawnManager "$SpawnManager$" appears to be misconfigured! CD might not work correctly.");
+	}
 
-	// log that we're done with the SM (note that SetCustomMaxMonsters logs its param value)
-	`log("Finished instantiating and configuring CDSpawnManager", bLogControlledDifficulty);
+	if (0 < MaxMonsters)
+	{
+		CDConsolePrint("MaxMonsters="$MaxMonsters);
+	}
+	else
+	{
+		CDConsolePrint("MaxMonsters=<unmodded default>");
+	}
+
+	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
 }
 
 exec function logControlledDifficulty( bool enabled )
@@ -187,4 +267,5 @@ defaultproperties
 	SpawnManagerClasses(0)=class'ControlledDifficulty.CDSpawnManager_Short'
 	SpawnManagerClasses(1)=class'ControlledDifficulty.CDSpawnManager_Normal'
 	SpawnManagerClasses(2)=class'ControlledDifficulty.CDSpawnManager_Long'
+
 }

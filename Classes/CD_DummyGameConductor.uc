@@ -4,16 +4,15 @@
 // Lobotomized game conductor
 //=============================================================================
 
-class CD_DummyGameConductor extends KFGameConductor within CD_Survival;
-
-var float SpawnMod;
+class CD_DummyGameConductor extends KFGameConductor
+	within CD_Survival;
 
 /** Conductor's periodic "think" method **/
 function TimerUpdate()
 {
-	CurrentSpawnRateModification = SpawnMod;
+	CurrentSpawnRateModification = GetSpawnMod();
 	CurrentAIMovementSpeedMod = DifficultyInfo.GetAIGroundSpeedMod();
-	`log("(GameConductor woken up) ControlledDifficulty forcing SpawnMod = "$CurrentSpawnRateModification$" AIMoveSpeedMod = "$CurrentAIMovementSpeedMod, Outer.bLogControlledDifficulty);
+	`log("(GameConductor woken up) ControlledDifficulty forcing SpawnMod = "$CurrentSpawnRateModification$" AIMoveSpeedMod = "$CurrentAIMovementSpeedMod, bLogControlledDifficulty);
 }
 
 /**
@@ -35,19 +34,7 @@ function EvaluateAIMovementSpeedModification()
 	// do nothing
 }
 
-function SetSpawnMod( float csm )
-{
-	local KFGameViewportClient GVC;
-
-	SpawnMod = csm;
-	`log("Set Dummy SpawnMod = "$SpawnMod, Outer.bLogControlledDifficulty);
-
-	// print SpawnMod to the console (most people never see the log)
-	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
-	GVC.ViewportConsole.OutputText("[ControlledDifficulty] SpawnMod="$SpawnMod);
-}
-
 function float GetSpawnMod()
 {
-	return SpawnMod;
+	return Outer.SpawnModFloat;
 }
