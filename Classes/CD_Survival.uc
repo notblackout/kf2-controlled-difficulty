@@ -6,6 +6,8 @@
 
 class CD_Survival extends KFGameInfo_Survival;
 
+`include(CD_BuildInfo.uci)
+
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at
 // numplayers >= 3, and faking players this way does the same; you can always
@@ -161,6 +163,9 @@ function CreateDifficultyInfo(string Options)
 	local int TraderTimeFromGameOptions;
 
 	super.CreateDifficultyInfo(Options);
+
+	// Print CD's commit hash (version)
+	CDConsolePrint("Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded");
 
 	// the preceding call should have initialized DifficultyInfo
 	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
