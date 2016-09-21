@@ -106,19 +106,39 @@ event InitGame( string Options, out string ErrorMessage )
 	SaveConfig();
 }
 
-static function bool GetBoolOption( string Options, string ParseString, bool CurrentValue )
+function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
 {
-	local string InOpt;
+	local class killerPawnClass;
 
-	InOpt = ParseOption( Options, ParseString );
-	if ( InOpt != "" )
-	{
-		return bool(InOpt);
+	if ( (Killer == Other) || (Killer == None) )
+	{	//suicide
+		BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Suicide, None, Other.PlayerReplicationInfo);
 	}
-
-	return CurrentValue;
+	else
+	{
+		if(Killer.IsA('KFAIController'))
+		{
+			if ( Killer.Pawn != none )
+			{
+				killerPawnClass = Killer.Pawn.Class;
+				if ( killerPawnClass == class'CDPawn_ZedCrawler' )
+				{
+					killerPawnClass = class'KFPawn_ZedCrawler';
+					`log("Mapped CDPawn_ZedCrawler to KFPawn_ZedCrawler in BroadcastDeathMessage(...)");
+				}
+			}
+			else
+			{
+				killerPawnClass = class'KFPawn_Human';
+			}
+			BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Killed, none, Other.PlayerReplicationInfo, killerPawnClass );
+		}
+		else
+		{
+			BroadcastLocalized(self, class'KFLocalMessage_PlayerKills', KMT_PlayerKillPlayer, Killer.PlayerReplicationInfo, Other.PlayerReplicationInfo);
+		}
+	}
 }
-
 
 function InitGameConductor()
 {
@@ -133,7 +153,6 @@ function InitGameConductor()
 		CDConsolePrint("WARNING: GameConductor "$GameConductor$" appears to be misconfigured! CD might not work correctly.");
 	}
 }
-
 
 function CreateDifficultyInfo(string Options)
 {
@@ -258,6 +277,19 @@ exec function logControlledDifficulty( bool enabled )
 	SaveConfig();
 }
 
+static function bool GetBoolOption( string Options, string ParseString, bool CurrentValue )
+{
+	local string InOpt;
+
+	InOpt = ParseOption( Options, ParseString );
+	if ( InOpt != "" )
+	{
+		return bool(InOpt);
+	}
+
+	return CurrentValue;
+}
+
 defaultproperties
 {
 	GameConductorClass=class'ControlledDifficulty.CD_DummyGameConductor'
@@ -268,4 +300,5 @@ defaultproperties
 	SpawnManagerClasses(1)=class'ControlledDifficulty.CDSpawnManager_Normal'
 	SpawnManagerClasses(2)=class'ControlledDifficulty.CDSpawnManager_Long'
 
+	PlayerControllerClass=class'ControlledDifficulty.CD_PlayerController'
 }
