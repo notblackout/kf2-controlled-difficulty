@@ -148,7 +148,7 @@ function InitGameConductor()
 
 	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
 	{
-		`log("Checked that GameConductor "$GameConductor$"is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
+		`log("Checked that GameConductor "$GameConductor$" is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
 	}
 	else
 	{
@@ -256,7 +256,7 @@ function InitSpawnManager()
 
 	if ( SpawnManager.isA( 'CDSpawnManager' ) )
 	{
-		`log("Checked that SpawnManager "$SpawnManager$"is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
+		`log("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
 	}
 	else
 	{
