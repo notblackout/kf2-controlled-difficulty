@@ -1,15 +1,16 @@
 [h1]Summary[/h1]
 
-[b]Last tested on[/b]: KF2 EA version 1043 / Sep 15 2016
-[b]Mod version[/b]: e048b0e (built 2016-09-15)
+[b]Last tested on[/b]: KF2 EA version 1043 / Sep 21 2016
+[b]Mod version[/b]: 8bd8ff84 (built 2016-09-21)
 
-This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which does the following:
+This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which supports the following:
 
-* Disables the game conductor's variation of the zed spawn intensity and move speed
-* Supports 'faking' players; this increases the zed count (but not zed health) as though additional players were present
-* Supports setting an arbitrary, fixed spawn intensity, without conductor interference
-* Supports setting the max amount live zeds
-* Supports setting trader time
+* Disabling the game conductor's variation of the zed spawn intensity and move speed
+* 'Faking' players; this increases the zed count (but not zed health) as though additional players were present
+* Setting an arbitrary, fixed spawn intensity, without conductor interference
+* Setting the max amount live zeds
+* Setting trader time
+* Optionally disabling albino crawlers (i.e. gas crawlers)
 
 Source: https://github.com/notblackout/kf2-controlled-difficulty
 
@@ -17,7 +18,7 @@ This mod is intended to support solo faked-player HOE challenges.
 
 In the vanilla game, the Game Conductor controls spawn intensity. This is expressed as a floating point number, where smaller numbers result in more frequent zed spawns and larger numbers result in less frequent zed spawns.
 
-The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  This makes the spawn rate feel unpredictable and theoretically encourages dumb strategies like intentionally missing (head)shots or kiting zeds so that their average lifetime value goes up, tricking the conductor into reducing intensity.  In this mod, you set an exact spawn intensity from the console.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this intensity measure between 1.0 and 0.75, where 1.0 is easiest HOE intensity and 0.75 is toughest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity.  Values down to and including zero are supported (since version e048b0e, built 2016-09-15).
+The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  This makes the spawn rate feel unpredictable and theoretically encourages dumb strategies intended to cheese the conductor.  In CD, you set an exact spawn intensity from the console.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this value between 1.0 and 0.75, where 1.0 is easiest HOE intensity and 0.75 is toughest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity.  Values from 0 to 1, inclusive, are supported (since version e048b0e, built 2016-09-15).
 
 [h1]Installation[/h1]
 
@@ -29,19 +30,17 @@ This mod only activates when you run an 'open' console command and specify the '
 
 [h1]Console Command Examples (Start Here)[/h1]
 
-The easiest way to get started is to open the KF2 console at the main menu (using the ` or ~ key on US keyboards) and to paste one of the following commands.  Change the map name to whatever you want.
+The easiest way to get started is to open the KF2 console at the main menu (using the ` or ~ key on US keyboards) and to paste one of the following commands.  Change the map name as desired.
 
 // One faked player (assuming solo play, that makes two total), 30 second trader time,
-// HOE difficulty, Long duration game, SpawnMod 0.85, MaxMonsters is 32.
-// SpawnMod is the "spawn intensity" described in preceding sections.
-// Map is KF-Hillside-B3.
-[code]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?MaxMonsters=32?SpawnMod=0.85[/code]
+// HOE difficulty, Long duration game, SpawnMod 0.85, MaxMonsters is 32, no gas.
+// SpawnMod is the 'spawn intensity' described in preceding sections.
+// Map is KF-Hillside-B3.  Must be typed/pasted as one line.
+[code]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?MaxMonsters=32?SpawnMod=0.85?AlbinoCrawlers=false[/code]
 
-// Five faked players, SpawnMod 0.75, MaxMonsters 24.  Length/Diff same as above.
-// TraderTime is set to the last value you explicitly specified (if KFGame.ini is not readonly),
-// or defaults to the vanilla game's value of 60 sec if you've never run the mod or if
-// KFGame.ini is readonly.  Same map.
-[code]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?FakePlayers=5?SpawnMod=0.75?MaxMonsters=24[/code]
+// Five faked players, SpawnMod 0.75, MaxMonsters 24, TraderTime 45.
+// Length/Diff same as above.  Map is Burning Paris.
+[code]open KF-BurningParis?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?FakePlayers=5?SpawnMod=0.75?MaxMonsters=24?TraderTime=45[/code]
 
 GameLength values:
 * 0 = Short
@@ -71,14 +70,20 @@ SpawnMod values:
 
 MaxMonsters values:
 * any positive value is taken literally
-* 0 or negative means use the unmodded game's default (usually 16 for solo)
-* note: multiplayer KF2 games use 32
+* 0 or negative means use the unmodded game's default
+* note: standard KF2 solo uses 16, standard KF2 multiplayer server uses 32
+
+AlbinoCrawlers values:
+* false forces all crawlers to be non-gas black crawlers
+* true allows albinos crawlers to spawn just like in standard KF2
+
+Parameters are order-insensitive.
 
 [h1]KFGame.ini Section: [ControlledDifficulty.CD_Survival][/h1]
 
 CD does not require .ini edits to get started.  You can paste one of the console commands listed in the preceding section if you just want to play.
 
-This mod persists the last settings used to KFGame.ini under the [ControlledDifficulty.CD_Survival] section.  All mod options can be specified through parameters to the 'open' console command.  The KFGame.ini section merely remembers the last options explicitly specified this way, so that you don't have to repeatedly type parameters that you never change.
+Whenever you run the mod, it writes its settings to KFGame.ini under the [ControlledDifficulty.CD_Survival] section, if KFGame.ini is not readonly.  This KFGame.ini section merely remembers the last options explicitly specified in the console, so that you don't have to repeatedly type parameters that you never change.  You don't have to edit it directly, though you can.
 
 For instance, if you run
 
@@ -94,23 +99,11 @@ then CD will read the saved FakePlayers=5 value from KFGame.ini and apply it aut
 
 KFGame.ini is usually in [b]<your homedir>\Documents\My Games\KillingFloor2\KFGame\Config[/b].
 
-Here's an example snippet showing CD's settings:
-
-[code]
-[ControlledDifficulty.CD_Survival]
-FakePlayers=1
-TraderTime=25
-SpawnMod=1.0
-MaxMonsters=32
-[/code]
-
-To disable any of these customizations, just delete the associated line from KFGame.ini.
-
-If the KFGame.ini section is missing or incomplete,  ControlledDifficulty.CD_Survival assumes:
+When the KFGame.ini section is missing or incomplete, CD assumes:
 
 * no faked players
 * standard trader time for the difficulty level
-* standard MaxMonsters (usually 16 in standalone mode, 32 in dedicated)
+* standard MaxMonsters (generally 16 in standalone/solo, compared to 32 on multiplayer servers)
 * SpawnMod = 1.0
 
 [h1]Logging[/h1]
@@ -122,21 +115,23 @@ Configure Controlled Difficulty's logging output by either:
 
 To see this logging output in realtime, add '-log' to KF2's launch options. This makes KF2 open two windows instead of one: one white-on-black text terminal for logging output, one for the regular game.
 
-If you are scrunitizing CD's logging output, then you might also find the base game's AISpawnManager logging output useful.  This is not part of CD proper; it just logs information about zeds and squads spawned by the game.  You can enable it by adding this to your KFGame.ini:
+Optionally, consider also enabling AISpawnManager logging of zed/squad spawns.  Enable it by adding this to your KFGame.ini:
 
 [KFGame.KFAISpawnManager]
 bLogAISpawning=true
 
 [h1]How does CD relate to the Project One mod?[/h1]
 
-I made this because Project One has not been updated in a while (December 2015 atm).  I wasn't confident that a mod that old actually disabled the Game Conductor, and the source was not available for me to check.  So I made Controlled Difficulty.  I'm deliberately focusing CD on a narrower use-case than P1: solo faked player HOE games.  Keeping the focus narrow makes CD easier to fix after future KF2 patches inevitably break stuff.
+I made this because Project One has not been updated in a while (December 2015 atm).  I wasn't confident that a mod that old actually disabled the Game Conductor, and the source was not available for me to check.  So I made Controlled Difficulty.
+
+[h1]Where can I get KF-Hillside-B3?[/h1]
+
+http://forums.tripwireinteractive.com/forum/killing-floor-2/killing-floor-2-modifications/level-design-ac/beta-map-releases-aa/114043-kf-hillside
+
+CD works with any map, not just Hillside.  But Hillside is good for a lot of solo challenges.
 
 [h1]Changelog & Internals[/h1]
-
-These files are externally maintained because Steam imposes a stiff size limit on workshop item descriptions.
 
 Changelog: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/changelog.txt
 
 Internals: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/internals.txt
-
-
