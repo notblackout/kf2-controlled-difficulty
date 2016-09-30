@@ -47,6 +47,17 @@ var config bool AlbinoCrawlers;
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
 
+// "ini": read info about squads from config and use it to set spawn squads
+// "std": unmodded game behavior
+// all other values are reserved for potential future preset names
+var config string SquadSchedule;
+var config array<string> SquadScheduleDefs;
+
+// "hans" or "volter": forces the hans boss wave
+// "pat", "patty", "patriarch": forces the patriarch boss wave
+// else: choose a random boss wave (unmodded game behavior)
+var config string Boss;
+
 var CD_DifficultyInfo CustomDifficultyInfo;
 
 event InitGame( string Options, out string ErrorMessage )
@@ -55,6 +66,7 @@ event InitGame( string Options, out string ErrorMessage )
 	local float SpawnModBeforeClamping;
 	local int MaxMonstersFromGameOptions;
 	local bool AlbinoCrawlersFromGameOptions;
+	local string SquadScheduleFromGameOptions;
 
  	Super.InitGame( Options, ErrorMessage );
 
@@ -88,6 +100,13 @@ event InitGame( string Options, out string ErrorMessage )
 		AlbinoCrawlers = AlbinoCrawlersFromGameOptions;
 	}
 
+	if ( HasOption(Options, "SquadSchedule") )
+	{
+		SquadScheduleFromGameOptions = ParseOption(Options, "SquadSchedule" );
+		`log("SquadScheduleFromGameOptions = "$SquadScheduleFromGameOptions, bLogControlledDifficulty);
+		SquadSchedule = SquadScheduleFromGameOptions;
+	}
+
 	// FClamp SpawnModFloat
 	SpawnModBeforeClamping = SpawnModFloat;
 	SpawnModFloat = FClamp(SpawnModFloat, 0.f, 1.f);
@@ -107,6 +126,184 @@ event InitGame( string Options, out string ErrorMessage )
 
 	SaveConfig();
 }
+
+function array<CD_AIWaveInfo> ParseFullSquadSchedule( array<string> fullRawSchedule )
+{
+	local int i;
+	local array<CD_AIWaveInfo> waveInfos;
+
+	for ( i = 0; i < fullRawSchedule.length; i++ )
+	{
+		`log("Attempting to parse wave "$(i + 1)$"...");
+		waveInfos.AddItem( ParseSquadScheduleDef( fullRawSchedule[i] ) );
+	}
+
+	return waveInfos;
+}
+
+function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
+{
+	local array<string> squadDefs;
+	local array<string> elemDefs;
+	local int squadIdx;
+	local int elemIdx;
+	local CD_AIWaveInfo waveInfo;
+	local CD_AISpawnSquad curSquad;
+	local AISquadElement curElement;
+	local int elemStrLen;
+	local int elemStrIdx;
+	local int unicodeVal;
+
+	local string elemCount;
+	local string elemType;
+
+	local int elemCountInt;
+
+	local EAIType elemEAIType;
+
+	waveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
+
+	// Split on , and drop empty elements
+	squadDefs = SplitString( rawSchedule, ",", true );
+
+	// Iterate through the squads
+	for ( squadIdx = 0; squadIdx < squadDefs.length; squadIdx++ )
+	{
+		curSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
+
+		// Squads may in general be heterogeneous, e.g.
+		// 2SClot_3Ccrawler_2Gorefast_2Siren
+		//
+		// This general model also allows squads that are homogeneous, e.g. 
+		// 6Crawler
+		//
+		// In the following code, we split on _ and loop through
+		// each element, populating a CD_AISpawnSquad as we go.
+		elemDefs = SplitString( squadDefs[squadIdx], "_", true );
+
+		for ( elemIdx = 0; elemIdx < elemDefs.length; elemIdx++ )
+		{
+			elemStrLen = Len( elemDefs[elemIdx] );
+
+			for ( elemStrIdx = 0; elemStrIdx < elemStrLen; elemStrIdx++ )
+			{
+				unicodeVal = Asc( Mid( elemDefs[elemIdx], elemStrIdx, 1 ) );
+				if ( !( 48 <= unicodeVal && unicodeVal <= 57 ) )
+				{
+					break;
+				}
+			}
+
+			if ( elemStrIdx < elemStrLen )
+			{
+				elemCount = Mid( elemDefs[elemIdx], 0, elemStrIdx );
+				elemType  = Mid( elemDefs[elemIdx], elemStrIdx, elemStrLen - elemStrIdx );
+			}
+
+			if ( elemCount == "" )
+			{
+				elemCount = "1";
+			}
+
+			elemEAIType = GetZedType( elemType );
+
+			elemCountInt = int(elemCount);
+
+			if ( "" == elemCount || elemCountInt < 1 || elemCountInt > 6 )
+			{
+				// TODO invalid elem count
+				`log("Invalid elemCount "$elemCount);
+				continue;
+			}
+
+			if ( 255 == elemEAIType )
+			{
+				// TODO invalid elem class
+				`log("Invalid elemType "$elemType);
+				continue;
+			}
+
+			curElement.Type = elemEAIType;
+			curElement.Num = elemCountInt;
+			curElement.CustomClass = none;
+
+			`log("[squad#"$squadIdx$"] Parsed squad element: "$curElement.Num$"x"$curElement.Type);
+
+			curSquad.AddSquadElement(curElement);
+		}
+
+		// todo check whether special or not, add to appropriate dynarray
+		waveInfo.CustomSquads.AddItem(curSquad);
+	}
+
+	return waveInfo;
+}
+
+/**
+    Get a zed EAIType from the name.
+
+    This is based on the LoadMonsterByName from KFCheatManager, but I have a separate copy here
+    for four reasons:
+    0. I need EAIType instead of a class, and there does not seem to be an easy way to convert those
+    1. To allow for a few more abbreviations than KFCheatManager knows (e.g. for clots: CC, CA, CS)
+    2. So that a hypothetical future KF2 update that might change KFCheatManager's zed abbreviations
+       will not change the behavior of this method, which is used to parse wave squad schedules and
+       generally represents a public API that must not change.
+    4. I have no need for the "friendly" zed shorthand names here, and I want to accept the absolute
+       minimum universe of correct inputs, so that this is easy to maintain.  Same for "TestHusk".
+*/
+
+function EAIType GetZedType( string ZedName )
+{
+	if( Left(ZedName, 5) ~= "ClotA" || Left(ZedName, 2) ~= "CA" )
+	{
+		return AT_AlphaClot;
+	}
+	else if( Left(ZedName, 5) ~= "ClotS" || Left(ZedName, 2) ~= "CS" )
+	{
+		return AT_SlasherClot;
+	}
+	else if( Left(ZedName, 5) ~= "ClotC" || Left(ZedName, 2) ~= "CC" || ZedName ~= "CLOT" )
+	{
+		return AT_Clot;
+	}
+	else if( Left(ZedName, 1) ~= "F" )
+	{
+		return AT_FleshPound;
+	}
+	else if( Left(ZedName, 1) ~= "G" )
+	{
+		return AT_GoreFast;
+	}
+	else if( Left(ZedName, 2) ~= "St" )
+	{
+		return AT_Stalker;
+	}
+	else if( Left(ZedName, 1) ~= "B" )
+	{
+		return AT_Bloat;
+	}
+	else if( Left(ZedName, 2) ~= "Sc" )
+	{
+		return AT_Scrake;
+	}
+	else if( Left(ZedName, 2) ~= "Cr" )
+	{
+		return AT_Crawler;
+	}
+	else if( Left(ZedName, 2) ~= "Hu" ) // could accept "H", but then can't have "H" = Hans
+	{
+		return AT_Husk;
+	}
+	else if( Left(ZedName, 2) ~= "Si" )
+	{
+		return AT_Siren;
+	}
+
+	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
+	return 255;
+}
+
 
 function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
 {
@@ -252,15 +449,20 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 /** Set up the spawning */
 function InitSpawnManager()
 {
+	local CDSpawnManager cdsm;
+	local array<CD_AIWaveInfo> WaveInfos;
+
 	super.InitSpawnManager();
 
 	if ( SpawnManager.isA( 'CDSpawnManager' ) )
 	{
 		`log("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
+		cdsm = CDSpawnManager( SpawnManager );
 	}
 	else
 	{
 		CDConsolePrint("WARNING: SpawnManager "$SpawnManager$" appears to be misconfigured! CD might not work correctly.");
+		return;
 	}
 
 	if (0 < MaxMonsters)
@@ -270,6 +472,18 @@ function InitSpawnManager()
 	else
 	{
 		CDConsolePrint("MaxMonsters=<unmodded default>");
+	}
+
+	if ( SquadSchedule == "ini" )
+	{
+		`log("Attempting to parse squad information in config...");
+		WaveInfos = ParseFullSquadSchedule( SquadScheduleDefs );
+		// TODO WaveInfo validation
+		cdsm.SetCustomWaves( WaveInfos );
+	}
+	else
+	{
+		`log("Not reading squad information from config (value="$SquadSchedule$")");
 	}
 
 	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
