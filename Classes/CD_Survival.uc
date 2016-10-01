@@ -255,7 +255,7 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
        minimum universe of correct inputs, so that this is easy to maintain.  Same for "TestHusk".
 */
 
-function EAIType GetZedType( string ZedName )
+static function EAIType GetZedType( string ZedName )
 {
 	if( Left(ZedName, 5) ~= "ClotA" || Left(ZedName, 2) ~= "Al" || ZedName ~= "CA" )
 	{
@@ -310,7 +310,7 @@ function EAIType GetZedType( string ZedName )
 	return 255;
 }
 
-function String GetZedFullName( EAIType ZedType )
+static function String GetZedFullName( EAIType ZedType )
 {
 	if ( ZedType == AT_AlphaClot )
 	{
@@ -365,7 +365,7 @@ function String GetZedFullName( EAIType ZedType )
 	return "?";
 }
 
-function String GetZedTinyName( EAIType ZedType )
+static function String GetZedTinyName( EAIType ZedType )
 {
 	if ( ZedType == AT_AlphaClot )
 	{
@@ -420,7 +420,7 @@ function String GetZedTinyName( EAIType ZedType )
 	return "?";
 }
 
-function String GetZedShortName( EAIType ZedType )
+static function String GetZedShortName( EAIType ZedType )
 {
 	if ( ZedType == AT_AlphaClot )
 	{
