@@ -9,17 +9,17 @@ class CD_AIWaveInfo extends KFAIWaveInfo;
 // could have avoided all of this idiocy.
 
 /** Once a squad is dead, do not reuse them */
-var bool	CustombRecycleWave;
+var bool CustombRecycleWave;
 
 /** List of available squads to spawn for each wave */
-var array<KFAISpawnSquad>		CustomSquads;
+var array<CD_AISpawnSquad> CustomSquads;
 
 /** Copy the list of squads for this wave type */
 function CopySquads(out array<KFAISpawnSquad> out_SquadList)
 {
 	local int i;
 
-    // Clear our AvailableSquadList and repopulate it
+	// Clear our AvailableSquadList and repopulate it
 	out_SquadList.Length = 0;
 
 	for ( i = 0; i < CustomSquads.Length; i++ )

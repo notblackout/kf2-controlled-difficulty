@@ -220,35 +220,6 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
     return FinalAmount;
 }
 
-
-//function int GetWaveTotalAI(byte NextWaveIndex)
-//{
-//	local int tot;
-//	local bool scaleup;
-//	local CD_AIWaveInfo wi;
-//
-//	if ( 0 < CustomWaves.length )
-//	{
-//		wi = CustomWaves[NextWaveIndex];
-//		scaleup = wi.CanRecycleWave();
-//		tot = wi.GetMaxAI();
-//	}
-//	else
-//	{
-//		scaleup = WaveSettings.Waves[NextWaveIndex].bRecycleWave;
-//		tot = WaveSettings.Waves[NextWaveIndex].MaxAI;
-//	}
-//
-//	if (scaleup)
-//	{
-//		tot = tot * 
-//					DifficultyInfo.GetPlayerNumMaxAIModifier( GetNumHumanTeamPlayers() ) *
-//					DifficultyInfo.GetDifficultyMaxAIModifier();
-//	}
-//
-//	return tot;
-//}
-
 /** Returns a random AIGroup from the "waiting" list */
 function array< class<KFPawn_Monster> > GetNextSpawnList()
 {
@@ -281,13 +252,14 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
         }
 	}
 
-	// select a random squad from the list
 	if (0 < CustomWaves.length && MyKFGRI.WaveNum - 1 < CustomWaves.length )
 	{
+		// CD behavior: use available squads in first-to-last order
 		RandNum = 0;
 	}
 	else
 	{
+		// STANDARD game behavior: select a random squad from the list
 		RandNum = Rand(AvailableSquads.Length);
 	}
 
@@ -428,7 +400,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	if ( usingCustom )
 	{
 		CustomSquad = CD_AISpawnSquad( Squad );
-		SquadElements = CustomSquad.CustomMonsterList;
+		CustomSquad.CopyAISquadElements( SquadElements );
 	}
 	else
 	{
