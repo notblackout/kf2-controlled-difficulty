@@ -62,8 +62,6 @@ var CD_DifficultyInfo CustomDifficultyInfo;
 
 var array<CD_AIWaveInfo> WaveInfos;
 
-
-
 event InitGame( string Options, out string ErrorMessage )
 {
 	local float SpawnModFromGameOptions;
@@ -275,7 +273,7 @@ function EAIType GetZedType( string ZedName )
 	{
 		return AT_FleshPound;
 	}
-	else if( Left(ZedName, 1) ~= "G" )
+	else if( Left(ZedName, 1) ~= "G" ) // DG(F) / DoubleGorefast reserved
 	{
 		return AT_GoreFast;
 	}
@@ -295,7 +293,7 @@ function EAIType GetZedType( string ZedName )
 	{
 		return AT_Crawler;
 	}
-	else if( Left(ZedName, 2) ~= "Hu" ) // could accept "H", but then can't have "H" = Hans
+	else if( Left(ZedName, 2) ~= "H" ) // this is ambiguous if we ever decide to accept Hans
 	{
 		return AT_Husk;
 	}
@@ -312,7 +310,117 @@ function EAIType GetZedType( string ZedName )
 	return 255;
 }
 
-function String GetZedAbbrevName( EAIType ZedType )
+function String GetZedFullName( EAIType ZedType )
+{
+	if ( ZedType == AT_AlphaClot )
+	{
+		return "Alpha";
+	}
+	else if ( ZedType == AT_SlasherClot )
+	{
+		return "Slasher";
+	}
+	else if ( ZedType == AT_Clot ) 
+	{
+		return "Cyst";
+	}
+	else if ( ZedType == AT_FleshPound )
+	{
+		return "Fleshpound";
+	}
+	else if ( ZedType == AT_Gorefast )
+	{
+		return "Gorefast";
+	}
+	else if ( ZedType == AT_Stalker )
+	{
+		return "Stalker";
+	}
+	else if ( ZedType == AT_Bloat )
+	{
+		return "Bloat";
+	}
+	else if ( ZedType == AT_Scrake )
+	{
+		return "Scrake";
+	}
+	else if ( ZedType == AT_Crawler )
+	{
+		return "Crawler";
+	}
+	else if ( ZedType == AT_Husk )
+	{
+		return "Husk";
+	}
+	else if ( ZedType == AT_Siren )
+	{
+		return "Siren";
+	}
+	else
+	{
+		// TODO error handling
+	}
+
+	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
+	return "?";
+}
+
+function String GetZedTinyName( EAIType ZedType )
+{
+	if ( ZedType == AT_AlphaClot )
+	{
+		return "AL";
+	}
+	else if ( ZedType == AT_SlasherClot )
+	{
+		return "SL";
+	}
+	else if ( ZedType == AT_Clot ) 
+	{
+		return "CY";
+	}
+	else if ( ZedType == AT_FleshPound )
+	{
+		return "F";
+	}
+	else if ( ZedType == AT_Gorefast )
+	{
+		return "G";
+	}
+	else if ( ZedType == AT_Stalker )
+	{
+		return "ST";
+	}
+	else if ( ZedType == AT_Bloat )
+	{
+		return "B";
+	}
+	else if ( ZedType == AT_Scrake )
+	{
+		return "SC";
+	}
+	else if ( ZedType == AT_Crawler )
+	{
+		return "CR";
+	}
+	else if ( ZedType == AT_Husk )
+	{
+		return "H";
+	}
+	else if ( ZedType == AT_Siren )
+	{
+		return "SI";
+	}
+	else
+	{
+		// TODO error handling
+	}
+
+	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
+	return "?";
+}
+
+function String GetZedShortName( EAIType ZedType )
 {
 	if ( ZedType == AT_AlphaClot )
 	{
@@ -602,7 +710,7 @@ exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
 	CDConsolePrintSpawnSummaries( AssumedPlayerCount );
 }
 
-exec function CDSpawnDetails()
+exec function CDSpawnDetails( optional string Verbosity = "" )
 {
 	CDConsolePrintScheduleSlug();
 
@@ -611,7 +719,44 @@ exec function CDSpawnDetails()
 		return;
 	}
 
-	CDConsolePrintSpawnDetails();
+	Verbosity = Locs( Verbosity );
+
+	if ( Verbosity == "" )
+	{
+		Verbosity = "short";
+		CDConsolePrint( "Verbosity level: \""$Verbosity$"\" (run \"CDSpawnDetails help\" for more choices)", false );
+	}
+	else if ( Verbosity == "tiny" || Verbosity == "short" || Verbosity == "long" )
+	{
+		// do nothing
+	}
+	else if ( Verbosity == "help" )
+	{
+		CDConsolePrintHelpForSpawnDetails();
+		return;
+	}
+	else
+	{
+		CDConsolePrint( "Parameter \""$Verbosity$"\" is not valid.", false );
+		CDConsolePrintHelpForSpawnDetails();
+		return;
+	}
+
+	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
+	CDConsolePrintSpawnDetails( Verbosity );
+}
+
+static function CDConsolePrintHelpForSpawnDetails()
+{
+	CDConsolePrint( "This command displays the currently selected CD spawn cycle.", false );
+	CDConsolePrint( "Supported verbosity levels:", false );
+	CDConsolePrint( "    tiny: abbreviate zed names as much as possible", false );
+	CDConsolePrint( "    short: abbreviate zed names down to two letters", false );
+	CDConsolePrint( "    long: don't abbreviate zed names", false );
+	CDConsolePrint( "For example, to print spawn details with full zed names:", false );
+	CDConsolePrint( "    CDSpawnDetails long", false );
+	CDConsolePrint( "You can omit the verbosity level argument, in which case", false );
+	CDConsolePrint( "this command defaults to \"short\".", false );
 }
 
 function CDConsolePrintScheduleSlug()
@@ -660,7 +805,7 @@ static function string GetShortWaveName( int WaveIndex )
 	return s;
 }
 
-function CDConsolePrintSpawnDetails()
+function CDConsolePrintSpawnDetails( string Verbosity )
 {
 	local int WaveIndex, SquadIndex, ElemIndex;
 	local string s;
@@ -668,6 +813,7 @@ function CDConsolePrintSpawnDetails()
 	local CD_AISpawnSquad ss;
 	local array<string> SquadList;
 	local array<string> ElemList;
+	local string ZedNameTmp;
 
 	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
 	{
@@ -681,10 +827,20 @@ function CDConsolePrintSpawnDetails()
 
 			for ( ElemIndex = 0; ElemIndex < ss.CustomMonsterList.length; ElemIndex++ )
 			{
-				ElemList.AddItem(
-					string( ss.CustomMonsterList[ElemIndex].Num ) $
-					GetZedAbbrevName( ss.CustomMonsterList[ElemIndex].Type )
-				);
+				if ( Verbosity == "tiny" )
+				{
+					ZedNameTmp = GetZedTinyName( ss.CustomMonsterList[ElemIndex].Type );
+				}
+				else if ( Verbosity == "long" )
+				{
+					ZedNameTmp = GetZedFullName( ss.CustomMonsterList[ElemIndex].Type );
+				}
+				else
+				{
+					ZedNameTmp = GetZedShortName( ss.CustomMonsterList[ElemIndex].Type );
+				}
+
+				ElemList.AddItem(string( ss.CustomMonsterList[ElemIndex].Num ) $ ZedNameTmp);
 			}
 
 			JoinArray( ElemList, s, "_" );
