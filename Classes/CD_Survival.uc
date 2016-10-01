@@ -241,6 +241,479 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	return waveInfo;
 }
 
+function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
+{
+	local class killerPawnClass;
+
+	if ( (Killer == Other) || (Killer == None) )
+	{	//suicide
+		BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Suicide, None, Other.PlayerReplicationInfo);
+	}
+	else
+	{
+		if(Killer.IsA('KFAIController'))
+		{
+			if ( Killer.Pawn != none )
+			{
+				killerPawnClass = Killer.Pawn.Class;
+				if ( killerPawnClass == class'CDPawn_ZedCrawler' )
+				{
+					killerPawnClass = class'KFPawn_ZedCrawler';
+					`log("Mapped CDPawn_ZedCrawler to KFPawn_ZedCrawler in BroadcastDeathMessage(...)");
+				}
+			}
+			else
+			{
+				killerPawnClass = class'KFPawn_Human';
+			}
+			BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Killed, none, Other.PlayerReplicationInfo, killerPawnClass );
+		}
+		else
+		{
+			BroadcastLocalized(self, class'KFLocalMessage_PlayerKills', KMT_PlayerKillPlayer, Killer.PlayerReplicationInfo, Other.PlayerReplicationInfo);
+		}
+	}
+}
+
+function InitGameConductor()
+{
+	super.InitGameConductor();
+
+	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
+	{
+		`log("Checked that GameConductor "$GameConductor$" is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
+	}
+	else
+	{
+		CDConsolePrint("WARNING: GameConductor "$GameConductor$" appears to be misconfigured! CD might not work correctly.");
+	}
+}
+
+function CreateDifficultyInfo(string Options)
+{
+	local int FakePlayersFromGameOptions;
+	local int FakePlayersBeforeClamping;
+	local int TraderTimeFromGameOptions;
+
+	super.CreateDifficultyInfo(Options);
+
+	// Print CD's commit hash (version)
+	CDConsolePrint("Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded");
+
+	// the preceding call should have initialized DifficultyInfo
+	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
+
+	// Process FakePlayers command option, if present
+	if ( HasOption(Options, "FakePlayers") )
+	{
+		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
+		`log("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		FakePlayers = FakePlayersFromGameOptions;
+	}
+
+	// Force FakePlayers onto the interval [0, 5]
+	FakePlayersBeforeClamping = FakePlayers;
+	FakePlayers = Clamp(FakePlayers, 0, 5);
+	`log("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
+
+	// Print FakePlayers to console
+	if ( FakePlayers != FakePlayersBeforeClamping )
+	{
+		CDConsolePrint("FakePlayers="$FakePlayers$" (clamped from "$FakePlayersBeforeClamping$")");
+	}
+	else
+	{
+		CDConsolePrint("FakePlayers="$FakePlayers);
+	}
+
+	// Process TraderTime command option, if present
+	if ( HasOption(Options, "TraderTime") )
+	{
+		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
+		`log("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		TraderTime = TraderTimeFromGameOptions;
+	}
+
+	// TraderTime is not clamped
+
+	// Print TraderTime to console
+	if ( 0 < TraderTime )
+	{
+		CDConsolePrint("TraderTime="$TraderTime);
+	}
+	else
+	{
+		CDConsolePrint("TraderTime=<unmodded default>");
+	}
+
+	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
+	`log("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
+}
+
+function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
+{
+	local float DoshMod;
+	local int LocalNumPlayers;
+	local int LocalNumFakes;
+	local float LocalMaxAIMod;
+
+	LocalNumPlayers = GetNumPlayers();
+	LocalNumFakes = CustomDifficultyInfo.GetNumFakePlayers();
+	// Only pass actual players to GetPlayerNumMaxAIModifier -- it adds fakes internally
+	LocalMaxAIMod = DifficultyInfo.GetPlayerNumMaxAIModifier(LocalNumPlayers);
+
+	`log("NumPlayers = "$LocalNumPlayers, bLogControlledDifficulty);
+	`log("NumFakes = "$LocalNumFakes, bLogControlledDifficulty);
+	`log("DifficultyInfo.GetPlayerNumMaxAIModifier(NumPlayers) = "$LocalMaxAIMod$"; this is fake-count-adjusted", bLogControlledDifficulty);
+
+	DoshMod = (LocalNumPlayers + LocalNumFakes) / LocalMaxAIMod;
+
+	`log("Starting Dosh Bounty: "$ModifiedValue$" DoshMod: "$DoshMod, bLogControlledDifficulty);
+
+	ModifiedValue *= DoshMod;
+
+	`log("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
+}
+
+/** Set up the spawning */
+function InitSpawnManager()
+{
+	local CDSpawnManager cdsm;
+
+	super.InitSpawnManager();
+
+	if ( SpawnManager.isA( 'CDSpawnManager' ) )
+	{
+		`log("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
+		cdsm = CDSpawnManager( SpawnManager );
+	}
+	else
+	{
+		CDConsolePrint("WARNING: SpawnManager "$SpawnManager$" appears to be misconfigured! CD might not work correctly.");
+		return;
+	}
+
+	if (0 < MaxMonsters)
+	{
+		CDConsolePrint("MaxMonsters="$MaxMonsters);
+	}
+	else
+	{
+		CDConsolePrint("MaxMonsters=<unmodded default>");
+	}
+
+	if ( SquadSchedule == "ini" )
+	{
+		`log("Attempting to parse squad information in config...");
+		WaveInfos = ParseFullSquadSchedule( SquadScheduleDefs );
+		// TODO WaveInfo validation
+		cdsm.SetCustomWaves( WaveInfos );
+	}
+	else
+	{
+		`log("Not reading squad information from config (value="$SquadSchedule$")");
+	}
+
+	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
+}
+
+exec function logControlledDifficulty( bool enabled )
+{
+	bLogControlledDifficulty = enabled;
+	`log("Set bLogControlledDifficulty = "$bLogControlledDifficulty);
+	SaveConfig();
+}
+
+exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
+{
+	CDConsolePrintScheduleSlug();
+
+	if ( SquadSchedule == "unmodded" )
+	{
+		return;
+	}
+
+	if ( -255 == AssumedPlayerCount )
+	{
+		if ( WorldInfo.NetMode == NM_StandAlone )
+		{
+			AssumedPlayerCount = 1 + FakePlayers;
+			CDConsolePrint( "Projecting wave summaries for "$AssumedPlayerCount$" players = 1 human + "$FakePlayers$" fake(s)...", false );
+		}
+		else
+		{
+			CDConsolePrint( "Unable to guess player count in netmode "$WorldInfo.NetMode, false );
+			CDConsolePrint( "Pass a player count as an argument to this console command, e.g.", false );
+			CDConsolePrint( "> cdSpawnSummaries 2", false );
+			return;
+		}
+	}
+	else if ( 0 < AssumedPlayerCount )
+	{
+		CDConsolePrint( "Projecting wave summaries for "$AssumedPlayerCount$" players...", false );
+	}
+	else
+	{
+		CDConsolePrint( "Player count argument "$AssumedPlayerCount$" must be positive", false );
+		return;
+	}
+
+	CDConsolePrintSpawnSummaries( AssumedPlayerCount );
+}
+
+exec function CDSpawnDetails( optional string Verbosity = "" )
+{
+	CDConsolePrintScheduleSlug();
+
+	if ( SquadSchedule == "unmodded" )
+	{
+		return;
+	}
+
+	Verbosity = Locs( Verbosity );
+
+	if ( Verbosity == "" )
+	{
+		Verbosity = "short";
+		CDConsolePrint( "Verbosity level: \""$Verbosity$"\" (run \"CDSpawnDetails help\" for more choices)", false );
+	}
+	else if ( Verbosity == "tiny" || Verbosity == "short" || Verbosity == "long" )
+	{
+		// do nothing
+	}
+	else if ( Verbosity == "help" )
+	{
+		CDConsolePrintHelpForSpawnDetails();
+		return;
+	}
+	else
+	{
+		CDConsolePrint( "Parameter \""$Verbosity$"\" is not valid.", false );
+		CDConsolePrintHelpForSpawnDetails();
+		return;
+	}
+
+	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
+	CDConsolePrintSpawnDetails( Verbosity );
+}
+
+function CDConsolePrintScheduleSlug()
+{
+	if ( SquadSchedule == "unmodded" )
+	{
+		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn randomly, as in standard KF2)", false);
+	}
+	else if ( SquadSchedule == "ini" )
+	{
+		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn according to the config file)", false);
+	}
+	else
+	{
+		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn according to preset "$SquadSchedule$")", false);
+	}
+}
+
+function CDConsolePrintSpawnDetails( string Verbosity )
+{
+	local int WaveIndex, SquadIndex, ElemIndex;
+	local string s;
+	local CD_AIWaveInfo wi;
+	local CD_AISpawnSquad ss;
+	local array<string> SquadList;
+	local array<string> ElemList;
+	local string ZedNameTmp;
+
+	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
+	{
+		wi = WaveInfos[WaveIndex];
+		SquadList.length = 0;
+
+		for ( SquadIndex = 0; SquadIndex < wi.CustomSquads.length; SquadIndex++ )
+		{
+			ss = wi.CustomSquads[SquadIndex];
+			ElemList.length = 0;
+
+			for ( ElemIndex = 0; ElemIndex < ss.CustomMonsterList.length; ElemIndex++ )
+			{
+				if ( Verbosity == "tiny" )
+				{
+					ZedNameTmp = GetZedTinyName( ss.CustomMonsterList[ElemIndex].Type );
+				}
+				else if ( Verbosity == "long" )
+				{
+					ZedNameTmp = GetZedFullName( ss.CustomMonsterList[ElemIndex].Type );
+				}
+				else
+				{
+					ZedNameTmp = GetZedShortName( ss.CustomMonsterList[ElemIndex].Type );
+				}
+
+				ElemList.AddItem(string( ss.CustomMonsterList[ElemIndex].Num ) $ ZedNameTmp);
+			}
+
+			JoinArray( ElemList, s, "_" );
+			SquadList.AddItem( s );
+		}
+
+		JoinArray( SquadList, s, ", " );
+		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$s, false );
+	}
+
+	// TODO log boss override (if any)
+}
+
+function CDConsolePrintSpawnSummaries( int PlayerCount )
+{
+	local int WaveIndex;
+	local CD_AIWaveInfo wi;
+	local CD_WaveSummary WaveSummary, GameSummary;
+	local string WaveSummaryString;
+
+	if ( PlayerCount <= 0 )
+	{
+		// TODO complain about being handed nonpositive players
+		PlayerCount = 1;
+	}
+
+	GameSummary = new class'CD_WaveSummary';
+
+	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
+	{
+		wi = WaveInfos[WaveIndex];
+
+		WaveSummaryString = "";
+
+		WaveSummary = new class'CD_WaveSummary';
+
+		GetCDWaveSummary( wi, WaveIndex, PlayerCount, WaveSummary );
+		GameSummary.AddParamToSelf( WaveSummary );
+		WaveSummaryString = WaveSummary.GetString();
+
+		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$WaveSummaryString, false );
+	}
+
+	CDConsolePrint( " >> Projected Game Totals:", false );
+	CDConsolePrint( "[TOT] "$GameSummary.GetString(), false );
+	CDConsolePrint( " >> Boss wave not included in preceding tally.", false );
+}
+
+function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCount, out CD_WaveSummary result )
+{
+	local int WaveTotalAI;
+	local int squadIndex;
+	local sDifficultyWaveInfo DWS;
+	local class<CDSpawnManager> cdsmClass;
+	local CD_AISpawnSquad CDSquad;
+	local array<AISquadElement> CustomMonsterList;
+	local int elemIndex, remainingBudget, zedsFromElement;
+
+	cdsmClass = class<CDSpawnManager>( SpawnManagerClasses[GameLength] );
+	// Don't initialize this one; we just want to ask it about MaxAI
+	// SpawnManager.Initialize();
+	DWS = cdsmClass.default.DifficultyWaveSettings[ Min(GameDifficulty, cdsmClass.default.DifficultyWaveSettings.Length-1) ];
+
+	WaveTotalAI = DWS.Waves[WaveIndex].MaxAI *
+	              PlayerCount *
+	              DifficultyInfo.GetDifficultyMaxAIModifier();
+	
+	result.Clear();
+
+	squadIndex = -1;
+
+	while ( result.Total < WaveTotalAI )
+	{
+		CDSquad = WaveInfo.CustomSquads[squadIndex++ % WaveInfo.CustomSquads.length];
+
+		CDSquad.CopyAISquadElements( CustomMonsterList );
+
+		for ( elemIndex = 0; elemIndex < CustomMonsterList.length; elemIndex++ )
+		{
+
+			remainingBudget = WaveTotalAI - result.total;
+
+			if ( remainingBudget <= 0 )
+			{
+				break;
+			}
+
+			zedsFromElement = Min( CustomMonsterList[elemIndex].Num, remainingBudget );
+
+			result.Increment( CustomMonsterList[elemIndex].Type, zedsFromElement );
+		}
+	}
+}
+
+static function CDConsolePrint( string message, optional bool autoPrefix = true )
+{
+	local KFGameViewportClient GVC;
+	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+
+	if ( autoPrefix )
+	{
+		GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
+	}
+	else
+	{
+		GVC.ViewportConsole.OutputTextLine(message);
+	}
+}
+
+static function CDConsolePrintHelpForSpawnDetails()
+{
+	CDConsolePrint( "This command displays the currently selected CD spawn cycle.", false );
+	CDConsolePrint( "Supported verbosity levels:", false );
+	CDConsolePrint( "    tiny: abbreviate zed names as much as possible", false );
+	CDConsolePrint( "    short: abbreviate zed names down to two letters", false );
+	CDConsolePrint( "    long: don't abbreviate zed names", false );
+	CDConsolePrint( "For example, to print spawn details with full zed names:", false );
+	CDConsolePrint( "    CDSpawnDetails long", false );
+	CDConsolePrint( "You can omit the verbosity level argument, in which case", false );
+	CDConsolePrint( "this command defaults to \"short\".", false );
+}
+
+static function bool GetBoolOption( string Options, string ParseString, bool CurrentValue )
+{
+	local string InOpt;
+
+	InOpt = ParseOption( Options, ParseString );
+	if ( InOpt != "" )
+	{
+		return bool(InOpt);
+	}
+
+	return CurrentValue;
+}
+
+static function string ZeroPadIntString( int numberToFormat, int totalWidth )
+{
+	local string numberAsString;
+
+	numberAsString = string( numberToFormat );
+
+	while ( Len(numberAsString) < totalWidth )
+	{
+		numberAsString = "0" $ numberAsString;
+	}
+	
+	return numberAsString;
+}
+
+static function string GetShortWaveName( int WaveIndex )
+{
+	local string s;
+
+	s = string( WaveIndex + 1 );
+
+	while ( 2 > Len(s) )
+	{
+		s = "0" $ s;
+	}
+
+	s = "W" $ s;
+
+	return s;
+}
+
 /**
     Get a zed EAIType from the name.
 
@@ -475,478 +948,6 @@ static function String GetZedShortName( EAIType ZedType )
 	return "?";
 }
 
-function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
-{
-	local class killerPawnClass;
-
-	if ( (Killer == Other) || (Killer == None) )
-	{	//suicide
-		BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Suicide, None, Other.PlayerReplicationInfo);
-	}
-	else
-	{
-		if(Killer.IsA('KFAIController'))
-		{
-			if ( Killer.Pawn != none )
-			{
-				killerPawnClass = Killer.Pawn.Class;
-				if ( killerPawnClass == class'CDPawn_ZedCrawler' )
-				{
-					killerPawnClass = class'KFPawn_ZedCrawler';
-					`log("Mapped CDPawn_ZedCrawler to KFPawn_ZedCrawler in BroadcastDeathMessage(...)");
-				}
-			}
-			else
-			{
-				killerPawnClass = class'KFPawn_Human';
-			}
-			BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Killed, none, Other.PlayerReplicationInfo, killerPawnClass );
-		}
-		else
-		{
-			BroadcastLocalized(self, class'KFLocalMessage_PlayerKills', KMT_PlayerKillPlayer, Killer.PlayerReplicationInfo, Other.PlayerReplicationInfo);
-		}
-	}
-}
-
-function InitGameConductor()
-{
-	super.InitGameConductor();
-
-	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
-	{
-		`log("Checked that GameConductor "$GameConductor$" is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
-	}
-	else
-	{
-		CDConsolePrint("WARNING: GameConductor "$GameConductor$" appears to be misconfigured! CD might not work correctly.");
-	}
-}
-
-function CreateDifficultyInfo(string Options)
-{
-	local int FakePlayersFromGameOptions;
-	local int FakePlayersBeforeClamping;
-	local int TraderTimeFromGameOptions;
-
-	super.CreateDifficultyInfo(Options);
-
-	// Print CD's commit hash (version)
-	CDConsolePrint("Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded");
-
-	// the preceding call should have initialized DifficultyInfo
-	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
-
-	// Process FakePlayers command option, if present
-	if ( HasOption(Options, "FakePlayers") )
-	{
-		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
-		`log("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
-		FakePlayers = FakePlayersFromGameOptions;
-	}
-
-	// Force FakePlayers onto the interval [0, 5]
-	FakePlayersBeforeClamping = FakePlayers;
-	FakePlayers = Clamp(FakePlayers, 0, 5);
-	`log("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
-
-	// Print FakePlayers to console
-	if ( FakePlayers != FakePlayersBeforeClamping )
-	{
-		CDConsolePrint("FakePlayers="$FakePlayers$" (clamped from "$FakePlayersBeforeClamping$")");
-	}
-	else
-	{
-		CDConsolePrint("FakePlayers="$FakePlayers);
-	}
-
-	// Process TraderTime command option, if present
-	if ( HasOption(Options, "TraderTime") )
-	{
-		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
-		`log("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
-		TraderTime = TraderTimeFromGameOptions;
-	}
-
-	// TraderTime is not clamped
-
-	// Print TraderTime to console
-	if ( 0 < TraderTime )
-	{
-		CDConsolePrint("TraderTime="$TraderTime);
-	}
-	else
-	{
-		CDConsolePrint("TraderTime=<unmodded default>");
-	}
-
-	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
-	`log("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
-}
-
-static function CDConsolePrint( string message, optional bool autoPrefix = true )
-{
-	local KFGameViewportClient GVC;
-	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
-
-	if ( autoPrefix )
-	{
-		GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
-	}
-	else
-	{
-		GVC.ViewportConsole.OutputTextLine(message);
-	}
-}
-
-function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
-{
-	local float DoshMod;
-	local int LocalNumPlayers;
-	local int LocalNumFakes;
-	local float LocalMaxAIMod;
-
-	LocalNumPlayers = GetNumPlayers();
-	LocalNumFakes = CustomDifficultyInfo.GetNumFakePlayers();
-	// Only pass actual players to GetPlayerNumMaxAIModifier -- it adds fakes internally
-	LocalMaxAIMod = DifficultyInfo.GetPlayerNumMaxAIModifier(LocalNumPlayers);
-
-	`log("NumPlayers = "$LocalNumPlayers, bLogControlledDifficulty);
-	`log("NumFakes = "$LocalNumFakes, bLogControlledDifficulty);
-	`log("DifficultyInfo.GetPlayerNumMaxAIModifier(NumPlayers) = "$LocalMaxAIMod$"; this is fake-count-adjusted", bLogControlledDifficulty);
-
-	DoshMod = (LocalNumPlayers + LocalNumFakes) / LocalMaxAIMod;
-
-	`log("Starting Dosh Bounty: "$ModifiedValue$" DoshMod: "$DoshMod, bLogControlledDifficulty);
-
-	ModifiedValue *= DoshMod;
-
-	`log("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
-}
-
-/** Set up the spawning */
-function InitSpawnManager()
-{
-	local CDSpawnManager cdsm;
-
-	super.InitSpawnManager();
-
-	if ( SpawnManager.isA( 'CDSpawnManager' ) )
-	{
-		`log("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
-		cdsm = CDSpawnManager( SpawnManager );
-	}
-	else
-	{
-		CDConsolePrint("WARNING: SpawnManager "$SpawnManager$" appears to be misconfigured! CD might not work correctly.");
-		return;
-	}
-
-	if (0 < MaxMonsters)
-	{
-		CDConsolePrint("MaxMonsters="$MaxMonsters);
-	}
-	else
-	{
-		CDConsolePrint("MaxMonsters=<unmodded default>");
-	}
-
-	if ( SquadSchedule == "ini" )
-	{
-		`log("Attempting to parse squad information in config...");
-		WaveInfos = ParseFullSquadSchedule( SquadScheduleDefs );
-		// TODO WaveInfo validation
-		cdsm.SetCustomWaves( WaveInfos );
-	}
-	else
-	{
-		`log("Not reading squad information from config (value="$SquadSchedule$")");
-	}
-
-	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
-}
-
-exec function logControlledDifficulty( bool enabled )
-{
-	bLogControlledDifficulty = enabled;
-	`log("Set bLogControlledDifficulty = "$bLogControlledDifficulty);
-	SaveConfig();
-}
-
-exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
-{
-	CDConsolePrintScheduleSlug();
-
-	if ( SquadSchedule == "unmodded" )
-	{
-		return;
-	}
-
-	if ( -255 == AssumedPlayerCount )
-	{
-		if ( WorldInfo.NetMode == NM_StandAlone )
-		{
-			AssumedPlayerCount = 1 + FakePlayers;
-			CDConsolePrint( "Projecting wave summaries for "$AssumedPlayerCount$" players = 1 human + "$FakePlayers$" fake(s)...", false );
-		}
-		else
-		{
-			CDConsolePrint( "Unable to guess player count in netmode "$WorldInfo.NetMode, false );
-			CDConsolePrint( "Pass a player count as an argument to this console command, e.g.", false );
-			CDConsolePrint( "> cdSpawnSummaries 2", false );
-			return;
-		}
-	}
-	else if ( 0 < AssumedPlayerCount )
-	{
-		CDConsolePrint( "Projecting wave summaries for "$AssumedPlayerCount$" players...", false );
-	}
-	else
-	{
-		CDConsolePrint( "Player count argument "$AssumedPlayerCount$" must be positive", false );
-		return;
-	}
-
-	CDConsolePrintSpawnSummaries( AssumedPlayerCount );
-}
-
-exec function CDSpawnDetails( optional string Verbosity = "" )
-{
-	CDConsolePrintScheduleSlug();
-
-	if ( SquadSchedule == "unmodded" )
-	{
-		return;
-	}
-
-	Verbosity = Locs( Verbosity );
-
-	if ( Verbosity == "" )
-	{
-		Verbosity = "short";
-		CDConsolePrint( "Verbosity level: \""$Verbosity$"\" (run \"CDSpawnDetails help\" for more choices)", false );
-	}
-	else if ( Verbosity == "tiny" || Verbosity == "short" || Verbosity == "long" )
-	{
-		// do nothing
-	}
-	else if ( Verbosity == "help" )
-	{
-		CDConsolePrintHelpForSpawnDetails();
-		return;
-	}
-	else
-	{
-		CDConsolePrint( "Parameter \""$Verbosity$"\" is not valid.", false );
-		CDConsolePrintHelpForSpawnDetails();
-		return;
-	}
-
-	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
-	CDConsolePrintSpawnDetails( Verbosity );
-}
-
-static function CDConsolePrintHelpForSpawnDetails()
-{
-	CDConsolePrint( "This command displays the currently selected CD spawn cycle.", false );
-	CDConsolePrint( "Supported verbosity levels:", false );
-	CDConsolePrint( "    tiny: abbreviate zed names as much as possible", false );
-	CDConsolePrint( "    short: abbreviate zed names down to two letters", false );
-	CDConsolePrint( "    long: don't abbreviate zed names", false );
-	CDConsolePrint( "For example, to print spawn details with full zed names:", false );
-	CDConsolePrint( "    CDSpawnDetails long", false );
-	CDConsolePrint( "You can omit the verbosity level argument, in which case", false );
-	CDConsolePrint( "this command defaults to \"short\".", false );
-}
-
-function CDConsolePrintScheduleSlug()
-{
-	if ( SquadSchedule == "unmodded" )
-	{
-		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn randomly, as in standard KF2)", false);
-	}
-	else if ( SquadSchedule == "ini" )
-	{
-		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn according to the config file)", false);
-	}
-	else
-	{
-		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn according to preset "$SquadSchedule$")", false);
-	}
-}
-
-static function string ZeroPadIntString( int numberToFormat, int totalWidth )
-{
-	local string numberAsString;
-
-	numberAsString = string( numberToFormat );
-
-	while ( Len(numberAsString) < totalWidth )
-	{
-		numberAsString = "0" $ numberAsString;
-	}
-	
-	return numberAsString;
-}
-
-static function string GetShortWaveName( int WaveIndex )
-{
-	local string s;
-
-	s = string( WaveIndex + 1 );
-
-	while ( 2 > Len(s) )
-	{
-		s = "0" $ s;
-	}
-
-	s = "W" $ s;
-
-	return s;
-}
-
-function CDConsolePrintSpawnDetails( string Verbosity )
-{
-	local int WaveIndex, SquadIndex, ElemIndex;
-	local string s;
-	local CD_AIWaveInfo wi;
-	local CD_AISpawnSquad ss;
-	local array<string> SquadList;
-	local array<string> ElemList;
-	local string ZedNameTmp;
-
-	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
-	{
-		wi = WaveInfos[WaveIndex];
-		SquadList.length = 0;
-
-		for ( SquadIndex = 0; SquadIndex < wi.CustomSquads.length; SquadIndex++ )
-		{
-			ss = wi.CustomSquads[SquadIndex];
-			ElemList.length = 0;
-
-			for ( ElemIndex = 0; ElemIndex < ss.CustomMonsterList.length; ElemIndex++ )
-			{
-				if ( Verbosity == "tiny" )
-				{
-					ZedNameTmp = GetZedTinyName( ss.CustomMonsterList[ElemIndex].Type );
-				}
-				else if ( Verbosity == "long" )
-				{
-					ZedNameTmp = GetZedFullName( ss.CustomMonsterList[ElemIndex].Type );
-				}
-				else
-				{
-					ZedNameTmp = GetZedShortName( ss.CustomMonsterList[ElemIndex].Type );
-				}
-
-				ElemList.AddItem(string( ss.CustomMonsterList[ElemIndex].Num ) $ ZedNameTmp);
-			}
-
-			JoinArray( ElemList, s, "_" );
-			SquadList.AddItem( s );
-		}
-
-		JoinArray( SquadList, s, ", " );
-		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$s, false );
-	}
-
-	// TODO log boss override (if any)
-}
-
-function CDConsolePrintSpawnSummaries( int PlayerCount )
-{
-	local int WaveIndex;
-	local CD_AIWaveInfo wi;
-	local CD_WaveSummary WaveSummary, GameSummary;
-	local string WaveSummaryString;
-
-	if ( PlayerCount <= 0 )
-	{
-		// TODO complain about being handed nonpositive players
-		PlayerCount = 1;
-	}
-
-	GameSummary = new class'CD_WaveSummary';
-
-	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
-	{
-		wi = WaveInfos[WaveIndex];
-
-		WaveSummaryString = "";
-
-		WaveSummary = new class'CD_WaveSummary';
-
-		GetCDWaveSummary( wi, WaveIndex, PlayerCount, WaveSummary );
-		GameSummary.AddParamToSelf( WaveSummary );
-		WaveSummaryString = WaveSummary.GetString();
-
-		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$WaveSummaryString, false );
-	}
-
-	CDConsolePrint( " >> Projected Game Totals:", false );
-	CDConsolePrint( "[TOT] "$GameSummary.GetString(), false );
-	CDConsolePrint( " >> Boss wave not included in preceding tally.", false );
-}
-
-function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCount, out CD_WaveSummary result )
-{
-	local int WaveTotalAI;
-	local int squadIndex;
-	local sDifficultyWaveInfo DWS;
-	local class<CDSpawnManager> cdsmClass;
-	local CD_AISpawnSquad CDSquad;
-	local array<AISquadElement> CustomMonsterList;
-	local int elemIndex, remainingBudget, zedsFromElement;
-
-	cdsmClass = class<CDSpawnManager>( SpawnManagerClasses[GameLength] );
-	// Don't initialize this one; we just want to ask it about MaxAI
-	// SpawnManager.Initialize();
-	DWS = cdsmClass.default.DifficultyWaveSettings[ Min(GameDifficulty, cdsmClass.default.DifficultyWaveSettings.Length-1) ];
-
-	WaveTotalAI = DWS.Waves[WaveIndex].MaxAI *
-	              PlayerCount *
-	              DifficultyInfo.GetDifficultyMaxAIModifier();
-	
-	result.Clear();
-
-	squadIndex = -1;
-
-	while ( result.Total < WaveTotalAI )
-	{
-		CDSquad = WaveInfo.CustomSquads[squadIndex++ % WaveInfo.CustomSquads.length];
-
-		CDSquad.CopyAISquadElements( CustomMonsterList );
-
-		for ( elemIndex = 0; elemIndex < CustomMonsterList.length; elemIndex++ )
-		{
-
-			remainingBudget = WaveTotalAI - result.total;
-
-			if ( remainingBudget <= 0 )
-			{
-				break;
-			}
-
-			zedsFromElement = Min( CustomMonsterList[elemIndex].Num, remainingBudget );
-
-			result.Increment( CustomMonsterList[elemIndex].Type, zedsFromElement );
-		}
-	}
-}
-
-static function bool GetBoolOption( string Options, string ParseString, bool CurrentValue )
-{
-	local string InOpt;
-
-	InOpt = ParseOption( Options, ParseString );
-	if ( InOpt != "" )
-	{
-		return bool(InOpt);
-	}
-
-	return CurrentValue;
-}
 
 defaultproperties
 {
