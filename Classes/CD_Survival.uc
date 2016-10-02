@@ -8,6 +8,15 @@ class CD_Survival extends KFGameInfo_Survival;
 
 `include(CD_BuildInfo.uci)
 
+struct StructSquadParserState
+{
+	// all indexes are zero-based
+	var int WaveIndex;
+	var int SquadIndex;
+	var int ElemIndex;
+};
+
+
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at
 // numplayers >= 3, and faking players this way does the same; you can always
@@ -52,6 +61,7 @@ var config bool bLogControlledDifficulty;
 // all other values are reserved for potential future preset names
 var config string SquadSchedule;
 var config array<string> SquadScheduleDefs;
+var StructSquadParserState SquadParserState;
 
 // "hans" or "volter": forces the hans boss wave
 // "pat", "patty", "patriarch": forces the patriarch boss wave
@@ -131,37 +141,24 @@ event InitGame( string Options, out string ErrorMessage )
 
 function array<CD_AIWaveInfo> ParseFullSquadSchedule( array<string> fullRawSchedule )
 {
-	local int i;
-	local array<CD_AIWaveInfo> wis;
+	local array<CD_AIWaveInfo> WaveInfosFromConfig;
 
-	for ( i = 0; i < fullRawSchedule.length; i++ )
+	for ( SquadParserState.WaveIndex = 0; SquadParserState.WaveIndex < fullRawSchedule.length; SquadParserState.WaveIndex++ )
 	{
-		`log("Attempting to parse wave "$(i + 1)$"...");
-		wis.AddItem( ParseSquadScheduleDef( fullRawSchedule[i] ) );
+		`log("Attempting to parse wave "$(SquadParserState.WaveIndex + 1)$"...");
+		WaveInfosFromConfig.AddItem( ParseSquadScheduleDef( fullRawSchedule[SquadParserState.WaveIndex] ) );
 	}
 
-	return wis;
+	return WaveInfosFromConfig;
 }
 
 function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 {
 	local array<string> squadDefs;
 	local array<string> elemDefs;
-	local int squadIdx;
-	local int elemIdx;
 	local CD_AIWaveInfo waveInfo;
 	local CD_AISpawnSquad curSquad;
 	local AISquadElement curElement;
-	local int elemStrLen;
-	local int elemStrIdx;
-	local int unicodeVal;
-
-	local string elemCount;
-	local string elemType;
-
-	local int elemCountInt;
-
-	local EAIType elemEAIType;
 
 	waveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
 
@@ -169,69 +166,30 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	squadDefs = SplitString( rawSchedule, ",", true );
 
 	// Iterate through the squads
-	for ( squadIdx = 0; squadIdx < squadDefs.length; squadIdx++ )
+	for ( SquadParserState.SquadIndex = 0; SquadParserState.SquadIndex < squadDefs.length; SquadParserState.SquadIndex++ )
 	{
 		curSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
 
 		// Squads may in general be heterogeneous, e.g.
-		// 2SClot_3Ccrawler_2Gorefast_2Siren
+		// 2Cyst_3Crawler_2Gorefast_2Siren
 		//
-		// This general model also allows squads that are homogeneous, e.g. 
+		// But specific squads may be homogeneous, e.g. 
 		// 6Crawler
 		//
 		// In the following code, we split on _ and loop through
 		// each element, populating a CD_AISpawnSquad as we go.
-		elemDefs = SplitString( squadDefs[squadIdx], "_", true );
+		elemDefs = SplitString( squadDefs[SquadParserState.SquadIndex], "_", true );
 
-		for ( elemIdx = 0; elemIdx < elemDefs.length; elemIdx++ )
+		for ( SquadParserState.ElemIndex = 0; SquadParserState.ElemIndex < elemDefs.length; SquadParserState.ElemIndex++ )
 		{
-			elemStrLen = Len( elemDefs[elemIdx] );
-
-			for ( elemStrIdx = 0; elemStrIdx < elemStrLen; elemStrIdx++ )
+			if ( !ParseSquadElement( elemDefs[SquadParserState.ElemIndex], curElement ) )
 			{
-				unicodeVal = Asc( Mid( elemDefs[elemIdx], elemStrIdx, 1 ) );
-				if ( !( 48 <= unicodeVal && unicodeVal <= 57 ) )
-				{
-					break;
-				}
+				continue; // Parse error in that element
 			}
 
-			if ( elemStrIdx < elemStrLen )
-			{
-				elemCount = Mid( elemDefs[elemIdx], 0, elemStrIdx );
-				elemType  = Mid( elemDefs[elemIdx], elemStrIdx, elemStrLen - elemStrIdx );
-			}
+			`log("[squad#"$SquadParserState.SquadIndex$"] Parsed squad element: "$curElement.Num$"x"$curElement.Type);
 
-			if ( elemCount == "" )
-			{
-				elemCount = "1";
-			}
-
-			elemEAIType = GetZedType( elemType );
-
-			elemCountInt = int(elemCount);
-
-			if ( "" == elemCount || elemCountInt < 1 || elemCountInt > 6 )
-			{
-				// TODO invalid elem count
-				`log("Invalid elemCount "$elemCount);
-				continue;
-			}
-
-			if ( 255 == elemEAIType )
-			{
-				// TODO invalid elem class
-				`log("Invalid elemType "$elemType);
-				continue;
-			}
-
-			curElement.Type = elemEAIType;
-			curElement.Num = elemCountInt;
-			curElement.CustomClass = none;
-
-			`log("[squad#"$squadIdx$"] Parsed squad element: "$curElement.Num$"x"$curElement.Type);
-
-			curSquad.AddSquadElement(curElement);
+			curSquad.AddSquadElement( curElement );
 		}
 
 		// todo check whether special or not, add to appropriate dynarray
@@ -239,6 +197,84 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	}
 
 	return waveInfo;
+}
+
+function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
+{
+	local int ElemStrLen, UnicodePoint, ElemCount, i;
+	local string ElemType;
+	local EAIType ElemEAIType;
+
+	ElemStrLen = Len( ElemDef );
+
+	// Locate the first index into ElemDef where the count
+	// of zeds in the element ends and the type of zed should begin
+	for ( i = 0; i < ElemStrLen; i++ )
+	{
+		// Get unicode codepoint (as int) for char at index i
+		UnicodePoint = Asc( Mid( ElemDef, i, 1 ) );
+
+		// Check for low ascii numerals [0-9]
+		if ( !( 48 <= UnicodePoint && UnicodePoint <= 57 ) )
+		{
+			break; // not a numeral
+		}
+	}
+
+	// The index must not be at the very beginning or end of the string.
+	// If that's true, then we can assume it was malformed.
+	if ( i <= 0 || i >= ElemStrLen )
+	{
+		// TODO issue warning about this element
+		return CDConsolePrintSquadParseError("Spawn element \"$ElemDef$\" could not be parsed.");
+	}
+
+	// Cut string in two at index i. Left is the count as a stringified int.
+	// Right is supposed to be the type of zed as a string.  We know the left
+	// part is a well-formed int-as-string because of the unicode codepoint
+	// loop check that we did earlier, and because 0 < i.  We don't know
+	// whether the zed name type on the right is valid (must check later).
+	ElemCount = int( Mid( ElemDef, 0, i ) );
+	ElemType  = Mid( ElemDef, i, ElemStrLen - i );
+
+	// Check value range for ElemCount
+	if ( ElemCount <= 0 )
+	{
+		// TODO issue warning about this element having quantity zero/neg
+		return CDConsolePrintSquadParseError("Element count \"$ElemCount$\" is not positive.  Must be between 1 and 6 (inclusive).");
+	}
+	if ( ElemCount > 6 )
+	{
+		// TODO issue warning about this element having too many zeds
+		return CDConsolePrintSquadParseError("Element count \"$ElemCount$\" is too large.  Must be between 1 and 6 (inclusive).");
+	}
+
+	// Convert user-provided zed type name into a zed type enum
+	ElemEAIType = GetZedType( ElemType );
+
+	// Was it a valid zed type name?
+	if ( 255 == ElemEAIType )
+	{
+		// TODO issue warning about invalid elem class
+		return CDConsolePrintSquadParseError("\""$ElemType$"\" does not appear to be a zed name."$
+		              "  Must be a zed name or abbreviation like cyst, fp, etc.");
+	}
+
+	SquadElement.Type = ElemEAIType;
+	SquadElement.Num = ElemCount;
+	SquadElement.CustomClass = none;
+
+	return true;
+}
+
+function bool CDConsolePrintSquadParseError( const string message )
+{
+	CDConsolePrint("WARNING Parse error in squad definition at location: \n" $
+	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SquadScheduleDefs, one-based)\n" $
+                       "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
+                       "      ElementNumber: " $ string(SquadParserState.ElemIndex + 1) $ " (underscore-separated element in the squad, one-based)\n" $
+	               "   >> Message: "$ message);
+	return false;
 }
 
 function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
@@ -593,7 +629,7 @@ function CDConsolePrintSpawnSummaries( int PlayerCount )
 	}
 
 	CDConsolePrint( " >> Projected Game Totals:", false );
-	CDConsolePrint( "[TOT] "$GameSummary.GetString(), false );
+	CDConsolePrint( "         "$GameSummary.GetString(), false );
 	CDConsolePrint( " >> Boss wave not included in preceding tally.", false );
 }
 
@@ -718,68 +754,70 @@ static function string GetShortWaveName( int WaveIndex )
     Get a zed EAIType from the name.
 
     This is based on the LoadMonsterByName from KFCheatManager, but I have a separate copy here
-    for four reasons:
+    for several reasons:
     0. I need EAIType instead of a class, and there does not seem to be an easy way to convert those
     1. To allow for a few more abbreviations than KFCheatManager knows (e.g. for clots: CC, CA, CS)
-    2. So that a hypothetical future KF2 update that might change KFCheatManager's zed abbreviations
+    2. To accept a slightly smaller universe of legal input strings, so that the effective API
+       created by this function is as small as possible.
+    3. So that a hypothetical future KF2 update that might change KFCheatManager's zed abbreviations
        will not change the behavior of this method, which is used to parse wave squad schedules and
        generally represents a public API that must not change.
-    4. I have no need for the "friendly" zed shorthand names here, and I want to accept the absolute
+    5. I have no need for the "friendly-to-player" zed AI names here, and I want to accept the absolute
        minimum universe of correct inputs, so that this is easy to maintain.  Same for "TestHusk".
 */
 
 static function EAIType GetZedType( string ZedName )
 {
-	if( Left(ZedName, 5) ~= "ClotA" || Left(ZedName, 2) ~= "Al" || ZedName ~= "CA" )
+	local int ZedLen;
+
+	ZedName = Caps( ZedName );
+	ZedLen = Len( ZedName );
+	
+	if ( ZedName == "CLOTA" || ZedName == "CA" || (2 <= ZedLen && ZedLen <= 5 && ZedName == Left("ALPHA", ZedLen)) )
 	{
 		return AT_AlphaClot;
 	}
-	else if( Left(ZedName, 5) ~= "ClotS" || Left(ZedName, 2) ~= "Sl" || ZedName ~= "CS" )
+	else if ( ZedName == "CLOTS" || ZedName == "CS" || (2 <= ZedLen && ZedLen <= 7 && ZedName == Left("SLASHER", ZedLen)) )
 	{
 		return AT_SlasherClot;
 	}
-	else if( Left(ZedName, 5) ~= "ClotC" || ZedName ~= "CC" || Left(ZedName, 2) ~= "cy" || ZedName ~= "clot" )
+	else if ( ZedName == "CLOTC" || ZedName == "CC" || (2 <= ZedLen && ZedLen <= 4 && ZedName == Left("CYST", ZedLen)) )
 	{
 		return AT_Clot;
 	}
-	else if( Left(ZedName, 1) ~= "F" )
+	else if ( ZedName == "FP" || (1 <= ZedLen && ZedLen <= 10 && ZedName == Left("FLESHPOUND", ZedLen)) )
 	{
 		return AT_FleshPound;
 	}
-	else if( Left(ZedName, 1) ~= "G" ) // DG(F) / DoubleGorefast reserved
+	else if ( ZedName == "G" || ZedName == "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName == Left("GOREFAST", ZedLen)) ) // DG(F) / DoubleGorefast reserved
 	{
 		return AT_GoreFast;
 	}
-	else if( Left(ZedName, 2) ~= "St" )
+	else if ( 2 <= ZedLen && ZedLen <= 7 && ZedName == Left("STALKER", ZedLen) )
 	{
 		return AT_Stalker;
 	}
-	else if( Left(ZedName, 1) ~= "B" )
+	else if ( 1 <= ZedLen && ZedLen <= 5 && ZedName == Left("BLOAT", ZedLen) )
 	{
 		return AT_Bloat;
 	}
-	else if( Left(ZedName, 2) ~= "Sc" )
+	else if ( 2 <= ZedLen && ZedLen <= 6 && ZedName == Left("SCRAKE", ZedLen) )
 	{
 		return AT_Scrake;
 	}
-	else if( Left(ZedName, 2) ~= "Cr" )
+	else if ( 2 <= ZedLen && ZedLen <= 7 && ZedName == Left("CRAWLER", ZedLen) )
 	{
 		return AT_Crawler;
 	}
-	else if( Left(ZedName, 2) ~= "H" ) // this is ambiguous if we ever decide to accept Hans
+	else if ( 1 <= ZedLen && ZedLen <= 4 && ZedName == Left("HUSK", ZedLen) )
 	{
 		return AT_Husk;
 	}
-	else if( Left(ZedName, 2) ~= "Si" )
+	else if ( 2 <= ZedLen && ZedLen <= 5 && ZedName == Left("SIREN", ZedLen) )
 	{
 		return AT_Siren;
 	}
-	else
-	{
-		// TODO error handling
-	}
 
-	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
 	return 255;
 }
 
