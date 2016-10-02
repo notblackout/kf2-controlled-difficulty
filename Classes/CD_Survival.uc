@@ -14,6 +14,13 @@ struct StructSquadParserState
 	var int WaveIndex;
 	var int SquadIndex;
 	var int ElemIndex;
+
+	var bool ParseError;
+
+	structdefaultproperties
+	{
+		ParseError=false
+	}
 };
 
 
@@ -70,7 +77,7 @@ var config string Boss;
 
 var CD_DifficultyInfo CustomDifficultyInfo;
 
-var array<CD_AIWaveInfo> WaveInfos;
+var array<CD_AIWaveInfo> CustomWaveInfos;
 
 event InitGame( string Options, out string ErrorMessage )
 {
@@ -79,6 +86,7 @@ event InitGame( string Options, out string ErrorMessage )
 	local int MaxMonstersFromGameOptions;
 	local bool AlbinoCrawlersFromGameOptions;
 	local string SquadScheduleFromGameOptions;
+	local string BossFromGameOptions;
 
  	Super.InitGame( Options, ErrorMessage );
 
@@ -119,6 +127,13 @@ event InitGame( string Options, out string ErrorMessage )
 		SquadSchedule = SquadScheduleFromGameOptions;
 	}
 
+	if ( HasOption(Options, "Boss") )
+	{
+		BossFromGameOptions = ParseOption(Options, "Boss" );
+		`log("BossFromGameOptions = "$BossFromGameOptions, bLogControlledDifficulty);
+		Boss = BossFromGameOptions;
+	}
+
 	// FClamp SpawnModFloat
 	SpawnModBeforeClamping = SpawnModFloat;
 	SpawnModFloat = FClamp(SpawnModFloat, 0.f, 1.f);
@@ -136,7 +151,47 @@ event InitGame( string Options, out string ErrorMessage )
 	// Assign SpawnMod before we save our config (SpawnModFloat is not saved, only its SpawnMod copy)
 	SpawnMod = string(SpawnModFloat);
 
+	// Check validity of the Boss option
+	if ( Boss == "" )
+	{
+		Boss = "random";
+	}
+	if ( !isRandomBossString(Boss) && !isPatriarchBossString(Boss) && !isVolterBossString(Boss) )
+	{
+		CDConsolePrint("WARNING invalid Boss setting \""$Boss$"\".  Valid settings for this option: patriarch, hans, random.  Setting Boss = random.");
+	}
+
 	SaveConfig();
+}
+
+static function bool isRandomBossString( const out string s )
+{
+	return s == "" || s ~= "random" || s ~= "unmodded";
+}
+
+function bool isRandomBoss()
+{
+	return isRandomBossString( Boss );
+}
+
+static function bool isPatriarchBossString( const out string s )
+{
+	return s ~= "patriarch" || s~= "patty" || s ~= "pat";
+}
+
+function bool isPatriarchBoss()
+{
+	return isPatriarchBossString( Boss );
+}
+
+static function bool isVolterBossString( const out string s )
+{
+	return s ~= "hans" || s ~= "volter" || s ~= "moregas";
+}
+
+function bool isVolterBoss()
+{
+	return isVolterBossString( Boss );
 }
 
 function array<CD_AIWaveInfo> ParseFullSquadSchedule( array<string> fullRawSchedule )
@@ -154,21 +209,21 @@ function array<CD_AIWaveInfo> ParseFullSquadSchedule( array<string> fullRawSched
 
 function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 {
-	local array<string> squadDefs;
-	local array<string> elemDefs;
-	local CD_AIWaveInfo waveInfo;
-	local CD_AISpawnSquad curSquad;
-	local AISquadElement curElement;
+	local array<string> SquadDefs;
+	local array<string> ElemDefs;
+	local CD_AIWaveInfo CurWaveInfo;
+	local CD_AISpawnSquad CurSquad;
+	local AISquadElement CurElement;
 
-	waveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
+	CurWaveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
 
 	// Split on , and drop empty elements
-	squadDefs = SplitString( rawSchedule, ",", true );
+	SquadDefs = SplitString( rawSchedule, ",", true );
 
 	// Iterate through the squads
-	for ( SquadParserState.SquadIndex = 0; SquadParserState.SquadIndex < squadDefs.length; SquadParserState.SquadIndex++ )
+	for ( SquadParserState.SquadIndex = 0; SquadParserState.SquadIndex < SquadDefs.length; SquadParserState.SquadIndex++ )
 	{
-		curSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
+		CurSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
 
 		// Squads may in general be heterogeneous, e.g.
 		// 2Cyst_3Crawler_2Gorefast_2Siren
@@ -178,25 +233,26 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 		//
 		// In the following code, we split on _ and loop through
 		// each element, populating a CD_AISpawnSquad as we go.
-		elemDefs = SplitString( squadDefs[SquadParserState.SquadIndex], "_", true );
+		ElemDefs = SplitString( SquadDefs[SquadParserState.SquadIndex], "_", true );
 
-		for ( SquadParserState.ElemIndex = 0; SquadParserState.ElemIndex < elemDefs.length; SquadParserState.ElemIndex++ )
+		for ( SquadParserState.ElemIndex = 0; SquadParserState.ElemIndex < ElemDefs.length; SquadParserState.ElemIndex++ )
 		{
-			if ( !ParseSquadElement( elemDefs[SquadParserState.ElemIndex], curElement ) )
+			if ( !ParseSquadElement( ElemDefs[SquadParserState.ElemIndex], CurElement ) )
 			{
 				continue; // Parse error in that element
 			}
 
-			`log("[squad#"$SquadParserState.SquadIndex$"] Parsed squad element: "$curElement.Num$"x"$curElement.Type);
+			`log("[squad#"$SquadParserState.SquadIndex$"] Parsed squad element: "$CurElement.Num$"x"$CurElement.Type);
 
-			curSquad.AddSquadElement( curElement );
+			CurSquad.AddSquadElement( CurElement );
 		}
 
-		// todo check whether special or not, add to appropriate dynarray
-		waveInfo.CustomSquads.AddItem(curSquad);
+		// TODO configure MinVolumeType on this completed squad
+
+		CurWaveInfo.CustomSquads.AddItem(CurSquad);
 	}
 
-	return waveInfo;
+	return CurWaveInfo;
 }
 
 function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
@@ -269,6 +325,8 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 
 function bool CDConsolePrintSquadParseError( const string message )
 {
+	SquadParserState.ParseError = true;
+
 	CDConsolePrint("WARNING Parse error in squad definition at location: \n" $
 	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SquadScheduleDefs, one-based)\n" $
                        "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
@@ -415,6 +473,7 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 function InitSpawnManager()
 {
 	local CDSpawnManager cdsm;
+	local int ExpectedWaveCount;
 
 	super.InitSpawnManager();
 
@@ -438,19 +497,47 @@ function InitSpawnManager()
 		CDConsolePrint("MaxMonsters=<unmodded default>");
 	}
 
+	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
+
+	CDConsolePrint( "Boss="$Boss );
+
 	if ( SquadSchedule == "ini" )
 	{
+		`log("Forcing a config reload because SquadSchedule="$SquadSchedule$"...");
+		//ConsoleCommand("reloadcfg ControlledDifficulty.CD_Survival", true);
+		//ReloadConfig();
+
 		`log("Attempting to parse squad information in config...");
-		WaveInfos = ParseFullSquadSchedule( SquadScheduleDefs );
-		// TODO WaveInfo validation
-		cdsm.SetCustomWaves( WaveInfos );
+		CustomWaveInfos = ParseFullSquadSchedule( SquadScheduleDefs );
+
+		// Number of parsed waves must match the current gamelength
+		// (Parsed waves only cover non-boss waves)
+		switch( GameLength )
+		{
+			case GL_Short:  ExpectedWaveCount = 4;  break;
+			case GL_Normal: ExpectedWaveCount = 7;  break;
+			case GL_Long:   ExpectedWaveCount = 10; break;
+		};
+	
+		if ( CustomWaveInfos.length != ExpectedWaveCount )
+		{
+			CDConsolePrint("WARNING Config defines "$CustomWaveInfos.length$" waves, but there are only "$ExpectedWaveCount$" waves in this GameLength.");
+			CDConsolePrint("WARNING Setting SquadSchedule=unmodded for this session because of ini-GameLength wave count mismatch.");
+			SquadSchedule = "unmodded";
+			SquadParserState.ParseError = true;
+		}
+
+		if ( !SquadParserState.ParseError )
+		{
+			cdsm.SetCustomWaves( CustomWaveInfos );
+		}
 	}
 	else
 	{
 		`log("Not reading squad information from config (value="$SquadSchedule$")");
 	}
 
-	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
+	CDConsolePrint( "SquadSchedule="$SquadSchedule );
 }
 
 exec function logControlledDifficulty( bool enabled )
@@ -559,9 +646,9 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 	local array<string> ElemList;
 	local string ZedNameTmp;
 
-	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
+	for ( WaveIndex = 0; WaveIndex < CustomWaveInfos.length; WaveIndex++ )
 	{
-		wi = WaveInfos[WaveIndex];
+		wi = CustomWaveInfos[WaveIndex];
 		SquadList.length = 0;
 
 		for ( SquadIndex = 0; SquadIndex < wi.CustomSquads.length; SquadIndex++ )
@@ -613,9 +700,9 @@ function CDConsolePrintSpawnSummaries( int PlayerCount )
 
 	GameSummary = new class'CD_WaveSummary';
 
-	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
+	for ( WaveIndex = 0; WaveIndex < CustomWaveInfos.length; WaveIndex++ )
 	{
-		wi = WaveInfos[WaveIndex];
+		wi = CustomWaveInfos[WaveIndex];
 
 		WaveSummaryString = "";
 

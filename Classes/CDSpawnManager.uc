@@ -13,8 +13,6 @@ class CDSpawnManager extends KFAISpawnManager
 
 var array<CD_AIWaveInfo> CustomWaves;
 
-var int ForcedBossIndex;
-
 function SetCustomWaves( array<CD_AIWaveInfo> inWaves )
 {
 	CustomWaves = inWaves;
@@ -420,15 +418,20 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 				AIType = SquadElements[i].Type;
 				if( AIType == AT_BossRandom )
 				{
-					if ( 0 <= ForcedBossIndex && ForcedBossIndex < AIBossClassList.Length )
+					if ( Outer.isVolterBoss() )
 					{
-						TempSpawnList.AddItem(AIBossClassList[ForcedBossIndex]);
-						// TODO logging
+						`log("Spawning Hans Volter (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						TempSpawnList.AddItem(AIBossClassList[0]);
+					}
+					else if ( Outer.isPatriarchBoss() )
+					{
+						`log("Spawning Patriarch (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						TempSpawnList.AddItem(AIBossClassList[1]);
 					}
 					else
 					{
+						`log("Spawning a random boss (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[Rand(AIBossClassList.Length)]);
-						// TODO logging
 					}
 				}
 				else
@@ -496,9 +499,4 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	{
 		`log("AlbinoCrawlers="$AlbinoCrawlers$": allowing albino crawlers to spawn normally");
 	}
-}
-
-defaultproperties
-{
-	ForcedBossIndex = -1;
 }
