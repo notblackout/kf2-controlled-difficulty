@@ -671,6 +671,11 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 					ZedNameTmp = GetZedShortName( ss.CustomMonsterList[ElemIndex].Type );
 				}
 
+				if ( ZedNameTmp == "" )
+				{
+					ZedNameTmp = string( ss.CustomMonsterList[ElemIndex].Type );
+				}
+
 				ElemList.AddItem(string( ss.CustomMonsterList[ElemIndex].Num ) $ ZedNameTmp);
 			}
 
@@ -681,8 +686,6 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 		JoinArray( SquadList, s, ", " );
 		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$s, false );
 	}
-
-	// TODO log boss override (if any)
 }
 
 function CDConsolePrintSpawnSummaries( int PlayerCount )
@@ -954,13 +957,8 @@ static function String GetZedFullName( EAIType ZedType )
 	{
 		return "Siren";
 	}
-	else
-	{
-		// TODO error handling
-	}
 
-	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
-	return "?";
+	return "";
 }
 
 static function String GetZedTinyName( EAIType ZedType )
@@ -1009,13 +1007,8 @@ static function String GetZedTinyName( EAIType ZedType )
 	{
 		return "SI";
 	}
-	else
-	{
-		// TODO error handling
-	}
 
-	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
-	return "?";
+	return "";
 }
 
 static function String GetZedShortName( EAIType ZedType )
@@ -1064,13 +1057,8 @@ static function String GetZedShortName( EAIType ZedType )
 	{
 		return "SI";
 	}
-	else
-	{
-		// TODO error handling
-	}
 
-	//ClientMessage("Could not spawn ZED ["$ZedName$"]. Please make sure you specified a valid ZED name (ClotA, ClotS, ClotC, etc.) and that the ZED has a valid archetype setup.", CheatType );
-	return "?";
+	return "";
 }
 
 
