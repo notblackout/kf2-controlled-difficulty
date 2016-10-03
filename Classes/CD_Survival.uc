@@ -90,6 +90,8 @@ event InitGame( string Options, out string ErrorMessage )
 
  	Super.InitGame( Options, ErrorMessage );
 
+//	AddMutator( "ControlledDifficulty.CD_Mutator", false );
+
 	if (SpawnMod == "")
 	{
 		SpawnModFloat = 1.f;
@@ -349,12 +351,7 @@ function BroadcastDeathMessage(Controller Killer, Controller Other, class<Damage
 		{
 			if ( Killer.Pawn != none )
 			{
-				killerPawnClass = Killer.Pawn.Class;
-				if ( killerPawnClass == class'CDPawn_ZedCrawler' )
-				{
-					killerPawnClass = class'KFPawn_ZedCrawler';
-					`log("Mapped CDPawn_ZedCrawler to KFPawn_ZedCrawler in BroadcastDeathMessage(...)");
-				}
+				killerPawnClass = CheckClassRemap( Killer.Pawn.Class, "CD_Survival.BroadcastDeathMessage" );
 			}
 			else
 			{
@@ -367,6 +364,61 @@ function BroadcastDeathMessage(Controller Killer, Controller Other, class<Damage
 			BroadcastLocalized(self, class'KFLocalMessage_PlayerKills', KMT_PlayerKillPlayer, Killer.PlayerReplicationInfo, Other.PlayerReplicationInfo);
 		}
 	}
+}
+
+static function class CheckClassRemap( const class OrigClass, const string InstigatorName )
+{
+	local class<KFPawn_Monster> MonsterClass;
+
+	if ( ClassIsChildOf( OrigClass, class'KFPawn_Monster' ) )
+	{
+		MonsterClass = class<KFPawn_Monster>( OrigClass );
+		return CheckMonsterClassRemap( MonsterClass, InstigatorName );
+	}
+
+	`log("Letting non-monster class "$OrigClass$" stand via "$InstigatorName );
+	return OrigClass;
+}
+
+static function class<Pawn> CheckPawnClassRemap( const class<Pawn> OrigClass, const string InstigatorName )
+{
+	local class<KFPawn_Monster> MonsterClass;
+
+	if ( ClassIsChildOf( OrigClass, class'KFPawn_Monster' ) )
+	{
+		MonsterClass = class<KFPawn_Monster>( OrigClass );
+		return CheckMonsterClassRemap( MonsterClass, InstigatorName );
+	}
+
+	`log("Letting non-monster class "$OrigClass$" stand via "$InstigatorName );
+	return OrigClass;
+}
+
+static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn_Monster> OrigClass, const string InstigatorName )
+{
+	local class<KFPawn_Monster> NewClass;
+
+	NewClass = OrigClass;
+
+	if ( OrigClass == class'CDPawn_ZedCrawler' )
+	{
+		NewClass = class'KFPawn_ZedCrawler';
+	}
+//	else if ( OrigClass == class'CDPawn_ZedClot_Alpha_Special' )
+//	{
+//		NewClass = class'KFPawn_ZedClot_Alpha';
+//	}
+
+	if ( OrigClass != NewClass )
+	{
+		`log("Masked monster class "$OrigClass$" with substitute class "$NewClass$" via "$InstigatorName );
+	}
+	else
+	{
+		`log("Letting monster class "$OrigClass$" stand via "$InstigatorName );
+	}
+
+	return NewClass;
 }
 
 function InitGameConductor()
