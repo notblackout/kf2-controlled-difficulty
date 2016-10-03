@@ -477,6 +477,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 /////////////////////
 /////////////////////
 
+	// TODO make this conditional on using an unmodded spawn schedule
 	if ( !AlbinoCrawlers )
 	{
 		crawlersForcedRegular = 0;
@@ -487,7 +488,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		{
 			if ( AISpawnList[i] == AIClassList[AT_Crawler] )
 			{
-				AISpawnList[i] = class'ControlledDifficulty.CDPawn_ZedCrawler';
+				AISpawnList[i] = class'ControlledDifficulty.CD_Pawn_ZedCrawler_Regular';
 				`log("Forcing crawler at AISpawnList["$i$"] to spawn as a regular crawler");
 				crawlersForcedRegular += 1;
 			}

@@ -1,7 +1,8 @@
 //=============================================================================
-// CDDifficultySettings_Crawler
+// CD_DS_Crawler_Regular
+// Sets the special spawnchance to zero on all difficulties
 //=============================================================================
-class CDDifficultySettings_Crawler extends KFDifficulty_Crawler
+class CD_DS_Crawler_Regular extends KFDifficulty_Crawler
 	abstract;
 
 static function float GetSpecialCrawlerChance( KFPawn_ZedCrawler CrawlerPawn , KFGameReplicationInfo KFGRI )

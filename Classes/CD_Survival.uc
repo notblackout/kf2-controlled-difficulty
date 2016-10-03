@@ -400,15 +400,19 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 
 	NewClass = OrigClass;
 
-	if ( OrigClass == class'CDPawn_ZedCrawler' )
+	// This really should be an associative array, but unrealscript is kind of barbaric
+	if ( OrigClass == class'CD_Pawn_ZedCrawler_Special' || 
+	     OrigClass == class'CD_Pawn_ZedCrawler_Regular' )
 	{
 		NewClass = class'KFPawn_ZedCrawler';
 	}
-//	else if ( OrigClass == class'CDPawn_ZedClot_Alpha_Special' )
-//	{
-//		NewClass = class'KFPawn_ZedClot_Alpha';
-//	}
+	else if ( OrigClass == class'CD_Pawn_ZedClot_Alpha_Special' ||
+	          OrigClass == class'CD_Pawn_ZedClot_Alpha_Regular' )
+	{
+		NewClass = class'KFPawn_ZedClot_Alpha';
+	}
 
+	// Log what we just did
 	if ( OrigClass != NewClass )
 	{
 		`log("Masked monster class "$OrigClass$" with substitute class "$NewClass$" via "$InstigatorName );
