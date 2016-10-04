@@ -385,8 +385,8 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	else if ( ElemEAIType == AT_Crawler )
 	{
 		SquadElement.CustomClass = IsSpecial ?
-			class'CD_Pawn_ZedClot_Alpha_Special' :
-			class'CD_Pawn_ZedClot_Alpha_Regular' ;
+			class'CD_Pawn_ZedCrawler_Special' :
+			class'CD_Pawn_ZedCrawler_Regular' ;
 	}
 	else
 	{
