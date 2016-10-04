@@ -991,7 +991,8 @@ static function EAIType GetZedType( string ZedName )
 	{
 		return AT_FleshPound;
 	}
-	else if ( ZedName == "G" || ZedName == "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName == Left("GOREFAST", ZedLen)) ) // DG(F) / DoubleGorefast reserved
+	// DG(F) / DoubleGorefast reserved
+	else if ( ZedName == "G" || ZedName == "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName == Left("GOREFAST", ZedLen)) )
 	{
 		return AT_GoreFast;
 	}
