@@ -878,20 +878,6 @@ static function bool GetBoolOption( string Options, string ParseString, bool Cur
 	return CurrentValue;
 }
 
-static function string ZeroPadIntString( int numberToFormat, int totalWidth )
-{
-	local string numberAsString;
-
-	numberAsString = string( numberToFormat );
-
-	while ( Len(numberAsString) < totalWidth )
-	{
-		numberAsString = "0" $ numberAsString;
-	}
-	
-	return numberAsString;
-}
-
 static function string GetShortWaveName( int WaveIndex )
 {
 	local string s;

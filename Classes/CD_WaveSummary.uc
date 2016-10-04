@@ -60,14 +60,13 @@ function string GetString()
 {
 	local string s;
 
-	s =
-		"Trash="$class'CD_Survival'.static.ZeroPadIntString(Trash, 4)$
-		" Bloats="$class'CD_Survival'.static.ZeroPadIntString(Bloats, 3)$
-		" Husks="$class'CD_Survival'.static.ZeroPadIntString(Husks, 3)$
-		" Sirens="$class'CD_Survival'.static.ZeroPadIntString(Sirens, 3)$
-		" Scrakes="$class'CD_Survival'.static.ZeroPadIntString(Scrakes, 2)$
-		" Fleshpounds="$class'CD_Survival'.static.ZeroPadIntString(Fleshpounds, 2)$
-		" TOTAL="$class'CD_Survival'.static.ZeroPadIntString(Total, 4);
+	s =	"Trash="$ZeroPadIntString(Trash, 4)$
+		" Bloats="$ZeroPadIntString(Bloats, 3)$
+		" Husks="$ZeroPadIntString(Husks, 3)$
+		" Sirens="$ZeroPadIntString(Sirens, 3)$
+		" Scrakes="$ZeroPadIntString(Scrakes, 2)$
+		" Fleshpounds="$ZeroPadIntString(Fleshpounds, 2)$
+		" TOTAL="$ZeroPadIntString(Total, 4);
 
 	`log(s);
 
@@ -86,4 +85,18 @@ function AddParamToSelf( CD_WaveSummary addend )
 	Fleshpounds += addend.Fleshpounds;
 
 	Total += addend.Total;
+}
+
+static function string ZeroPadIntString( int numberToFormat, int totalWidth )
+{
+	local string numberAsString;
+
+	numberAsString = string( numberToFormat );
+
+	while ( Len(numberAsString) < totalWidth )
+	{
+		numberAsString = "0" $ numberAsString;
+	}
+	
+	return numberAsString;
 }
