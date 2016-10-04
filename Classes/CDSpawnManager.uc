@@ -360,8 +360,6 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	return NewSquad;
 }
 
-
-
 // This function is invoked by the spawning system in the base game.
 // It is obnoxiously difficult to modify the spawn chances for albino/regular
 // crawlers without introducing a new pawn class.  I would have much rather
@@ -449,18 +447,20 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 
 	if( TempSpawnList.Length > 0 )
 	{
-        // Copy temp spawn list to AISpawnList
+        // Copy temp spawn list to AISpawnList, one element at a time
         while( TempSpawnList.Length > 0 )
 		{
-			// TODO logging
 			if ( usingCustom )
 			{
 				RandNum = 0;
+				`log("Prevented spawnlist shuffling", bLogControlledDifficulty);
 			}
 			else
 			{
 				RandNum = Rand( TempSpawnList.Length );
+				`log("Permitted spawnlist shuffling", bLogControlledDifficulty);
 			}
+
 			AISpawnList.AddItem( TempSpawnList[RandNum] );
 			TempSpawnList.Remove( RandNum, 1 );
 		}

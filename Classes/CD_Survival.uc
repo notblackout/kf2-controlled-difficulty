@@ -216,6 +216,7 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	local CD_AIWaveInfo CurWaveInfo;
 	local CD_AISpawnSquad CurSquad;
 	local AISquadElement CurElement;
+	local ESquadType LargestMonsterSquadType;
 
 	CurWaveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
 
@@ -247,6 +248,12 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 			`log("[squad#"$SquadParserState.SquadIndex$"] Parsed squad element: "$CurElement.Num$"x"$CurElement.Type);
 
 			CurSquad.AddSquadElement( CurElement );
+
+			// Update LargestMonsterSquadType
+//			if ( CurElement.default.MinSpawnSquadSizeType < LargestMonsterSquadType )
+//			{
+//				LargestMonsterSquadType = NewSquad[i].default.MinSpawnSquadSizeType;
+//			}
 		}
 
 		// TODO configure MinVolumeType on this completed squad
@@ -262,8 +269,15 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	local int ElemStrLen, UnicodePoint, ElemCount, i;
 	local string ElemType;
 	local EAIType ElemEAIType;
+	local bool IsSpecial;
 
+	IsSpecial = false;
 	ElemStrLen = Len( ElemDef );
+
+	if ( 0 == ElemStrLen )
+	{
+		return CDConsolePrintSquadParseError("Spawn elements must not be empty.");
+	}
 
 	// Locate the first index into ElemDef where the count
 	// of zeds in the element ends and the type of zed should begin
@@ -283,27 +297,44 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	// If that's true, then we can assume it was malformed.
 	if ( i <= 0 || i >= ElemStrLen )
 	{
-		// TODO issue warning about this element
 		return CDConsolePrintSquadParseError("Spawn element \"$ElemDef$\" could not be parsed.");
 	}
 
-	// Cut string in two at index i. Left is the count as a stringified int.
-	// Right is supposed to be the type of zed as a string.  We know the left
-	// part is a well-formed int-as-string because of the unicode codepoint
-	// loop check that we did earlier, and because 0 < i.  We don't know
-	// whether the zed name type on the right is valid (must check later).
+	// Check whether the element string ends with a *.  The
+	// asterisk suffix denotes special/albino zeds.  It is only
+	// valid on crawlers and alphas (when this comment was written,
+	// at least).  We will have to check that constraint later so
+	// that we correctly reject requests for nonexistent specials,
+	// e.g. albino scrake.
+	if ( "*" == Right( ElemDef, 1 ) )
+	{
+		IsSpecial = true;
+
+		// Check that the zed name is not empty
+		if ( i >= ElemStrLen - 1)
+		{
+			return CDConsolePrintSquadParseError("Spawn element \"$ElemDef$\" could not be parsed.");
+		}
+	}
+
+	// Cut string into two parts.
+	//
+	// Left is the count as a stringified int.  We know it is a
+	// parseable int because of the preceding unicode check loop.
+	//
+	// Right is possibly the name of a zed as a string, but it is
+	// totally unverified at this stage.  We exclude the * suffix
+	// (if it was detected above).
 	ElemCount = int( Mid( ElemDef, 0, i ) );
-	ElemType  = Mid( ElemDef, i, ElemStrLen - i );
+	ElemType  = Mid( ElemDef, i, ElemStrLen - i - ( IsSpecial ? 1 : 0 ) );
 
 	// Check value range for ElemCount
 	if ( ElemCount <= 0 )
 	{
-		// TODO issue warning about this element having quantity zero/neg
 		return CDConsolePrintSquadParseError("Element count \"$ElemCount$\" is not positive.  Must be between 1 and 6 (inclusive).");
 	}
 	if ( ElemCount > 6 )
 	{
-		// TODO issue warning about this element having too many zeds
 		return CDConsolePrintSquadParseError("Element count \"$ElemCount$\" is too large.  Must be between 1 and 6 (inclusive).");
 	}
 
@@ -313,14 +344,39 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	// Was it a valid zed type name?
 	if ( 255 == ElemEAIType )
 	{
-		// TODO issue warning about invalid elem class
 		return CDConsolePrintSquadParseError("\""$ElemType$"\" does not appear to be a zed name."$
 		              "  Must be a zed name or abbreviation like cyst, fp, etc.");
 	}
 
+	// If the ElemDef requested a special zed, then we need to
+	// check that the zed described by ElemType actually has a
+	// special/albino variant.
+	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler ) )
+	{
+		return CDConsolePrintSquadParseError("\""$ElemType$"\" does not have a special variant."$
+		      "  Remove the trailing asterisk from \""$ElemDef$"\" to spawn a non-special equivalent.");
+	}
+
 	SquadElement.Type = ElemEAIType;
 	SquadElement.Num = ElemCount;
-	SquadElement.CustomClass = none;
+	
+	// Apply custom class overrides that control albinism
+	if ( ElemEAIType == AT_AlphaClot )
+	{
+		SquadElement.CustomClass = IsSpecial ?
+			class'CD_Pawn_ZedClot_Alpha_Special' :
+			class'CD_Pawn_ZedClot_Alpha_Regular' ;
+	}
+	else if ( ElemEAIType == AT_Crawler )
+	{
+		SquadElement.CustomClass = IsSpecial ?
+			class'CD_Pawn_ZedClot_Alpha_Special' :
+			class'CD_Pawn_ZedClot_Alpha_Regular' ;
+	}
+	else
+	{
+		SquadElement.CustomClass = None;
+	}
 
 	return true;
 }
@@ -716,15 +772,15 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 			{
 				if ( Verbosity == "tiny" )
 				{
-					ZedNameTmp = GetZedTinyName( ss.CustomMonsterList[ElemIndex].Type );
+					GetZedTinyName( ss.CustomMonsterList[ElemIndex], ZedNameTmp );
 				}
 				else if ( Verbosity == "long" )
 				{
-					ZedNameTmp = GetZedFullName( ss.CustomMonsterList[ElemIndex].Type );
+					GetZedFullName( ss.CustomMonsterList[ElemIndex], ZedNameTmp );
 				}
 				else
 				{
-					ZedNameTmp = GetZedShortName( ss.CustomMonsterList[ElemIndex].Type );
+					GetZedShortName( ss.CustomMonsterList[ElemIndex], ZedNameTmp );
 				}
 
 				if ( ZedNameTmp == "" )
@@ -800,7 +856,7 @@ function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCoun
 	
 	result.Clear();
 
-	squadIndex = -1;
+	squadIndex = 0;
 
 	while ( result.Total < WaveTotalAI )
 	{
@@ -967,154 +1023,176 @@ static function EAIType GetZedType( string ZedName )
 	return 255;
 }
 
-static function String GetZedFullName( EAIType ZedType )
+static function GetZedFullName( const AISquadElement SquadElement, out string ZedName )
 {
-	if ( ZedType == AT_AlphaClot )
+	ZedName = "";
+
+	if ( SquadElement.Type == AT_AlphaClot )
 	{
-		return "Alpha";
+		ZedName = "Alpha";
 	}
-	else if ( ZedType == AT_SlasherClot )
+	else if ( SquadElement.Type == AT_SlasherClot )
 	{
-		return "Slasher";
+		ZedName = "Slasher";
 	}
-	else if ( ZedType == AT_Clot ) 
+	else if ( SquadElement.Type == AT_Clot ) 
 	{
-		return "Cyst";
+		ZedName = "Cyst";
 	}
-	else if ( ZedType == AT_FleshPound )
+	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		return "Fleshpound";
+		ZedName = "Fleshpound";
 	}
-	else if ( ZedType == AT_Gorefast )
+	else if ( SquadElement.Type == AT_Gorefast )
 	{
-		return "Gorefast";
+		ZedName = "Gorefast";
 	}
-	else if ( ZedType == AT_Stalker )
+	else if ( SquadElement.Type == AT_Stalker )
 	{
-		return "Stalker";
+		ZedName = "Stalker";
 	}
-	else if ( ZedType == AT_Bloat )
+	else if ( SquadElement.Type == AT_Bloat )
 	{
-		return "Bloat";
+		ZedName = "Bloat";
 	}
-	else if ( ZedType == AT_Scrake )
+	else if ( SquadElement.Type == AT_Scrake )
 	{
-		return "Scrake";
+		ZedName = "Scrake";
 	}
-	else if ( ZedType == AT_Crawler )
+	else if ( SquadElement.Type == AT_Crawler )
 	{
-		return "Crawler";
+		ZedName = "Crawler";
 	}
-	else if ( ZedType == AT_Husk )
+	else if ( SquadElement.Type == AT_Husk )
 	{
-		return "Husk";
+		ZedName = "Husk";
 	}
-	else if ( ZedType == AT_Siren )
+	else if ( SquadElement.Type == AT_Siren )
 	{
-		return "Siren";
+		ZedName = "Siren";
 	}
 
-	return "";
+	AppendAsteriskIfSpecialZedClass( SquadElement.CustomClass, ZedName );
 }
 
-static function String GetZedTinyName( EAIType ZedType )
+static function AppendAsteriskIfSpecialZedClass( const class CustomClass, out string ZedName )
 {
-	if ( ZedType == AT_AlphaClot )
-	{
-		return "AL";
-	}
-	else if ( ZedType == AT_SlasherClot )
-	{
-		return "SL";
-	}
-	else if ( ZedType == AT_Clot ) 
-	{
-		return "CY";
-	}
-	else if ( ZedType == AT_FleshPound )
-	{
-		return "F";
-	}
-	else if ( ZedType == AT_Gorefast )
-	{
-		return "G";
-	}
-	else if ( ZedType == AT_Stalker )
-	{
-		return "ST";
-	}
-	else if ( ZedType == AT_Bloat )
-	{
-		return "B";
-	}
-	else if ( ZedType == AT_Scrake )
-	{
-		return "SC";
-	}
-	else if ( ZedType == AT_Crawler )
-	{
-		return "CR";
-	}
-	else if ( ZedType == AT_Husk )
-	{
-		return "H";
-	}
-	else if ( ZedType == AT_Siren )
-	{
-		return "SI";
-	}
+	local string s;
 
-	return "";
+	if ( CustomClass != None )
+	{
+	 	s = string( CustomClass.name );
+		`log("Classname: "$s);
+
+		if ( Left(s, 7) == "CD_Pawn" && Right(s, 8) == "_Special" )
+		{
+			ZedName = ZedName $ "*";
+		}
+	}
 }
 
-static function String GetZedShortName( EAIType ZedType )
+static function GetZedTinyName( const AISquadElement SquadElement, out string ZedName )
 {
-	if ( ZedType == AT_AlphaClot )
+	ZedName = "";
+
+	if ( SquadElement.Type == AT_AlphaClot )
 	{
-		return "AL";
+		ZedName = "AL";
 	}
-	else if ( ZedType == AT_SlasherClot )
+	else if ( SquadElement.Type == AT_SlasherClot )
 	{
-		return "SL";
+		ZedName = "SL";
 	}
-	else if ( ZedType == AT_Clot ) 
+	else if ( SquadElement.Type == AT_Clot ) 
 	{
-		return "CY";
+		ZedName = "CY";
 	}
-	else if ( ZedType == AT_FleshPound )
+	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		return "FP";
+		ZedName = "F";
 	}
-	else if ( ZedType == AT_Gorefast )
+	else if ( SquadElement.Type == AT_Gorefast )
 	{
-		return "GF";
+		ZedName = "G";
 	}
-	else if ( ZedType == AT_Stalker )
+	else if ( SquadElement.Type == AT_Stalker )
 	{
-		return "ST";
+		ZedName = "ST";
 	}
-	else if ( ZedType == AT_Bloat )
+	else if ( SquadElement.Type == AT_Bloat )
 	{
-		return "BL";
+		ZedName = "B";
 	}
-	else if ( ZedType == AT_Scrake )
+	else if ( SquadElement.Type == AT_Scrake )
 	{
-		return "SC";
+		ZedName = "SC";
 	}
-	else if ( ZedType == AT_Crawler )
+	else if ( SquadElement.Type == AT_Crawler )
 	{
-		return "CR";
+		ZedName = "CR";
 	}
-	else if ( ZedType == AT_Husk )
+	else if ( SquadElement.Type == AT_Husk )
 	{
-		return "HU";
+		ZedName = "H";
 	}
-	else if ( ZedType == AT_Siren )
+	else if ( SquadElement.Type == AT_Siren )
 	{
-		return "SI";
+		ZedName = "SI";
 	}
 
-	return "";
+	AppendAsteriskIfSpecialZedClass( SquadElement.CustomClass, ZedName );
+}
+
+static function GetZedShortName( const AISquadElement SquadElement, out string ZedName )
+{
+	ZedName = "";
+
+	if ( SquadElement.Type == AT_AlphaClot )
+	{
+		ZedName = "AL";
+	}
+	else if ( SquadElement.Type == AT_SlasherClot )
+	{
+		ZedName = "SL";
+	}
+	else if ( SquadElement.Type == AT_Clot ) 
+	{
+		ZedName = "CY";
+	}
+	else if ( SquadElement.Type == AT_FleshPound )
+	{
+		ZedName = "FP";
+	}
+	else if ( SquadElement.Type == AT_Gorefast )
+	{
+		ZedName = "GF";
+	}
+	else if ( SquadElement.Type == AT_Stalker )
+	{
+		ZedName = "ST";
+	}
+	else if ( SquadElement.Type == AT_Bloat )
+	{
+		ZedName = "BL";
+	}
+	else if ( SquadElement.Type == AT_Scrake )
+	{
+		ZedName = "SC";
+	}
+	else if ( SquadElement.Type == AT_Crawler )
+	{
+		ZedName = "CR";
+	}
+	else if ( SquadElement.Type == AT_Husk )
+	{
+		ZedName = "HU";
+	}
+	else if ( SquadElement.Type == AT_Siren )
+	{
+		ZedName = "SI";
+	}
+
+	AppendAsteriskIfSpecialZedClass( SquadElement.CustomClass, ZedName );
 }
 
 
