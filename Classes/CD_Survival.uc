@@ -216,7 +216,8 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	local CD_AIWaveInfo CurWaveInfo;
 	local CD_AISpawnSquad CurSquad;
 	local AISquadElement CurElement;
-	local ESquadType LargestMonsterSquadType;
+	local ESquadType LargestVolumeInSquad;
+	local ESquadType CurElementVolume;
 
 	CurWaveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
 
@@ -227,6 +228,8 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	for ( SquadParserState.SquadIndex = 0; SquadParserState.SquadIndex < SquadDefs.length; SquadParserState.SquadIndex++ )
 	{
 		CurSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
+
+		LargestVolumeInSquad = EST_Crawler;
 
 		// Squads may in general be heterogeneous, e.g.
 		// 2Cyst_3Crawler_2Gorefast_2Siren
@@ -249,19 +252,31 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 
 			CurSquad.AddSquadElement( CurElement );
 
-			// Update LargestMonsterSquadType
-//			if ( CurElement.default.MinSpawnSquadSizeType < LargestMonsterSquadType )
-//			{
-//				LargestMonsterSquadType = NewSquad[i].default.MinSpawnSquadSizeType;
-//			}
+			// Update LargestVolumeInSquad
+			CurElementVolume = AIClassList[CurElement.Type].default.MinSpawnSquadSizeType;
+
+			// ESquadType is biggest first (boss) to smallest last (crawler)
+			// blame tripwire
+			if ( CurElementVolume < LargestVolumeInSquad )
+			{
+				LargestVolumeInSquad = CurElementVolume;
+			}
 		}
 
-		// TODO configure MinVolumeType on this completed squad
+		// I think the squad volume type doesn't even matter in most cases,
+		// judging from KFAISpawnManager and the shambholic state of this
+		// property on the official TWI squad archetypes
+		CurSquad.MinVolumeType = LargestVolumeInSquad;
+		`log("Set spawn volume type: "$CurSquad.MinVolumeType);
 
 		CurWaveInfo.CustomSquads.AddItem(CurSquad);
 	}
 
 	return CurWaveInfo;
+}
+
+static function GetMonsterSpawnVolume( EAIType ZedType )
+{
 }
 
 function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
