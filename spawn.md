@@ -103,6 +103,16 @@ Whereas all of the following strings are invalid:
 * flp
 * FLPOUND
 
+
+### Albino/Special Zed Variants
+
+At the time this document was last updated, there are two albino or special zed variants:
+
+* Albino Alpha Clot
+* Albino Crawler
+
+These zeds may be specified by appending a * character.  For example, "Crawler\*" or "AL\*".  Appending a * character to a zed that has no albino variant will produce an error message.
+
 ## Diagnostic Commands
 
 `CDSpawnSummaries` projects the estimated number of zeds per wave, breaking fleshpounds, scrakes, sirens, husks, bloats, and trash into separate counts.  It accounts for the current `FakePlayers` setting automatically.  However, if you want to see what would happen on a particular player count, you can specify an integer argument, which will be interpreted as a player count override.  This command does not consider the boss wave; it only considers regular waves.
