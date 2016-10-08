@@ -34,6 +34,11 @@ function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 	return GetNumPlayersModifier( NumPlayers_WaveSize, sum );
 }
 
+function float GetRawPlayerNumMaxAIModifier( byte TotalPlayers )
+{
+	return GetNumPlayersModifier( NumPlayers_WaveSize, TotalPlayers );
+}
+
 /** Get the custom trader time, or the difficulty's default TT if no custom TT is set */
 // This is invoked by the base game.
 function float GetTraderTimeByDifficulty()

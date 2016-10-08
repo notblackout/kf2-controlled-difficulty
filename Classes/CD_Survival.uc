@@ -66,9 +66,15 @@ var config bool bLogControlledDifficulty;
 // "ini": read info about squads from config and use it to set spawn squads
 // "unmodded": unmodded game behavior
 // all other values are reserved for potential future preset names
-var config string SquadSchedule;
-var config array<string> SquadScheduleDefs;
+var config string SpawnCycle;
+var config array<string> SpawnCycleDefs;
 var StructSquadParserState SquadParserState;
+
+const MinZedsInElement = 1;
+const MaxZedsInElement = 10;
+
+const MinZedsInSquad = 1;
+const MaxZedsInSquad = 10;
 
 // "hans" or "volter": forces the hans boss wave
 // "pat", "patty", "patriarch": forces the patriarch boss wave
@@ -79,13 +85,15 @@ var CD_DifficultyInfo CustomDifficultyInfo;
 
 var array<CD_AIWaveInfo> CustomWaveInfos;
 
+var KFGameViewportClient CachedGVC;
+
 event InitGame( string Options, out string ErrorMessage )
 {
 	local float SpawnModFromGameOptions;
 	local float SpawnModBeforeClamping;
 	local int MaxMonstersFromGameOptions;
 	local bool AlbinoCrawlersFromGameOptions;
-	local string SquadScheduleFromGameOptions;
+	local string SpawnCycleFromGameOptions;
 	local string BossFromGameOptions;
 
  	Super.InitGame( Options, ErrorMessage );
@@ -122,11 +130,11 @@ event InitGame( string Options, out string ErrorMessage )
 		AlbinoCrawlers = AlbinoCrawlersFromGameOptions;
 	}
 
-	if ( HasOption(Options, "SquadSchedule") )
+	if ( HasOption(Options, "SpawnCycle") )
 	{
-		SquadScheduleFromGameOptions = ParseOption(Options, "SquadSchedule" );
-		`log("SquadScheduleFromGameOptions = "$SquadScheduleFromGameOptions, bLogControlledDifficulty);
-		SquadSchedule = SquadScheduleFromGameOptions;
+		SpawnCycleFromGameOptions = ParseOption(Options, "SpawnCycle" );
+		`log("SpawnCycleFromGameOptions = "$SpawnCycleFromGameOptions, bLogControlledDifficulty);
+		SpawnCycle = SpawnCycleFromGameOptions;
 	}
 
 	if ( HasOption(Options, "Boss") )
@@ -196,20 +204,20 @@ function bool isVolterBoss()
 	return isVolterBossString( Boss );
 }
 
-function array<CD_AIWaveInfo> ParseFullSquadSchedule( array<string> fullRawSchedule )
+function array<CD_AIWaveInfo> ParseFullSpawnCycle( array<string> fullRawSchedule )
 {
 	local array<CD_AIWaveInfo> WaveInfosFromConfig;
 
 	for ( SquadParserState.WaveIndex = 0; SquadParserState.WaveIndex < fullRawSchedule.length; SquadParserState.WaveIndex++ )
 	{
 		`log("Attempting to parse wave "$(SquadParserState.WaveIndex + 1)$"...");
-		WaveInfosFromConfig.AddItem( ParseSquadScheduleDef( fullRawSchedule[SquadParserState.WaveIndex] ) );
+		WaveInfosFromConfig.AddItem( ParseSpawnCycleDef( fullRawSchedule[SquadParserState.WaveIndex] ) );
 	}
 
 	return WaveInfosFromConfig;
 }
 
-function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
+function CD_AIWaveInfo ParseSpawnCycleDef( string rawSchedule )
 {
 	local array<string> SquadDefs;
 	local array<string> ElemDefs;
@@ -218,6 +226,7 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	local AISquadElement CurElement;
 	local ESquadType LargestVolumeInSquad;
 	local ESquadType CurElementVolume;
+	local int CurSquadSize;
 
 	CurWaveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
 
@@ -228,6 +237,7 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 	for ( SquadParserState.SquadIndex = 0; SquadParserState.SquadIndex < SquadDefs.length; SquadParserState.SquadIndex++ )
 	{
 		CurSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
+		CurSquadSize = 0;
 
 		LargestVolumeInSquad = EST_Crawler;
 
@@ -251,6 +261,7 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 			`log("[squad#"$SquadParserState.SquadIndex$"] Parsed squad element: "$CurElement.Num$"x"$CurElement.Type);
 
 			CurSquad.AddSquadElement( CurElement );
+			CurSquadSize += CurElement.Num;
 
 			// Update LargestVolumeInSquad
 			CurElementVolume = AIClassList[CurElement.Type].default.MinSpawnSquadSizeType;
@@ -261,6 +272,20 @@ function CD_AIWaveInfo ParseSquadScheduleDef( string rawSchedule )
 			{
 				LargestVolumeInSquad = CurElementVolume;
 			}
+		}
+
+		// Check overall zed count of the squad (summing across all elements)
+		if ( CurSquadSize < MinZedsInSquad )
+		{
+			CDConsolePrintSquadParseError("Squad size \"$CurSquadSize$\" is not positive.  "$
+			    "Must be between "$MinZedsInSquad$" to "$MaxZedsInSquad$" (inclusive).");
+			continue;
+		}
+		if ( CurSquadSize > MaxZedsInSquad )
+		{
+			CDConsolePrintSquadParseError("Squad size \"$CurSquadSize$\" is too large.  "$
+			    "Must be between "$MinZedsInSquad$" to "$MaxZedsInSquad$" (inclusive).");
+			continue;
 		}
 
 		// I think the squad volume type doesn't even matter in most cases,
@@ -291,7 +316,7 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 
 	if ( 0 == ElemStrLen )
 	{
-		return CDConsolePrintSquadParseError("Spawn elements must not be empty.");
+		return CDConsolePrintElemParseError("Spawn elements must not be empty.");
 	}
 
 	// Locate the first index into ElemDef where the count
@@ -312,7 +337,7 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	// If that's true, then we can assume it was malformed.
 	if ( i <= 0 || i >= ElemStrLen )
 	{
-		return CDConsolePrintSquadParseError("Spawn element \"$ElemDef$\" could not be parsed.");
+		return CDConsolePrintElemParseError("Spawn element \"$ElemDef$\" could not be parsed.");
 	}
 
 	// Check whether the element string ends with a *.  The
@@ -328,7 +353,7 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 		// Check that the zed name is not empty
 		if ( i >= ElemStrLen - 1)
 		{
-			return CDConsolePrintSquadParseError("Spawn element \"$ElemDef$\" could not be parsed.");
+			return CDConsolePrintElemParseError("Spawn element \"$ElemDef$\" could not be parsed.");
 		}
 	}
 
@@ -344,13 +369,15 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	ElemType  = Mid( ElemDef, i, ElemStrLen - i - ( IsSpecial ? 1 : 0 ) );
 
 	// Check value range for ElemCount
-	if ( ElemCount <= 0 )
+	if ( ElemCount < MinZedsInElement )
 	{
-		return CDConsolePrintSquadParseError("Element count \"$ElemCount$\" is not positive.  Must be between 1 and 6 (inclusive).");
+		return CDConsolePrintElemParseError("Element count \"$ElemCount$\" is not positive.  "$
+		           "Must be between "$MinZedsInElement$" to "$MaxZedsInElement$" (inclusive).");
 	}
-	if ( ElemCount > 6 )
+	if ( ElemCount > MaxZedsInElement )
 	{
-		return CDConsolePrintSquadParseError("Element count \"$ElemCount$\" is too large.  Must be between 1 and 6 (inclusive).");
+		return CDConsolePrintElemParseError("Element count \"$ElemCount$\" is too large.  "$
+		           "Must be between "$MinZedsInElement$" to "$MaxZedsInElement$" (inclusive).");
 	}
 
 	// Convert user-provided zed type name into a zed type enum
@@ -359,7 +386,7 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	// Was it a valid zed type name?
 	if ( 255 == ElemEAIType )
 	{
-		return CDConsolePrintSquadParseError("\""$ElemType$"\" does not appear to be a zed name."$
+		return CDConsolePrintElemParseError("\""$ElemType$"\" does not appear to be a zed name."$
 		              "  Must be a zed name or abbreviation like cyst, fp, etc.");
 	}
 
@@ -368,7 +395,7 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	// special/albino variant.
 	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler ) )
 	{
-		return CDConsolePrintSquadParseError("\""$ElemType$"\" does not have a special variant."$
+		return CDConsolePrintElemParseError("\""$ElemType$"\" does not have a special variant."$
 		      "  Remove the trailing asterisk from \""$ElemDef$"\" to spawn a non-special equivalent.");
 	}
 
@@ -401,7 +428,18 @@ function bool CDConsolePrintSquadParseError( const string message )
 	SquadParserState.ParseError = true;
 
 	CDConsolePrint("WARNING Parse error in squad definition at location: \n" $
-	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SquadScheduleDefs, one-based)\n" $
+	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
+                       "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
+	               "   >> Message: "$ message);
+	return false;
+}
+
+function bool CDConsolePrintElemParseError( const string message )
+{
+	SquadParserState.ParseError = true;
+
+	CDConsolePrint("WARNING Parse error in squad element definition at location: \n" $
+	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
                        "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
                        "      ElementNumber: " $ string(SquadParserState.ElemIndex + 1) $ " (underscore-separated element in the squad, one-based)\n" $
 	               "   >> Message: "$ message);
@@ -569,14 +607,14 @@ function InitSpawnManager()
 
 	CDConsolePrint( "Boss="$Boss );
 
-	if ( SquadSchedule == "ini" )
+	if ( SpawnCycle == "ini" )
 	{
-		`log("Forcing a config reload because SquadSchedule="$SquadSchedule$"...");
+		`log("Forcing a config reload because SpawnCycle="$SpawnCycle$"...");
 		//ConsoleCommand("reloadcfg ControlledDifficulty.CD_Survival", true);
 		//ReloadConfig();
 
 		`log("Attempting to parse squad information in config...");
-		CustomWaveInfos = ParseFullSquadSchedule( SquadScheduleDefs );
+		CustomWaveInfos = ParseFullSpawnCycle( SpawnCycleDefs );
 
 		// Number of parsed waves must match the current gamelength
 		// (Parsed waves only cover non-boss waves)
@@ -590,8 +628,8 @@ function InitSpawnManager()
 		if ( CustomWaveInfos.length != ExpectedWaveCount )
 		{
 			CDConsolePrint("WARNING Config defines "$CustomWaveInfos.length$" waves, but there are only "$ExpectedWaveCount$" waves in this GameLength.");
-			CDConsolePrint("WARNING Setting SquadSchedule=unmodded for this session because of ini-GameLength wave count mismatch.");
-			SquadSchedule = "unmodded";
+			CDConsolePrint("WARNING Setting SpawnCycle=unmodded for this session because of ini-GameLength wave count mismatch.");
+			SpawnCycle = "unmodded";
 			SquadParserState.ParseError = true;
 		}
 
@@ -602,10 +640,10 @@ function InitSpawnManager()
 	}
 	else
 	{
-		`log("Not reading squad information from config (value="$SquadSchedule$")");
+		`log("Not reading squad information from config (value="$SpawnCycle$")");
 	}
 
-	CDConsolePrint( "SquadSchedule="$SquadSchedule );
+	CDConsolePrint( "SpawnCycle="$SpawnCycle );
 }
 
 exec function logControlledDifficulty( bool enabled )
@@ -619,7 +657,7 @@ exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
 {
 	CDConsolePrintScheduleSlug();
 
-	if ( SquadSchedule == "unmodded" )
+	if ( SpawnCycle == "unmodded" )
 	{
 		return;
 	}
@@ -656,7 +694,7 @@ exec function CDSpawnDetails( optional string Verbosity = "" )
 {
 	CDConsolePrintScheduleSlug();
 
-	if ( SquadSchedule == "unmodded" )
+	if ( SpawnCycle == "unmodded" )
 	{
 		return;
 	}
@@ -690,17 +728,17 @@ exec function CDSpawnDetails( optional string Verbosity = "" )
 
 function CDConsolePrintScheduleSlug()
 {
-	if ( SquadSchedule == "unmodded" )
+	if ( SpawnCycle == "unmodded" )
 	{
-		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn randomly, as in standard KF2)", false);
+		CDConsolePrint("SpawnCycle="$SpawnCycle$" (zeds spawn randomly, as in standard KF2)", false);
 	}
-	else if ( SquadSchedule == "ini" )
+	else if ( SpawnCycle == "ini" )
 	{
-		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn according to the config file)", false);
+		CDConsolePrint("SpawnCycle="$SpawnCycle$" (zeds spawn according to the config file)", false);
 	}
 	else
 	{
-		CDConsolePrint("SquadSchedule="$SquadSchedule$" (zeds spawn according to preset "$SquadSchedule$")", false);
+		CDConsolePrint("SpawnCycle="$SpawnCycle$" (zeds spawn according to preset "$SpawnCycle$")", false);
 	}
 }
 
@@ -807,7 +845,7 @@ function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCoun
 	DWS = cdsmClass.default.DifficultyWaveSettings[ Min(GameDifficulty, cdsmClass.default.DifficultyWaveSettings.Length-1) ];
 
 	WaveTotalAI = DWS.Waves[WaveIndex].MaxAI *
-	              PlayerCount *
+	              CustomDifficultyInfo.GetRawPlayerNumMaxAIModifier( PlayerCount ) *
 	              DifficultyInfo.GetDifficultyMaxAIModifier();
 	
 	result.Clear();
@@ -837,22 +875,24 @@ function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCoun
 	}
 }
 
-static function CDConsolePrint( string message, optional bool autoPrefix = true )
+function CDConsolePrint( string message, optional bool autoPrefix = true )
 {
-	local KFGameViewportClient GVC;
-	GVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	if ( CachedGVC == None )
+	{
+		CachedGVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
+	}
 
 	if ( autoPrefix )
 	{
-		GVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
+		CachedGVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
 	}
 	else
 	{
-		GVC.ViewportConsole.OutputTextLine(message);
+		CachedGVC.ViewportConsole.OutputTextLine(message);
 	}
 }
 
-static function CDConsolePrintHelpForSpawnDetails()
+function CDConsolePrintHelpForSpawnDetails()
 {
 	CDConsolePrint( "This command displays the currently selected CD spawn cycle.", false );
 	CDConsolePrint( "Supported verbosity levels:", false );
