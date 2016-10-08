@@ -690,7 +690,7 @@ exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
 	CDConsolePrintSpawnSummaries( AssumedPlayerCount );
 }
 
-exec function CDSpawnDetails( optional string Verbosity = "" )
+exec function CDSpawnDetails()
 {
 	CDConsolePrintScheduleSlug();
 
@@ -699,31 +699,21 @@ exec function CDSpawnDetails( optional string Verbosity = "" )
 		return;
 	}
 
-	Verbosity = Locs( Verbosity );
+	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
+	CDConsolePrintSpawnDetails( "short" );
+}
 
-	if ( Verbosity == "" )
+exec function CDSpawnDetailsVerbose()
+{
+	CDConsolePrintScheduleSlug();
+
+	if ( SpawnCycle == "unmodded" )
 	{
-		Verbosity = "short";
-		CDConsolePrint( "Verbosity level: \""$Verbosity$"\" (run \"CDSpawnDetails help\" for more choices)", false );
-	}
-	else if ( Verbosity == "tiny" || Verbosity == "short" || Verbosity == "long" )
-	{
-		// do nothing
-	}
-	else if ( Verbosity == "help" )
-	{
-		CDConsolePrintHelpForSpawnDetails();
-		return;
-	}
-	else
-	{
-		CDConsolePrint( "Parameter \""$Verbosity$"\" is not valid.", false );
-		CDConsolePrintHelpForSpawnDetails();
 		return;
 	}
 
 	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
-	CDConsolePrintSpawnDetails( Verbosity );
+	CDConsolePrintSpawnDetails( "full" );
 }
 
 function CDConsolePrintScheduleSlug()
@@ -768,7 +758,7 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 				{
 					class'CD_ZedNameUtils'.static.GetZedTinyName( ss.CustomMonsterList[ElemIndex], ZedNameTmp );
 				}
-				else if ( Verbosity == "long" )
+				else if ( Verbosity == "full" )
 				{
 					class'CD_ZedNameUtils'.static.GetZedFullName( ss.CustomMonsterList[ElemIndex], ZedNameTmp );
 				}
@@ -898,9 +888,9 @@ function CDConsolePrintHelpForSpawnDetails()
 	CDConsolePrint( "Supported verbosity levels:", false );
 	CDConsolePrint( "    tiny: abbreviate zed names as much as possible", false );
 	CDConsolePrint( "    short: abbreviate zed names down to two letters", false );
-	CDConsolePrint( "    long: don't abbreviate zed names", false );
+	CDConsolePrint( "    full: don't abbreviate zed names", false );
 	CDConsolePrint( "For example, to print spawn details with full zed names:", false );
-	CDConsolePrint( "    CDSpawnDetails long", false );
+	CDConsolePrint( "    CDSpawnDetails full", false );
 	CDConsolePrint( "You can omit the verbosity level argument, in which case", false );
 	CDConsolePrint( "this command defaults to \"short\".", false );
 }
