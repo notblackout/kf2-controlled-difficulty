@@ -43,7 +43,7 @@ CD lets the user define, for each wave, exactly what squads spawn and in what or
 
 **Fine control:** Specify as many or as few squads as you want. Compose squads with whatever combination of zeds you want. CD spawns zeds as listed without shuffling.  This system supports all squads used in the base game, but also permits squads unseen in the base game (e.g. 4 FP), should you wish to use such squads.
 
-**Reproducibility:** This system removes random ordering from the spawn list.  The only remaining random aspect is spawnpoint selection.  On solo maps like Hillside or Midnightpark, spawnpoint selection is nearly irrelevant, and only zed spawn order and rate really matters.  This is where deterministic spawns really help.  Once you've set the spawn list and rate, every run presents effectively identical difficulty.  The game doesn't randomly get harder or easier from one attempt to the next depending on random list generation and shuffling, like in the standard game.  This takes a major luck aspect out of challenges.
+**Reproducibility:** This system removes random spawn list shuffling.  The only random aspect is spawnpoint selection.  On solo maps like Hillside or Midnightpark, spawnpoint selection is nearly irrelevant, and only zed spawn order and rate really matters.  This is where deterministic spawns really help.  Once you've set the spawn list and rate, every run presents effectively identical difficulty.  The game doesn't randomly get harder or easier from one attempt to the next depending on random list generation and shuffling, like in the standard game.  This takes a major luck aspect out of challenges.
 
 
 
