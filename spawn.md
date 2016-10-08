@@ -103,6 +103,18 @@ Whereas all of the following strings are invalid:
 * flp
 * FLPOUND
 
+## Diagnostic Commands
+
+`CDSpawnSummaries` projects the estimated number of zeds per wave, breaking fleshpounds, scrakes, sirens, husks, bloats, and trash into separate counts.  It accounts for the current `FakePlayers` setting automatically.  However, if you want to see what would happen on a particular player count, you can specify an integer argument, which will be interpreted as a player count override.  This command does not consider the boss wave; it only considers regular waves.
+
+`CDSpawnDetails` lists the exact spawn squads scheduled for each wave when not using `SpawnCycle=ini`.  Although the ini-parser prints warning messages to the console whenever it encounters a parse error, this command could be useful in case of an edge case that CD fails to warn about (though that would just be a temporary fix, since I will try to make CD warn about every error case that I know about).
+
+![loading the mod](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/0_load.png)
+
+![running cdspawnsummaries](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/1_summaries.png)
+
+![running cdspawndetails](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/2_details.png)
+
 ## Sample Configuration
 
 The following `KFGame.ini` snippet contains a 10-wave configuration adapted from an average HOE Long game.  All of the squads used are present in HOE Long games.  The special squads have been selected to be average or slightly below average for their wave number.  Scrakes start at 5, FPs start at 7.  The big zeds are spread out a bit, but within the rules used by standard KF2.
