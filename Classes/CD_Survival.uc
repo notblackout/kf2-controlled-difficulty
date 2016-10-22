@@ -60,6 +60,9 @@ var config int MaxMonsters;
 // false to spawn regular crawlers in place of albino crawlers.
 var config bool AlbinoCrawlers;
 
+// same truth table sense as for AlbinoCrawlers, but for alpha clots
+var config bool AlbinoAlphas;
+
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
 
@@ -93,6 +96,7 @@ event InitGame( string Options, out string ErrorMessage )
 	local float SpawnModBeforeClamping;
 	local int MaxMonstersFromGameOptions;
 	local bool AlbinoCrawlersFromGameOptions;
+	local bool AlbinoAlphasFromGameOptions;
 	local string SpawnCycleFromGameOptions;
 	local string BossFromGameOptions;
 
@@ -128,6 +132,13 @@ event InitGame( string Options, out string ErrorMessage )
 		AlbinoCrawlersFromGameOptions = GetBoolOption( Options, "AlbinoCrawlers", true );
 		`log("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlersFromGameOptions$" (true=default)", bLogControlledDifficulty);
 		AlbinoCrawlers = AlbinoCrawlersFromGameOptions;
+	}
+
+	if ( HasOption(Options, "AlbinoAlphas") )
+	{
+		AlbinoAlphasFromGameOptions = GetBoolOption( Options, "AlbinoAlphas", true );
+		`log("AlbinoAlphasFromGameOptions = "$AlbinoAlphasFromGameOptions$" (true=default)", bLogControlledDifficulty);
+		AlbinoAlphas = AlbinoAlphasFromGameOptions;
 	}
 
 	if ( HasOption(Options, "SpawnCycle") )
@@ -169,6 +180,7 @@ event InitGame( string Options, out string ErrorMessage )
 	if ( !isRandomBossString(Boss) && !isPatriarchBossString(Boss) && !isVolterBossString(Boss) )
 	{
 		CDConsolePrint("WARNING invalid Boss setting \""$Boss$"\".  Valid settings for this option: patriarch, hans, random.  Setting Boss = random.");
+		Boss = "random";
 	}
 
 	SaveConfig();
@@ -204,6 +216,22 @@ function bool isVolterBoss()
 	return isVolterBossString( Boss );
 }
 
+function string getStringForBossSetting()
+{
+	if ( isPatriarchBoss() )
+	{
+		return "patriarch";
+	}
+	else if ( isVolterBoss() )
+	{
+		return "volter";
+	}
+	else
+	{
+		return "random";
+	}
+}
+
 function array<CD_AIWaveInfo> ParseFullSpawnCycle( array<string> fullRawSchedule )
 {
 	local array<CD_AIWaveInfo> WaveInfosFromConfig;
@@ -212,6 +240,13 @@ function array<CD_AIWaveInfo> ParseFullSpawnCycle( array<string> fullRawSchedule
 	{
 		`log("Attempting to parse wave "$(SquadParserState.WaveIndex + 1)$"...");
 		WaveInfosFromConfig.AddItem( ParseSpawnCycleDef( fullRawSchedule[SquadParserState.WaveIndex] ) );
+		
+		// If the wave was empty, log a fatal parse error, but keep processing later waves to
+		// try to log as much information/errors as possible
+		if ( WaveInfosFromConfig[WaveInfosFromConfig.length - 1].CustomSquads.length < 1 )
+		{
+			CDConsolePrintWaveParseError("No valid squads found in this wave");
+		}
 	}
 
 	return WaveInfosFromConfig;
@@ -277,7 +312,7 @@ function CD_AIWaveInfo ParseSpawnCycleDef( string rawSchedule )
 		// Check overall zed count of the squad (summing across all elements)
 		if ( CurSquadSize < MinZedsInSquad )
 		{
-			CDConsolePrintSquadParseError("Squad size \"$CurSquadSize$\" is not positive.  "$
+			CDConsolePrintSquadParseError("Squad size \"$CurSquadSize$\" is too small.  "$
 			    "Must be between "$MinZedsInSquad$" to "$MaxZedsInSquad$" (inclusive).");
 			continue;
 		}
@@ -423,11 +458,21 @@ function bool ParseSquadElement( const out String ElemDef, out AISquadElement Sq
 	return true;
 }
 
+function bool CDConsolePrintWaveParseError( const string message )
+{
+	SquadParserState.ParseError = true;
+
+	CDConsolePrint("WARNING Wave definition parse error:\n" $
+	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
+	               "   >> Message: "$ message);
+	return false;
+}
+
 function bool CDConsolePrintSquadParseError( const string message )
 {
 	SquadParserState.ParseError = true;
 
-	CDConsolePrint("WARNING Parse error in squad definition at location: \n" $
+	CDConsolePrint("WARNING Squad definition parse error:\n" $
 	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
                        "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
 	               "   >> Message: "$ message);
@@ -438,7 +483,7 @@ function bool CDConsolePrintElemParseError( const string message )
 {
 	SquadParserState.ParseError = true;
 
-	CDConsolePrint("WARNING Parse error in squad element definition at location: \n" $
+	CDConsolePrint("WARNING Squad element definition parse error:\n" $
 	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
                        "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
                        "      ElementNumber: " $ string(SquadParserState.ElemIndex + 1) $ " (underscore-separated element in the squad, one-based)\n" $
@@ -603,9 +648,7 @@ function InitSpawnManager()
 		CDConsolePrint("MaxMonsters=<unmodded default>");
 	}
 
-	CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
-
-	CDConsolePrint( "Boss="$Boss );
+	CDConsolePrint( "Boss="$GetStringForBossSetting() );
 
 	if ( SpawnCycle == "ini" )
 	{
@@ -627,7 +670,7 @@ function InitSpawnManager()
 	
 		if ( CustomWaveInfos.length != ExpectedWaveCount )
 		{
-			CDConsolePrint("WARNING Config defines "$CustomWaveInfos.length$" waves, but there are only "$ExpectedWaveCount$" waves in this GameLength.");
+			CDConsolePrint("WARNING Config defines "$CustomWaveInfos.length$" waves, but there are "$ExpectedWaveCount$" waves in this GameLength.");
 			CDConsolePrint("WARNING Setting SpawnCycle=unmodded for this session because of ini-GameLength wave count mismatch.");
 			SpawnCycle = "unmodded";
 			SquadParserState.ParseError = true;
@@ -644,6 +687,17 @@ function InitSpawnManager()
 	}
 
 	CDConsolePrint( "SpawnCycle="$SpawnCycle );
+
+	if ( SpawnCycle == "unmodded" )
+	{
+		CDConsolePrint( "AlbinoCrawlers="$AlbinoCrawlers );
+		CDConsolePrint( "AlbinoAlphas="$AlbinoAlphas );
+	}
+	else
+	{
+		CDConsolePrint( "AlbinoCrawlers=<overidden by spawncycle>" );
+		CDConsolePrint( "AlbinoAlphas=<overidden by spawncycle>" );
+	}
 }
 
 exec function logControlledDifficulty( bool enabled )

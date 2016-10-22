@@ -366,24 +366,22 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 // they made this spawn chance table part of DifficultyInfo instead of hardcoding
 // it into defaultproperties and then reading it by static method invocation.
 //
-// The point of this method is to replace the standard crawler pawn class (with
-// hardcoded albino chances) with a CD pawn class that never spawns albinos, if
-// and only if the user set AlbinoCrawlers=False.
+// This function does a few things.  If a custom squad schedule is in use, it
+// enforces it.  If not, it checks AlbinoCrawlers/AlbinoAlphas.  It also
+// enforces a Boss preference, if set.
 function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > SquadsList, out array< class<KFPawn_Monster> >  AISpawnList)
 {
 	local int crawlersForcedRegular;
-
-/////////////////////
-/////////////////////
+	local int alphasForcedRegular;
 
 	local KFAISpawnSquad Squad;
 	local EAIType AIType;
 	local int i, j, RandNum, waveIndex;
 	local ESquadType LargestMonsterSquadType;
-    local array<class<KFPawn_Monster> > TempSpawnList;
+	local array<class<KFPawn_Monster> > TempSpawnList;
 	local array<AISquadElement> SquadElements;
 	local CD_AISpawnSquad CustomSquad;
-	local bool usingCustom;
+	local bool UsingCustomSquads;
 
 	Squad = SquadsList[SquadIdx];
 
@@ -391,9 +389,9 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	LargestMonsterSquadType = EST_Crawler;
 
 	waveIndex = MyKFGRI.WaveNum - 1;
-	usingCustom = 0 < CustomWaves.length && waveIndex < CustomWaves.length;
+	UsingCustomSquads = 0 < CustomWaves.length && waveIndex < CustomWaves.length;
 
-	if ( usingCustom )
+	if ( UsingCustomSquads )
 	{
 		CustomSquad = CD_AISpawnSquad( Squad );
 		CustomSquad.CopyAISquadElements( SquadElements );
@@ -450,7 +448,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
         // Copy temp spawn list to AISpawnList, one element at a time
         while( TempSpawnList.Length > 0 )
 		{
-			if ( usingCustom )
+			if ( UsingCustomSquads )
 			{
 				RandNum = 0;
 				`log("Prevented spawnlist shuffling", bLogControlledDifficulty);
@@ -474,11 +472,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
         }
 	}
 
-/////////////////////
-/////////////////////
-
-	// TODO make this conditional on using an unmodded spawn schedule
-	if ( !AlbinoCrawlers )
+	if ( !AlbinoCrawlers && !UsingCustomSquads )
 	{
 		crawlersForcedRegular = 0;
 
@@ -496,8 +490,24 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 
 		`log("Total crawlers forced regular in this AISpawnList: "$crawlersForcedRegular);
 	}
-	else
+
+	if ( !AlbinoAlphas && !UsingCustomSquads )
 	{
-		`log("AlbinoCrawlers="$AlbinoCrawlers$": allowing albino crawlers to spawn normally");
+		alphasForcedRegular = 0;
+
+		`log("AlbinoAlphas="$AlbinoAlphas$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx);
+		// Replace all standard alpha classes with forced-regular crawers
+		for ( i = 0; i < AISpawnList.Length; i++ )
+		{
+			if ( AISpawnList[i] == AIClassList[AT_AlphaClot] )
+			{
+				AISpawnList[i] = class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Regular';
+				`log("Forcing alpha at AISpawnList["$i$"] to spawn as a regular alpha");
+				alphasForcedRegular += 1;
+			}
+		}
+
+		`log("Total alphas forced regular in this AISpawnList: "$alphasForcedRegular);
 	}
+
 }
