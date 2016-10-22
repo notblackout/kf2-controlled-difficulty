@@ -60,7 +60,7 @@ var config int MaxMonsters;
 // false to spawn regular crawlers in place of albino crawlers.
 var config bool AlbinoCrawlers;
 
-// same truth table sense as for AlbinoCrawlers, but for alpha clots
+// same value sense as for AlbinoCrawlers, but for alpha clots
 var config bool AlbinoAlphas;
 
 // true to log some internal state specific to this mod
@@ -90,6 +90,8 @@ var array<CD_AIWaveInfo> CustomWaveInfos;
 
 var KFGameViewportClient CachedGVC;
 
+var array<CD_SpawnCycle_Preset> SpawnCyclePresetList;
+
 event InitGame( string Options, out string ErrorMessage )
 {
 	local float SpawnModFromGameOptions;
@@ -101,6 +103,8 @@ event InitGame( string Options, out string ErrorMessage )
 	local string BossFromGameOptions;
 
  	Super.InitGame( Options, ErrorMessage );
+
+	InitSpawnCyclePresetList();
 
 //	AddMutator( "ControlledDifficulty.CD_Mutator", false );
 
@@ -175,15 +179,29 @@ event InitGame( string Options, out string ErrorMessage )
 	// Check validity of the Boss option
 	if ( Boss == "" )
 	{
-		Boss = "random";
+		Boss = "unmodded";
 	}
+
 	if ( !isRandomBossString(Boss) && !isPatriarchBossString(Boss) && !isVolterBossString(Boss) )
 	{
-		CDConsolePrint("WARNING invalid Boss setting \""$Boss$"\".  Valid settings for this option: patriarch, hans, random.  Setting Boss = random.");
-		Boss = "random";
+		CDConsolePrint("WARNING invalid Boss setting \""$Boss$"\"; Valid alternatives: patriarch, hans, or unmodded");
+		CDConsolePrint("Boss=unmodded (forced because \""$ Boss $"\" is invalid)");
+		Boss = "unmodded";
+	}
+	else
+	{
+		CDConsolePrint("Boss="$ Boss);
 	}
 
 	SaveConfig();
+}
+
+function InitSpawnCyclePresetList()
+{
+	if ( 0 == SpawnCyclePresetList.length )
+	{
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_beta_hoe_avg');
+	}
 }
 
 static function bool isRandomBossString( const out string s )
@@ -333,10 +351,6 @@ function CD_AIWaveInfo ParseSpawnCycleDef( string rawSchedule )
 	}
 
 	return CurWaveInfo;
-}
-
-static function GetMonsterSpawnVolume( EAIType ZedType )
-{
 }
 
 function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
@@ -625,10 +639,12 @@ function InitSpawnManager()
 {
 	local CDSpawnManager cdsm;
 	local int ExpectedWaveCount;
+	local array<string> CycleDefs;
+	local string OriginalSpawnCycle;
 
 	super.InitSpawnManager();
 
-	if ( SpawnManager.isA( 'CDSpawnManager' ) )
+	if ( SpawnManager.IsA( 'CDSpawnManager' ) )
 	{
 		`log("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
 		cdsm = CDSpawnManager( SpawnManager );
@@ -648,45 +664,79 @@ function InitSpawnManager()
 		CDConsolePrint("MaxMonsters=<unmodded default>");
 	}
 
-	CDConsolePrint( "Boss="$GetStringForBossSetting() );
-
+	// Back up the current SpawnCycle setting
+	OriginalSpawnCycle = SpawnCycle;
+	
+	// Assign a spawn definition array to CycleDefs (unless SpawnCycle=random)
 	if ( SpawnCycle == "ini" )
 	{
-		`log("Forcing a config reload because SpawnCycle="$SpawnCycle$"...");
+		// This doesn't seem to work (am I forcing a SaveConfig() beforehand?)
+		//`log("Forcing a config reload because SpawnCycle="$SpawnCycle$"...");
 		//ConsoleCommand("reloadcfg ControlledDifficulty.CD_Survival", true);
 		//ReloadConfig();
-
-		`log("Attempting to parse squad information in config...");
-		CustomWaveInfos = ParseFullSpawnCycle( SpawnCycleDefs );
-
-		// Number of parsed waves must match the current gamelength
-		// (Parsed waves only cover non-boss waves)
-		switch( GameLength )
-		{
-			case GL_Short:  ExpectedWaveCount = 4;  break;
-			case GL_Normal: ExpectedWaveCount = 7;  break;
-			case GL_Long:   ExpectedWaveCount = 10; break;
-		};
-	
-		if ( CustomWaveInfos.length != ExpectedWaveCount )
-		{
-			CDConsolePrint("WARNING Config defines "$CustomWaveInfos.length$" waves, but there are "$ExpectedWaveCount$" waves in this GameLength.");
-			CDConsolePrint("WARNING Setting SpawnCycle=unmodded for this session because of ini-GameLength wave count mismatch.");
-			SpawnCycle = "unmodded";
-			SquadParserState.ParseError = true;
-		}
-
-		if ( !SquadParserState.ParseError )
-		{
-			cdsm.SetCustomWaves( CustomWaveInfos );
-		}
+		CycleDefs = SpawnCycleDefs;
+	}
+	else if ( SpawnCycle == "unmodded" )
+	{
+		`log("Not using a SpawnCycle (value="$SpawnCycle$")");
 	}
 	else
 	{
-		`log("Not reading squad information from config (value="$SpawnCycle$")");
+		if ( !ResolveSpawnCyclePreset( SpawnCycle, CycleDefs ) )
+		{
+			SpawnCycle = "unmodded";
+		}
 	}
 
-	CDConsolePrint( "SpawnCycle="$SpawnCycle );
+	// Parse CycleDefs
+	if ( SpawnCycle != "unmodded" )
+	{
+		// Start by assuming this isn't going to work.
+		//
+		// If the SpawnCycle actually parses correctly, then
+		// we'll set SpawnCycle back to OriginalSpawnCycle
+		SpawnCycle = "unmodded"; 
+
+		if ( CycleDefs.length > 0 )
+		{
+			`log("Attempting to parse squad spawn info for SpawnCycle="$SpawnCycle$"...");
+			CustomWaveInfos = ParseFullSpawnCycle( CycleDefs );
+	
+			// Number of parsed waves must match the current gamelength
+			// (Parsed waves only cover non-boss waves)
+			switch( GameLength )
+			{
+				case GL_Short:  ExpectedWaveCount = 4;  break;
+				case GL_Normal: ExpectedWaveCount = 7;  break;
+				case GL_Long:   ExpectedWaveCount = 10; break;
+			};
+		
+			if ( CustomWaveInfos.length != ExpectedWaveCount )
+			{
+				CDConsolePrint("WARNING SpawnCycle="$SpawnCycle$" defines "$CustomWaveInfos.length$" waves, but there are "$ExpectedWaveCount$" waves in this GameLength");
+				SquadParserState.ParseError = true;
+			}
+	
+			if ( !SquadParserState.ParseError )
+			{
+				cdsm.SetCustomWaves( CustomWaveInfos );
+				SpawnCycle = OriginalSpawnCycle; // success
+			}
+		}
+		else if ( OriginalSpawnCycle == "ini" )
+		{
+			CDConsolePrint("WARNING No SpawnCycleDefs lines found.  These must be in KFGame.ini under the ControlledDifficulty.CD_Survival section to use SpawnCycle=ini.");
+		}
+	}
+
+	if ( OriginalSpawnCycle != SpawnCycle )
+	{
+		CDConsolePrint( "SpawnCycle="$ SpawnCycle $" (forced because \""$ OriginalSpawnCycle $"\" is invalid)" );
+	}
+	else
+	{
+		CDConsolePrint( "SpawnCycle="$ SpawnCycle );
+	}
 
 	if ( SpawnCycle == "unmodded" )
 	{
@@ -695,9 +745,100 @@ function InitSpawnManager()
 	}
 	else
 	{
-		CDConsolePrint( "AlbinoCrawlers=<overidden by spawncycle>" );
-		CDConsolePrint( "AlbinoAlphas=<overidden by spawncycle>" );
+		CDConsolePrint( "AlbinoCrawlers=<ignored because SpawnCycle is not unmodded>" );
+		CDConsolePrint( "AlbinoAlphas=<ignored because SpawnCycle is not unmodded>" );
 	}
+}
+
+function bool ResolveSpawnCyclePreset( const string CycleName, out array<string> CycleDefs )
+{
+//	local string TmpClassname;
+//	local class TmpClass;
+//	local object SCPresetBeforeCast;
+	local CD_SpawnCycle_Preset SCPreset;
+	local int i;
+
+//	// try to map SpawnCycle to a builtin name
+//	TmpClassname = "ControlledDifficulty.CD_SpawnCycle_Preset_"$ CycleName;
+//	TmpClass = class( DynamicLoadObject(TmpClassname, class'Class', true) );
+//
+//	if ( TmpClass == None )
+//	{
+//		CDConsolePrint("WARNING Unable to process SpawnCycle=\""$  CycleName $"\"");
+//		return false;
+//	}
+//
+//	`log("Class object loaded for name "$ TmpClassname $": "$ string(TmpClass));
+//
+//	SCPresetBeforeCast = new TmpClass;
+//
+//	`log("Instantiated SpawnCycle preset: "$ SCPresetBeforeCast);
+//
+//	SCPreset = CD_SpawnCycle_Preset(SCPresetBeforeCast);
+
+	// Avoidable linear search; this is another case where I wish unrealscript
+	// had an associative array/hashtable
+	for ( i = 0; i < SpawnCyclePresetList.length; i++ )
+	{
+		if ( CycleName == SpawnCyclePresetList[i].GetName() )
+		{
+			SCPreset = SpawnCyclePresetList[i];
+			break;
+		}
+	}
+
+	`log("SCPreset: "$ SCPreset);
+
+	if ( SCPreset == None )
+	{
+		CDConsolePrint("WARNING Not a recognized SpawnCycle value: "$ CycleName $"\"");
+		return false;
+	}
+
+	switch( GameLength )
+	{
+		case GL_Short:  SCPreset.GetShortSpawnCycleDefs( CycleDefs );  break;
+		case GL_Normal: SCPreset.GetNormalSpawnCycleDefs( CycleDefs ); break;
+		case GL_Long:   SCPreset.GetLongSpawnCycleDefs( CycleDefs );   break;
+	};
+       	
+	if ( 0 == CycleDefs.length )
+	{
+		CDConsolePrint( "WARNING SpawnCycle="$ CycleName $" exists but is not defined for the current GameLength.\n" $
+		                "   The following GameLength(s) are supported by SpawnCycle="$ CycleName $":\n" $
+		                "   " $ GetSupportedGameLengthString( SCPreset ) );
+		return false;
+       	}
+
+	return true;
+}
+
+static function string GetSupportedGameLengthString( CD_SpawnCycle_Preset SCPreset )
+{
+	local array<string> defs;
+	local string result;
+
+	result = "";
+
+	SCPreset.GetShortSpawnCycleDefs( defs );
+	if ( 0 < defs.length )
+	{
+		result $= "Short (GameLength=0), ";
+	}
+
+	SCPreset.GetNormalSpawnCycleDefs( defs );
+	if ( 0 < defs.length )
+	{
+		result $= "Normal (GameLength=1), ";
+	}
+
+	SCPreset.GetLongSpawnCycleDefs( defs );
+	if ( 0 < defs.length )
+	{
+		result $= "Long (GameLength=2), ";
+	}
+
+	return Left( result, Len( result ) - 2 );
 }
 
 exec function logControlledDifficulty( bool enabled )
@@ -768,6 +909,39 @@ exec function CDSpawnDetailsVerbose()
 
 	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
 	CDConsolePrintSpawnDetails( "full" );
+}
+
+exec function CDSpawnPresets()
+{
+	local int i;
+	local CD_SpawnCycle_Preset SCPreset;
+
+	for ( i = 0; i < SpawnCyclePresetList.length; i++ )
+	{
+		SCPreset = SpawnCyclePresetList[i];
+		CDConsolePrint( "   "$ GetLengthBadgeForPreset( SCPreset ) $" "$ SCPreset.GetName(), false );
+	}
+}
+
+function string GetLengthBadgeForPreset( CD_SpawnCycle_Preset SCPreset )
+{
+	local string result;
+	local array<string> defs;
+
+	result = "[";
+
+	SCPreset.GetShortSpawnCycleDefs( defs );
+	result $= ( 0 < defs.length ? "S" : "_" );
+
+	SCPreset.GetNormalSpawnCycleDefs( defs );
+	result $= ( 0 < defs.length ? "M" : "_" );
+
+	SCPreset.GetLongSpawnCycleDefs( defs );
+	result $= ( 0 < defs.length ? "L" : "_" );
+
+	result $= "]";
+
+	return result;
 }
 
 function CDConsolePrintScheduleSlug()
