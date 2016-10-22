@@ -829,7 +829,7 @@ static function string GetSupportedGameLengthString( CD_SpawnCycle_Preset SCPres
 	SCPreset.GetNormalSpawnCycleDefs( defs );
 	if ( 0 < defs.length )
 	{
-		result $= "Normal (GameLength=1), ";
+		result $= "Medium (GameLength=1), ";
 	}
 
 	SCPreset.GetLongSpawnCycleDefs( defs );
@@ -848,12 +848,17 @@ exec function logControlledDifficulty( bool enabled )
 	SaveConfig();
 }
 
-exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
+exec function CDSpawnSummaries( optional string CycleName, optional int AssumedPlayerCount = -255 )
 {
 	CDConsolePrintScheduleSlug();
 
-	if ( SpawnCycle == "unmodded" )
+	if ( SpawnCycle == "unmodded" && CycleName == "" )
 	{
+		CDConsolePrint("  Nothing to display because SpawnCycle=unmodded and no parameters were given.", false);
+		CDConsolePrint("  This command displays SpawnCycle summaries.  If this command is invoked with", false);
+		CDConsolePrint("  a string parameter, then this command interprets the parameter as a SpawnCycle", false);
+		CDConsolePrint("  name and attempts to display summaries for that cycle.  If invoked without", false);
+		CDConsolePrint("  parameters, this command displays summaries for the current SpawnCycle value.", false);
 		return;
 	}
 
@@ -868,7 +873,7 @@ exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
 		{
 			CDConsolePrint( "Unable to guess player count in netmode "$WorldInfo.NetMode, false );
 			CDConsolePrint( "Pass a player count as an argument to this console command, e.g.", false );
-			CDConsolePrint( "> cdSpawnSummaries 2", false );
+			CDConsolePrint( "> CDSpawnSummaries 2", false );
 			return;
 		}
 	}
@@ -882,7 +887,12 @@ exec function CDSpawnSummaries( optional int AssumedPlayerCount = -255 )
 		return;
 	}
 
-	CDConsolePrintSpawnSummaries( AssumedPlayerCount );
+	if ( "" == CycleName )
+	{
+		CycleName = SpawnCycle;
+	}
+
+	CDConsolePrintSpawnSummaries( CycleName, AssumedPlayerCount );
 }
 
 exec function CDSpawnDetails()
@@ -916,10 +926,20 @@ exec function CDSpawnPresets()
 	local int i;
 	local CD_SpawnCycle_Preset SCPreset;
 
+	CDConsolePrint( "  Total available SpawnCycle presets: "$ SpawnCyclePresetList.length, false );
+
+	if ( 0 < SpawnCyclePresetList.length )
+	{
+		CDConsolePrint( "  Listing format:", false);
+		CDConsolePrint( "    <SpawnCycle name> [SML]", false );
+		CDConsolePrint( "  The SML letters denote supported game lengths (Short/Medium/Long)", false);
+		CDConsolePrint( "  --------------------------------------------------------------------------", false );
+	}
+
 	for ( i = 0; i < SpawnCyclePresetList.length; i++ )
 	{
 		SCPreset = SpawnCyclePresetList[i];
-		CDConsolePrint( "   "$ GetLengthBadgeForPreset( SCPreset ) $" "$ SCPreset.GetName(), false );
+		CDConsolePrint( "    "$ SCPreset.GetName()$" "$ GetLengthBadgeForPreset( SCPreset ), false );
 	}
 }
 
@@ -1012,7 +1032,7 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 	}
 }
 
-function CDConsolePrintSpawnSummaries( int PlayerCount )
+function CDConsolePrintSpawnSummaries( string CycleName, int PlayerCount )
 {
 	local int WaveIndex;
 	local CD_AIWaveInfo wi;
@@ -1021,7 +1041,6 @@ function CDConsolePrintSpawnSummaries( int PlayerCount )
 
 	if ( PlayerCount <= 0 )
 	{
-		// TODO complain about being handed nonpositive players
 		PlayerCount = 1;
 	}
 
@@ -1070,7 +1089,7 @@ function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCoun
 
 	squadIndex = 0;
 
-	while ( result.Total < WaveTotalAI )
+	while ( result.GetTotal() < WaveTotalAI )
 	{
 		CDSquad = WaveInfo.CustomSquads[squadIndex++ % WaveInfo.CustomSquads.length];
 
@@ -1079,7 +1098,7 @@ function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCoun
 		for ( elemIndex = 0; elemIndex < CustomMonsterList.length; elemIndex++ )
 		{
 
-			remainingBudget = WaveTotalAI - result.total;
+			remainingBudget = WaveTotalAI - result.GetTotal();
 
 			if ( remainingBudget <= 0 )
 			{
