@@ -8,22 +8,6 @@ class CD_Survival extends KFGameInfo_Survival;
 
 `include(CD_BuildInfo.uci)
 
-struct StructSquadParserState
-{
-	// all indexes are zero-based
-	var int WaveIndex;
-	var int SquadIndex;
-	var int ElemIndex;
-
-	var bool ParseError;
-
-	structdefaultproperties
-	{
-		ParseError=false
-	}
-};
-
-
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at
 // numplayers >= 3, and faking players this way does the same; you can always
@@ -71,13 +55,6 @@ var config bool bLogControlledDifficulty;
 // all other values are reserved for potential future preset names
 var config string SpawnCycle;
 var config array<string> SpawnCycleDefs;
-var StructSquadParserState SquadParserState;
-
-const MinZedsInElement = 1;
-const MaxZedsInElement = 10;
-
-const MinZedsInSquad = 1;
-const MaxZedsInSquad = 10;
 
 // "hans" or "volter": forces the hans boss wave
 // "pat", "patty", "patriarch": forces the patriarch boss wave
@@ -88,7 +65,7 @@ var CD_DifficultyInfo CustomDifficultyInfo;
 
 var array<CD_AIWaveInfo> CustomWaveInfos;
 
-var KFGameViewportClient CachedGVC;
+var CD_ConsolePrinter GameInfo_CDCP;
 
 var array<CD_SpawnCycle_Preset> SpawnCyclePresetList;
 
@@ -250,261 +227,6 @@ function string getStringForBossSetting()
 	}
 }
 
-function array<CD_AIWaveInfo> ParseFullSpawnCycle( array<string> fullRawSchedule )
-{
-	local array<CD_AIWaveInfo> WaveInfosFromConfig;
-
-	for ( SquadParserState.WaveIndex = 0; SquadParserState.WaveIndex < fullRawSchedule.length; SquadParserState.WaveIndex++ )
-	{
-		`log("Attempting to parse wave "$(SquadParserState.WaveIndex + 1)$"...");
-		WaveInfosFromConfig.AddItem( ParseSpawnCycleDef( fullRawSchedule[SquadParserState.WaveIndex] ) );
-		
-		// If the wave was empty, log a fatal parse error, but keep processing later waves to
-		// try to log as much information/errors as possible
-		if ( WaveInfosFromConfig[WaveInfosFromConfig.length - 1].CustomSquads.length < 1 )
-		{
-			CDConsolePrintWaveParseError("No valid squads found in this wave");
-		}
-	}
-
-	return WaveInfosFromConfig;
-}
-
-function CD_AIWaveInfo ParseSpawnCycleDef( string rawSchedule )
-{
-	local array<string> SquadDefs;
-	local array<string> ElemDefs;
-	local CD_AIWaveInfo CurWaveInfo;
-	local CD_AISpawnSquad CurSquad;
-	local AISquadElement CurElement;
-	local ESquadType LargestVolumeInSquad;
-	local ESquadType CurElementVolume;
-	local int CurSquadSize;
-
-	CurWaveInfo = new class'ControlledDifficulty.CD_AIWaveInfo';
-
-	// Split on , and drop empty elements
-	SquadDefs = SplitString( rawSchedule, ",", true );
-
-	// Iterate through the squads
-	for ( SquadParserState.SquadIndex = 0; SquadParserState.SquadIndex < SquadDefs.length; SquadParserState.SquadIndex++ )
-	{
-		CurSquad = new class'ControlledDifficulty.CD_AISpawnSquad';
-		CurSquadSize = 0;
-
-		LargestVolumeInSquad = EST_Crawler;
-
-		// Squads may in general be heterogeneous, e.g.
-		// 2Cyst_3Crawler_2Gorefast_2Siren
-		//
-		// But specific squads may be homogeneous, e.g. 
-		// 6Crawler
-		//
-		// In the following code, we split on _ and loop through
-		// each element, populating a CD_AISpawnSquad as we go.
-		ElemDefs = SplitString( SquadDefs[SquadParserState.SquadIndex], "_", true );
-
-		for ( SquadParserState.ElemIndex = 0; SquadParserState.ElemIndex < ElemDefs.length; SquadParserState.ElemIndex++ )
-		{
-			if ( !ParseSquadElement( ElemDefs[SquadParserState.ElemIndex], CurElement ) )
-			{
-				continue; // Parse error in that element
-			}
-
-			`log("[squad#"$SquadParserState.SquadIndex$"] Parsed squad element: "$CurElement.Num$"x"$CurElement.Type);
-
-			CurSquad.AddSquadElement( CurElement );
-			CurSquadSize += CurElement.Num;
-
-			// Update LargestVolumeInSquad
-			CurElementVolume = AIClassList[CurElement.Type].default.MinSpawnSquadSizeType;
-
-			// ESquadType is biggest first (boss) to smallest last (crawler)
-			// blame tripwire
-			if ( CurElementVolume < LargestVolumeInSquad )
-			{
-				LargestVolumeInSquad = CurElementVolume;
-			}
-		}
-
-		// Check overall zed count of the squad (summing across all elements)
-		if ( CurSquadSize < MinZedsInSquad )
-		{
-			CDConsolePrintSquadParseError("Squad size \"$CurSquadSize$\" is too small.  "$
-			    "Must be between "$MinZedsInSquad$" to "$MaxZedsInSquad$" (inclusive).");
-			continue;
-		}
-		if ( CurSquadSize > MaxZedsInSquad )
-		{
-			CDConsolePrintSquadParseError("Squad size \"$CurSquadSize$\" is too large.  "$
-			    "Must be between "$MinZedsInSquad$" to "$MaxZedsInSquad$" (inclusive).");
-			continue;
-		}
-
-		// I think the squad volume type doesn't even matter in most cases,
-		// judging from KFAISpawnManager and the shambholic state of this
-		// property on the official TWI squad archetypes
-		CurSquad.MinVolumeType = LargestVolumeInSquad;
-		`log("Set spawn volume type: "$CurSquad.MinVolumeType);
-
-		CurWaveInfo.CustomSquads.AddItem(CurSquad);
-	}
-
-	return CurWaveInfo;
-}
-
-function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
-{
-	local int ElemStrLen, UnicodePoint, ElemCount, i;
-	local string ElemType;
-	local EAIType ElemEAIType;
-	local bool IsSpecial;
-
-	IsSpecial = false;
-	ElemStrLen = Len( ElemDef );
-
-	if ( 0 == ElemStrLen )
-	{
-		return CDConsolePrintElemParseError("Spawn elements must not be empty.");
-	}
-
-	// Locate the first index into ElemDef where the count
-	// of zeds in the element ends and the type of zed should begin
-	for ( i = 0; i < ElemStrLen; i++ )
-	{
-		// Get unicode codepoint (as int) for char at index i
-		UnicodePoint = Asc( Mid( ElemDef, i, 1 ) );
-
-		// Check for low ascii numerals [0-9]
-		if ( !( 48 <= UnicodePoint && UnicodePoint <= 57 ) )
-		{
-			break; // not a numeral
-		}
-	}
-
-	// The index must not be at the very beginning or end of the string.
-	// If that's true, then we can assume it was malformed.
-	if ( i <= 0 || i >= ElemStrLen )
-	{
-		return CDConsolePrintElemParseError("Spawn element \"$ElemDef$\" could not be parsed.");
-	}
-
-	// Check whether the element string ends with a *.  The
-	// asterisk suffix denotes special/albino zeds.  It is only
-	// valid on crawlers and alphas (when this comment was written,
-	// at least).  We will have to check that constraint later so
-	// that we correctly reject requests for nonexistent specials,
-	// e.g. albino scrake.
-	if ( "*" == Right( ElemDef, 1 ) )
-	{
-		IsSpecial = true;
-
-		// Check that the zed name is not empty
-		if ( i >= ElemStrLen - 1)
-		{
-			return CDConsolePrintElemParseError("Spawn element \"$ElemDef$\" could not be parsed.");
-		}
-	}
-
-	// Cut string into two parts.
-	//
-	// Left is the count as a stringified int.  We know it is a
-	// parseable int because of the preceding unicode check loop.
-	//
-	// Right is possibly the name of a zed as a string, but it is
-	// totally unverified at this stage.  We exclude the * suffix
-	// (if it was detected above).
-	ElemCount = int( Mid( ElemDef, 0, i ) );
-	ElemType  = Mid( ElemDef, i, ElemStrLen - i - ( IsSpecial ? 1 : 0 ) );
-
-	// Check value range for ElemCount
-	if ( ElemCount < MinZedsInElement )
-	{
-		return CDConsolePrintElemParseError("Element count \"$ElemCount$\" is not positive.  "$
-		           "Must be between "$MinZedsInElement$" to "$MaxZedsInElement$" (inclusive).");
-	}
-	if ( ElemCount > MaxZedsInElement )
-	{
-		return CDConsolePrintElemParseError("Element count \"$ElemCount$\" is too large.  "$
-		           "Must be between "$MinZedsInElement$" to "$MaxZedsInElement$" (inclusive).");
-	}
-
-	// Convert user-provided zed type name into a zed type enum
-	ElemEAIType = class'CD_ZedNameUtils'.static.GetZedType( ElemType );
-
-	// Was it a valid zed type name?
-	if ( 255 == ElemEAIType )
-	{
-		return CDConsolePrintElemParseError("\""$ElemType$"\" does not appear to be a zed name."$
-		              "  Must be a zed name or abbreviation like cyst, fp, etc.");
-	}
-
-	// If the ElemDef requested a special zed, then we need to
-	// check that the zed described by ElemType actually has a
-	// special/albino variant.
-	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler ) )
-	{
-		return CDConsolePrintElemParseError("\""$ElemType$"\" does not have a special variant."$
-		      "  Remove the trailing asterisk from \""$ElemDef$"\" to spawn a non-special equivalent.");
-	}
-
-	SquadElement.Type = ElemEAIType;
-	SquadElement.Num = ElemCount;
-	
-	// Apply custom class overrides that control albinism
-	if ( ElemEAIType == AT_AlphaClot )
-	{
-		SquadElement.CustomClass = IsSpecial ?
-			class'CD_Pawn_ZedClot_Alpha_Special' :
-			class'CD_Pawn_ZedClot_Alpha_Regular' ;
-	}
-	else if ( ElemEAIType == AT_Crawler )
-	{
-		SquadElement.CustomClass = IsSpecial ?
-			class'CD_Pawn_ZedCrawler_Special' :
-			class'CD_Pawn_ZedCrawler_Regular' ;
-	}
-	else
-	{
-		SquadElement.CustomClass = None;
-	}
-
-	return true;
-}
-
-function bool CDConsolePrintWaveParseError( const string message )
-{
-	SquadParserState.ParseError = true;
-
-	CDConsolePrint("WARNING Wave definition parse error:\n" $
-	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
-	               "   >> Message: "$ message);
-	return false;
-}
-
-function bool CDConsolePrintSquadParseError( const string message )
-{
-	SquadParserState.ParseError = true;
-
-	CDConsolePrint("WARNING Squad definition parse error:\n" $
-	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
-                       "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
-	               "   >> Message: "$ message);
-	return false;
-}
-
-function bool CDConsolePrintElemParseError( const string message )
-{
-	SquadParserState.ParseError = true;
-
-	CDConsolePrint("WARNING Squad element definition parse error:\n" $
-	               "      WaveNumber: " $ string(SquadParserState.WaveIndex + 1) $ " (SpawnCycleDefs, one-based)\n" $
-                       "      SquadNumber: " $ string(SquadParserState.SquadIndex + 1) $ " (comma-separated element in the line, one-based)\n" $
-                       "      ElementNumber: " $ string(SquadParserState.ElemIndex + 1) $ " (underscore-separated element in the squad, one-based)\n" $
-	               "   >> Message: "$ message);
-	return false;
-}
-
 function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
 {
 	local class killerPawnClass;
@@ -641,6 +363,7 @@ function InitSpawnManager()
 	local int ExpectedWaveCount;
 	local array<string> CycleDefs;
 	local string OriginalSpawnCycle;
+	local CD_SpawnCycleParser SCParser;
 
 	super.InitSpawnManager();
 
@@ -699,8 +422,11 @@ function InitSpawnManager()
 
 		if ( CycleDefs.length > 0 )
 		{
-			`log("Attempting to parse squad spawn info for SpawnCycle="$SpawnCycle$"...");
-			CustomWaveInfos = ParseFullSpawnCycle( CycleDefs );
+			SCParser = new class'CD_SpawnCycleParser';
+			SCParser.SetConsolePrinter( GameInfo_CDCP );
+
+			`log("Attempting to parse squad spawn info for SpawnCycle="$ OriginalSpawnCycle $"...");
+			CustomWaveInfos = SCParser.ParseFullSpawnCycle( CycleDefs, AIClassList );
 	
 			// Number of parsed waves must match the current gamelength
 			// (Parsed waves only cover non-boss waves)
@@ -713,11 +439,9 @@ function InitSpawnManager()
 		
 			if ( CustomWaveInfos.length != ExpectedWaveCount )
 			{
-				CDConsolePrint("WARNING SpawnCycle="$SpawnCycle$" defines "$CustomWaveInfos.length$" waves, but there are "$ExpectedWaveCount$" waves in this GameLength");
-				SquadParserState.ParseError = true;
+				CDConsolePrint("WARNING SpawnCycle="$ OriginalSpawnCycle $" defines "$CustomWaveInfos.length$" waves, but there are "$ExpectedWaveCount$" waves in this GameLength");
 			}
-	
-			if ( !SquadParserState.ParseError )
+			else if ( !SCParser.HasParseError() )
 			{
 				cdsm.SetCustomWaves( CustomWaveInfos );
 				SpawnCycle = OriginalSpawnCycle; // success
@@ -850,9 +574,14 @@ exec function logControlledDifficulty( bool enabled )
 
 exec function CDSpawnSummaries( optional string CycleName, optional int AssumedPlayerCount = -255 )
 {
-	CDConsolePrintScheduleSlug();
+	if ( CycleName == "" )
+	{
+		CycleName = SpawnCycle;
+	}
 
-	if ( SpawnCycle == "unmodded" && CycleName == "" )
+	CDConsolePrintScheduleSlug( CycleName );
+
+	if ( SpawnCycle == "unmodded" )
 	{
 		CDConsolePrint("  Nothing to display because SpawnCycle=unmodded and no parameters were given.", false);
 		CDConsolePrint("  This command displays SpawnCycle summaries.  If this command is invoked with", false);
@@ -887,38 +616,53 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 		return;
 	}
 
-	if ( "" == CycleName )
+	CDConsolePrintSpawnSummaries( CycleName, AssumedPlayerCount, GameInfo_CDCP );
+}
+
+exec function CDSpawnDetails( optional string CycleName )
+{
+	if ( CycleName == "" )
 	{
 		CycleName = SpawnCycle;
 	}
 
-	CDConsolePrintSpawnSummaries( CycleName, AssumedPlayerCount );
-}
-
-exec function CDSpawnDetails()
-{
-	CDConsolePrintScheduleSlug();
+	CDConsolePrintScheduleSlug( CycleName );
 
 	if ( SpawnCycle == "unmodded" )
 	{
+		CDPrintSpawnDetailsHelp();
 		return;
 	}
 
 	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
-	CDConsolePrintSpawnDetails( "short" );
+	CDConsolePrintSpawnDetails( CustomWaveInfos /* TODO not this */, "short", GameInfo_CDCP );
 }
 
-exec function CDSpawnDetailsVerbose()
+exec function CDSpawnDetailsVerbose( optional string CycleName )
 {
-	CDConsolePrintScheduleSlug();
+	if ( CycleName == "" )
+	{
+		CycleName = SpawnCycle;
+	}
+
+	CDConsolePrintScheduleSlug( CycleName );
 
 	if ( SpawnCycle == "unmodded" )
 	{
+		CDPrintSpawnDetailsHelp();
 		return;
 	}
 
 	CDConsolePrint("Printing zed spawn cycles on each wave...", false);
-	CDConsolePrintSpawnDetails( "full" );
+	CDConsolePrintSpawnDetails( CustomWaveInfos /* TODO not this */, "full", GameInfo_CDCP );
+}
+
+function CDPrintSpawnDetailsHelp()
+{
+	CDConsolePrint( "  This command displays the exact composition and ordering of zed squads that", false );
+	CDConsolePrint( "  spawn when the CD option SpawnCycle is not \"unmodded\" (the default).", false );
+	CDConsolePrint( "  Either change SpawnCycle to something other than \"unmodded\" or invoke", false );
+	CDConsolePrint( "  this command with the name of the SpawnCycle that you want to examine.", false );
 }
 
 exec function CDSpawnPresets()
@@ -964,23 +708,23 @@ function string GetLengthBadgeForPreset( CD_SpawnCycle_Preset SCPreset )
 	return result;
 }
 
-function CDConsolePrintScheduleSlug()
+function CDConsolePrintScheduleSlug( string CycleName )
 {
-	if ( SpawnCycle == "unmodded" )
+	if ( CycleName == "unmodded" )
 	{
-		CDConsolePrint("SpawnCycle="$SpawnCycle$" (zeds spawn randomly, as in standard KF2)", false);
+		CDConsolePrint("  Considering SpawnCycle="$CycleName$" (zeds spawn randomly, as in standard KF2)", false);
 	}
-	else if ( SpawnCycle == "ini" )
+	else if ( CycleName == "ini" )
 	{
-		CDConsolePrint("SpawnCycle="$SpawnCycle$" (zeds spawn according to the config file)", false);
+		CDConsolePrint("  Considering SpawnCycle="$CycleName$" (zeds spawn according to the config file)", false);
 	}
 	else
 	{
-		CDConsolePrint("SpawnCycle="$SpawnCycle$" (zeds spawn according to preset "$SpawnCycle$")", false);
+		CDConsolePrint("  Considering SpawnCycle="$CycleName$" (zeds spawn according to preset "$SpawnCycle$")", false);
 	}
 }
 
-function CDConsolePrintSpawnDetails( string Verbosity )
+static function CDConsolePrintSpawnDetails( const out array<CD_AIWaveInfo> WaveInfos, const string Verbosity, const CD_ConsolePrinter CDCP )
 {
 	local int WaveIndex, SquadIndex, ElemIndex;
 	local string s;
@@ -990,9 +734,9 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 	local array<string> ElemList;
 	local string ZedNameTmp;
 
-	for ( WaveIndex = 0; WaveIndex < CustomWaveInfos.length; WaveIndex++ )
+	for ( WaveIndex = 0; WaveIndex < WaveInfos.length; WaveIndex++ )
 	{
-		wi = CustomWaveInfos[WaveIndex];
+		wi = WaveInfos[WaveIndex];
 		SquadList.length = 0;
 
 		for ( SquadIndex = 0; SquadIndex < wi.CustomSquads.length; SquadIndex++ )
@@ -1028,11 +772,11 @@ function CDConsolePrintSpawnDetails( string Verbosity )
 		}
 
 		JoinArray( SquadList, s, ", " );
-		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$s, false );
+		CDCP.Print( "["$GetShortWaveName( WaveIndex )$"] "$s, false );
 	}
 }
 
-function CDConsolePrintSpawnSummaries( string CycleName, int PlayerCount )
+function CDConsolePrintSpawnSummaries( string CycleName, int PlayerCount, CD_ConsolePrinter CDCP )
 {
 	local int WaveIndex;
 	local CD_AIWaveInfo wi;
@@ -1058,12 +802,12 @@ function CDConsolePrintSpawnSummaries( string CycleName, int PlayerCount )
 		GameSummary.AddParamToSelf( WaveSummary );
 		WaveSummaryString = WaveSummary.GetString();
 
-		CDConsolePrint( "["$GetShortWaveName( WaveIndex )$"] "$WaveSummaryString, false );
+		CDCP.Print( "["$GetShortWaveName( WaveIndex )$"] "$WaveSummaryString, false );
 	}
 
-	CDConsolePrint( " >> Projected Game Totals:", false );
-	CDConsolePrint( "         "$GameSummary.GetString(), false );
-	CDConsolePrint( " >> Boss wave not included in preceding tally.", false );
+	CDCP.Print( " >> Projected Game Totals:", false );
+	CDCP.Print( "         "$GameSummary.GetString(), false );
+	CDCP.Print( " >> Boss wave not included in preceding tally.", false );
 }
 
 function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCount, out CD_WaveSummary result )
@@ -1112,23 +856,6 @@ function GetCDWaveSummary( CD_AIWaveInfo WaveInfo, int WaveIndex, int PlayerCoun
 	}
 }
 
-function CDConsolePrint( string message, optional bool autoPrefix = true )
-{
-	if ( CachedGVC == None )
-	{
-		CachedGVC = KFGameViewportClient(class'GameEngine'.static.GetEngine().GameViewport);
-	}
-
-	if ( autoPrefix )
-	{
-		CachedGVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
-	}
-	else
-	{
-		CachedGVC.ViewportConsole.OutputTextLine(message);
-	}
-}
-
 function CDConsolePrintHelpForSpawnDetails()
 {
 	CDConsolePrint( "This command displays the currently selected CD spawn cycle.", false );
@@ -1171,6 +898,11 @@ static function string GetShortWaveName( int WaveIndex )
 	return s;
 }
 
+function CDConsolePrint( string message, optional bool autoPrefix = true )
+{
+	GameInfo_CDCP.Print( message, autoPrefix );
+}
+
 defaultproperties
 {
 	GameConductorClass=class'ControlledDifficulty.CD_DummyGameConductor'
@@ -1182,4 +914,9 @@ defaultproperties
 	SpawnManagerClasses(2)=class'ControlledDifficulty.CDSpawnManager_Long'
 
 	PlayerControllerClass=class'ControlledDifficulty.CD_PlayerController'
+
+	Begin Object Class=CD_ConsolePrinter Name=Default_CDCP
+	End Object
+
+	GameInfo_CDCP=Default_CDCP
 }
