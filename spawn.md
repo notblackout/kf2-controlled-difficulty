@@ -10,7 +10,10 @@ With those caveats, here's the draft documentation...
 
 ## Overview
 
-Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When enabled, it bypasses standard KF2's random zed spawns and instead spawns a user-specified list of zed squads in predictable order.  _TODO: I want eventually include popular spawn lists in CD itself, selectable by a simple in-game option, with no manual list-editing required.  I will mention it here when implemented._
+Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When enabled, it bypasses standard KF2's random zed spawns and instead spawns a user-specified list of zed squads in predictable order.  There are two ways to activate this feature.
+
+* `SpawnCycle=<name_of_preset>` activates one of CD's builtin, standard, handcrafted spawnlists.  The command `CDSpawnPresets` lists all available preset names.  This is easy to use and the presets are not customizable.
+* `SpawnCycle=ini` tells CD to look in KFGame.ini for a spawnlist.  This provides maximum control.  You can control every zed that spawns, in what squads, and in what order, on every wave.  This is highly customizable and comparatively harder to use than a named preset.
 
 With this system, it is possible to define waves of zeds with practically any difficulty level. Crucially, it is stable and repeatable.  Runs made with this system in place are easier to compare, because players using the same config will see the same zeds in the same spawn order on every attempt.  Only selection of spawnpoints is left to chance, but that tends to have relatively little importance on linear challenge maps.
 
@@ -24,15 +27,15 @@ A squad is a predefined group of zeds that the game attempts to spawn simultaneo
 * 2 slashers, 3 gorefasts, and a scrake
 * 3 fleshpounds
 
-Standard KF2 comes with predefined squad definitions, called "archetypes", created by  Tripwire.  For each combination of difficulty+gamelength+wavenumber, the game also has a list of squad archetypes allowed to spawn in that wave.  For a full list of these archetypes, consult [Simple Cat's KF2 spreadsheet](https://docs.google.com/spreadsheets/d/1GDpg2mN1l_86U_RaDug0glFx8cZCuErwxZLiBKl9SyY) or open the KF2 SDK and browse Packages->Gameplay->GP_Spawning_ARCH
+Standard KF2 comes with predefined squad definitions, called "archetypes", created by  Tripwire.  A list of archetypes is associated with each combination of difficulty+gamelength+wavenumber.  For a full list of these archetypes, consult [Simple Cat's KF2 spreadsheet](https://docs.google.com/spreadsheets/d/1GDpg2mN1l_86U_RaDug0glFx8cZCuErwxZLiBKl9SyY) or open the KF2 SDK and browse Packages->Gameplay->GP_Spawning_ARCH
 
-When a wave starts, the game creates an initially-empty list.  The game adds all of the wave's "normal squads" as described in Simple Cat's spreadsheet to the list.  The game then randomly selects one "special squad" as described in Simple Cat's spreadsheet and adds it to the list.  The game then randomly shuffles the entire list.
+When a wave starts, the game creates an initially-empty squadlist.  The game iterates through all "normal squad" archetypes, adding each one to the its list.  The game then randomly selects one "special squad" archetype and adds it to the squadlist.  The game then randomly shuffles the entire squadlist.
 
-The game then iterates through the shuffled list, spawning zeds as it goes.
+The game then spawns each squad in the squadlist.
 
-If the game reaches the end of the list before the wave ends, then it discards the old list and repeats the entire list-building process, but with one exception: on the 2nd, 4th, 6th, ... lists, the game only uses regular squads.  This creates a natural rhythm: the beginning of a wave tends to be more hectic because the spawn list includes a special squad, but that is followed by a less hectic spawn list with no special squad, then there is another spawn list with a special squad that makes the game more hectic, etc.
+If the game reaches the end of the squadlist before the wave ends, then it discards the used-up squadlist and repeats entire squadlist-building process from the start.  However, there is one special consideration: on the 2nd, 4th, 6th, ... squadlists, the game only uses "normal squad" archetypes.  It does not spawn a "special squad" archetype on these even-numbered squadlists.  This behavior creates a natural hard-easy-hard-easy-... rhythm.  The beginning of a wave tends to be more hectic because the spawn list includes a special squad, but that is followed by a less hectic spawn list with no special squad, then there is another spawn list with a special squad that makes the game more hectic, etc.
 
-Note that the name "normal squad" is somewhat misleading.  In later waves on higher difficulties, a "normal squad" may include up to one scrake. For example, "normal squads" on Wave 10 HOE guarantee at least two scrakes per pass through the spawn list, even with no special squad.
+Note that "normal squad" is somewhat misleading.  In later waves on higher difficulties, a "normal squad" may include up to one scrake. For example, there are two separate "normal squad" archetypes on Wave 10 HOE that have one scrake each.  This means even the squadlists without a "special squad" archetype will still have two scrakes, and squadlists with a "special squad" archytpes have two extra scrakes mixed in.
 
 This system removes player control over difficulty.  It has two key problems:
 
