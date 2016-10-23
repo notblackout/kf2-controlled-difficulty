@@ -108,7 +108,7 @@ Whereas all of the following strings are invalid:
 
 At the time this document was last updated, there are two albino or special zed variants:
 
-* AL(PHA)\* (Albino Alpha Clot)
+* AL(PHA)\*, CA\*, ClotA\* (Albino Alpha Clot)
 * CR(AWLER)\* (Albino Crawler)
 
 The asterisk suffix makes these zeds albino/special.  For example, "Crawler\*" would spawn an gas grawler and "AL\*" would spawn an alpha clot.  Appending a * character to a zed that has no albino variant generates an error message and causes the SpawnCycle to be rejected.
