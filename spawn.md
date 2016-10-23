@@ -49,13 +49,11 @@ This system removes player control over difficulty.  It has two key problems:
 
 ## Benefits of CD's `SpawnCycle` System
 
-CD lets the user define, for each wave, exactly what squads spawn and in what order.  If the user-provided list is shorter than the wave, then it repeats in order until the wave ends.  This offers both fine control and reproducibility.
+CD lets the user define, for each wave, exactly what squads spawn and in what order.  This offers both fine control and reproducibility.
 
 **Fine control:** Specify as many or as few squads as you want. Compose squads with whatever combination of zeds you want. CD spawns zeds as listed without shuffling.  This system supports all squads used in the base game, but also permits squads unseen in the base game (e.g. 4 FP), should you wish to use such squads.
 
 **Reproducibility:** This system removes random spawn list shuffling.  The only random aspect is spawnpoint selection.  On solo maps like Hillside or Midnightpark, spawnpoint selection is nearly irrelevant, and only zed spawn order and rate really matters.  This is where deterministic spawns really help.  Once you've set the spawn list and rate, every run presents effectively identical difficulty.  The game doesn't randomly get harder or easier from one attempt to the next depending on random list generation and shuffling, like in the standard game.  This takes a major luck aspect out of challenges.
-
-
 
 ## Configuration Syntax
 
@@ -65,14 +63,19 @@ All of the following options live under the `[ControlledDifficulty.CD_Survival` 
 
 Values for `SpawnCycle`:
 
-* unmodded: use standard KF2's randomized spawn system
-* ini: spawn zeds according to the `SpawnCycleDefs` settings in `KFGame.ini`
+* unmodded: Use standard KF2's randomized spawn system
+* ini: Spawn zeds according to the `SpawnCycleDefs` settings in `KFGame.ini`
+* anything else: Interpreted as the name of `SpawnCycle` preset.  Must be listed in `CDSpawnPresets` and must support the selected game length.
 
 `SpawnCycle=<value>` can be appended to the `open` command used to start CD.
 
 `SpawnCycleDefs` can only appear in `KFGame.ini`, not in the `open` command.  This is an array of strings defining a list of squads to spawn in a particular wave.  The first `SpawnCycleDefs` that appears in `KFGame.ini` controls Wave 1, the second controls Wave 2, etc.  The number of `SpawnCycleDefs` must match the game length or an error message will be printed at game startup and CD will revert to unmodded spawn behavior.
 
 A single `SpawnCycleDefs` line for a wave is a comma-separated list of squads.  Squads are comprised of one or more underscore-separated elements, where each element is a number and a zed type.  This allows for heterogeneous squads.
+
+The squads on each `SpawnCycleDefs` are spawned in the order listed.  If only part of a squad can be spawned (because of `MaxMonsters`), then zeds are spawned left-to-right within the squad.  For example, a hypothetical 1Stalker_1Cyst squad will spawn the stalker first and the cyst second.
+
+If CD reaches the end of a `SpawnCycleDefs` list before the end of the wave, then CD goes back to the beginning of the `SpawnCycleDefs` line and repeats it.  This is why they're called cycles.  They repeat as necessary to supply the number of zeds required for the selected difficulty, wave number, and player count.
 
 Each squad must contain between one and ten zeds (inclusive).  Each wave defined with `SquadCycleDefs` should have at least one squad.
 
