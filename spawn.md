@@ -20,7 +20,7 @@ To turn it off, set `SpawnCycle=unmodded`.  It is off by default.
 Because the `SpawnCycle` system spawns zeds in a fixed order, it avoids a significant aspect of luck when comparing challenge runs.  The only aspect of spawning it does not control is spawnpoint selection.
 
 
-## Background
+## Background: Details about KF2's Spawn System
 
 A squad is a predefined group of zeds that the game attempts to spawn simultaneously.  Examples of squads that the standard game can spawn:
 
