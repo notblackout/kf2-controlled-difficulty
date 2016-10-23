@@ -384,7 +384,7 @@ function InitSpawnManager()
 		}
 	}
 
-	if ( 0 == ActiveWaveinfos.length )
+	if ( 0 == ActiveWaveinfos.length && SpawnCycle != "unmodded" )
 	{
 		GameInfo_CDCP.Print( "SpawnCycle=unmodded (forced because \""$ SpawnCycle $"\" is invalid or does not support this game length)" );
 		SpawnCycle = "unmodded";
