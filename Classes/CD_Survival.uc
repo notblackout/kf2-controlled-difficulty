@@ -173,71 +173,34 @@ event InitGame( string Options, out string ErrorMessage )
 	SaveConfig();
 }
 
-function InitSpawnCyclePresetList()
-{
-	if ( 0 == SpawnCyclePresetList.length )
-	{
-		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_beta_hoe_avg');
-	}
-}
-
-static function bool isRandomBossString( const out string s )
-{
-	return s == "" || s ~= "random" || s ~= "unmodded";
-}
-
-function bool isRandomBoss()
-{
-	return isRandomBossString( Boss );
-}
-
-static function bool isPatriarchBossString( const out string s )
-{
-	return s ~= "patriarch" || s~= "patty" || s ~= "pat";
-}
-
-function bool isPatriarchBoss()
-{
-	return isPatriarchBossString( Boss );
-}
-
-static function bool isVolterBossString( const out string s )
-{
-	return s ~= "hans" || s ~= "volter" || s ~= "moregas";
-}
-
-function bool isVolterBoss()
-{
-	return isVolterBossString( Boss );
-}
-
-function string getStringForBossSetting()
-{
-	if ( isPatriarchBoss() )
-	{
-		return "patriarch";
-	}
-	else if ( isVolterBoss() )
-	{
-		return "volter";
-	}
-	else
-	{
-		return "random";
-	}
-}
-
+/* 
+ * We override this function for the sole purpose of hiding
+ * our custom CD_ZedPawn classnames from the kill ticker.
+ * classname literals are embedded in the internationalization
+ * assets, so it's impossible to display custom zed class names
+ * properly on the client's zed kill ticker without a
+ * specifically client-side mod, which I don't want to do.
+ *
+ * This class intercepts outgoing kill ticker messages mentioning
+ * a CD_ZedPawn class and replaces that class with its standard
+ * KF_ZedPawn equivalent.
+ *
+ * This prevents the client from falling back on its ugly
+ * "I don't know how to internationalize this string" behavior,
+ * which is something like "?<Package.Classname>?".
+ */
 function BroadcastDeathMessage(Controller Killer, Controller Other, class<DamageType> damageType)
 {
 	local class killerPawnClass;
 
 	if ( (Killer == Other) || (Killer == None) )
-	{	//suicide
+	{
+		// suicide
 		BroadcastLocalized(self, class'KFLocalMessage_Game', KMT_Suicide, None, Other.PlayerReplicationInfo);
 	}
 	else
 	{
-		if(Killer.IsA('KFAIController'))
+		if ( Killer.IsA('KFAIController') )
 		{
 			if ( Killer.Pawn != none )
 			{
@@ -256,6 +219,9 @@ function BroadcastDeathMessage(Controller Killer, Controller Other, class<Damage
 	}
 }
 
+/*
+ * Check that the game conductor is lobotomized (or print a warning if not)
+ */
 function InitGameConductor()
 {
 	super.InitGameConductor();
@@ -270,6 +236,9 @@ function InitGameConductor()
 	}
 }
 
+/*
+ * Setup CD_DifficultyInfo, FakePlayers, and TraderTime.
+ */
 function CreateDifficultyInfo(string Options)
 {
 	local int FakePlayersFromGameOptions;
@@ -356,7 +325,14 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 	`log("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
 }
 
-/** Set up the spawning */
+/*
+ * Configure CD_SpawnManager according to user-specified options, including:
+ *
+ *  - SpawnCycle
+ *  - Boss
+ *  - AlbinoAlphas
+ *  - AlbinoCrawlers
+ */ 
 function InitSpawnManager()
 {
 	local CDSpawnManager cdsm;
@@ -476,29 +452,8 @@ function InitSpawnManager()
 
 function bool ResolveSpawnCyclePreset( const string CycleName, out array<string> CycleDefs )
 {
-//	local string TmpClassname;
-//	local class TmpClass;
-//	local object SCPresetBeforeCast;
 	local CD_SpawnCycle_Preset SCPreset;
 	local int i;
-
-//	// try to map SpawnCycle to a builtin name
-//	TmpClassname = "ControlledDifficulty.CD_SpawnCycle_Preset_"$ CycleName;
-//	TmpClass = class( DynamicLoadObject(TmpClassname, class'Class', true) );
-//
-//	if ( TmpClass == None )
-//	{
-//		CDConsolePrint("WARNING Unable to process SpawnCycle=\""$  CycleName $"\"");
-//		return false;
-//	}
-//
-//	`log("Class object loaded for name "$ TmpClassname $": "$ string(TmpClass));
-//
-//	SCPresetBeforeCast = new TmpClass;
-//
-//	`log("Instantiated SpawnCycle preset: "$ SCPresetBeforeCast);
-//
-//	SCPreset = CD_SpawnCycle_Preset(SCPresetBeforeCast);
 
 	// Avoidable linear search; this is another case where I wish unrealscript
 	// had an associative array/hashtable
@@ -901,6 +856,60 @@ static function string GetShortWaveName( int WaveIndex )
 function CDConsolePrint( string message, optional bool autoPrefix = true )
 {
 	GameInfo_CDCP.Print( message, autoPrefix );
+}
+
+function InitSpawnCyclePresetList()
+{
+	if ( 0 == SpawnCyclePresetList.length )
+	{
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_beta_hoe_avg');
+	}
+}
+
+static function bool isRandomBossString( const out string s )
+{
+	return s == "" || s ~= "random" || s ~= "unmodded";
+}
+
+function bool isRandomBoss()
+{
+	return isRandomBossString( Boss );
+}
+
+static function bool isPatriarchBossString( const out string s )
+{
+	return s ~= "patriarch" || s~= "patty" || s ~= "pat";
+}
+
+function bool isPatriarchBoss()
+{
+	return isPatriarchBossString( Boss );
+}
+
+static function bool isVolterBossString( const out string s )
+{
+	return s ~= "hans" || s ~= "volter" || s ~= "moregas";
+}
+
+function bool isVolterBoss()
+{
+	return isVolterBossString( Boss );
+}
+
+function string getStringForBossSetting()
+{
+	if ( isPatriarchBoss() )
+	{
+		return "patriarch";
+	}
+	else if ( isVolterBoss() )
+	{
+		return "volter";
+	}
+	else
+	{
+		return "random";
+	}
 }
 
 defaultproperties
