@@ -1,5 +1,13 @@
 # `SpawnCycle` Draft Docs
 
+Notes from 2016-10-23: This page is a work-in-progress.
+
+The command syntax (CDSpawnDetails, CDSpawnSummaries, CDSpawnPresets) has changed slightly to accommodate more options, support the SpawnCycle preset feature, and to fix a bug where I forgot to display gorefast counts in the spawn summary (doh).
+
+The only aspect that is stable and extremely unlikely to change is the syntax of SpawnCycleDefs itself.  The language for specifying zed types is pretty much set.  I've been working with the current syntax for a couple of weeks and I'm pretty happy with it.  I may have to add forward-compatible extensionsr depending on what TWI does (e.g. for doublegorefast), but the existing SpawnCycleDef format will not break.
+
+With those caveats, here's the draft documentation...
+
 ## Overview
 
 Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When enabled, it bypasses standard KF2's random zed spawns and instead spawns a user-specified list of zed squads in predictable order.  _TODO: I want eventually include popular spawn lists in CD itself, selectable by a simple in-game option, with no manual list-editing required.  I will mention it here when implemented._
