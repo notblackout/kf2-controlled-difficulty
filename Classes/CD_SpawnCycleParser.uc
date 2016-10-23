@@ -138,7 +138,7 @@ private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, con
 				continue; // Parse error in that element
 			}
 
-			`log("[squad#"$ParserState.SquadIndex$"] Parsed squad element: "$CurElement.Num$"x"$CurElement.Type);
+			`log("[squad#"$ ParserState.SquadIndex $",elem#"$ ParserState.ElemIndex $"] "$CurElement.Num$"x"$CurElement.Type);
 
 			CurSquad.AddSquadElement( CurElement );
 			CurSquadSize += CurElement.Num;
@@ -172,7 +172,7 @@ private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, con
 		// judging from KFAISpawnManager and the shambholic state of this
 		// property on the official TWI squad archetypes
 		CurSquad.MinVolumeType = LargestVolumeInSquad;
-		`log("Set spawn volume type: "$CurSquad.MinVolumeType);
+		`log("[squad#"$ ParserState.SquadIndex $"] Set spawn volume type: "$CurSquad.MinVolumeType);
 
 		CurWaveInfo.CustomSquads.AddItem(CurSquad);
 	}

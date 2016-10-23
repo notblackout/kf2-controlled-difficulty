@@ -20,4 +20,20 @@ function GetNormalSpawnCycleDefs( out array<string> sink );
  */
 function GetLongSpawnCycleDefs( out array<string> sink );
 
+/* 
+ * Returns the SpawnCycle name.  The user sets SpawnCycle=<this>
+ * to activate the preset.
+ */
 function string GetName();
+
+/*
+ * The approximate date that the preset was first added to
+ * Controlled Difficulty.  Shown to the user in listings of
+ * available presets.
+ */
+function string GetDate();
+
+/*
+ * The name/username/alias of the preset's author(s).
+ */
+function string GetAuthor();

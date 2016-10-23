@@ -391,7 +391,7 @@ function InitSpawnManager()
 
 	if ( 0 == ActiveWaveinfos.length )
 	{
-		GameInfo_CDCP.Print( "SpawnCycle=unmodded (forced because \""$ SpawnCycle $"\" is invalid)" );
+		GameInfo_CDCP.Print( "SpawnCycle=unmodded (forced because \""$ SpawnCycle $"\" is invalid or does not support this game length)" );
 		SpawnCycle = "unmodded";
 	}
 	else
@@ -449,11 +449,18 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 
 	if ( wis == WIS_SPAWNCYCLE_NOT_MODDED )
 	{
-		GameInfo_CDCP.Print("  Nothing to display because SpawnCycle=unmodded and no parameters were given.", false);
-		GameInfo_CDCP.Print("  This command displays SpawnCycle summaries.  If this command is invoked with", false);
-		GameInfo_CDCP.Print("  a string parameter, then this command interprets the parameter as a SpawnCycle", false);
-		GameInfo_CDCP.Print("  name and attempts to display summaries for that cycle.  If invoked without", false);
-		GameInfo_CDCP.Print("  parameters, this command displays summaries for the current SpawnCycle value.", false);
+		GameInfo_CDCP.Print("", false);
+		GameInfo_CDCP.Print("Usage: CDSpawnSummaries <optional SpawnCycle name> <optional player count>", false);
+		GameInfo_CDCP.Print("", false);
+		GameInfo_CDCP.Print("This command displays summary zed counts for a SpawnCycle.", false);
+		GameInfo_CDCP.Print("It uses the optional SpawnCycle name param when provided, but otherwise", false);
+		GameInfo_CDCP.Print("defaults to whatever SpawnCycle was used to open CD.", false);
+		GameInfo_CDCP.Print("", false);
+		GameInfo_CDCP.Print("Because the current effective SpawnCycle setting is \"unmodded\",", false);
+		GameInfo_CDCP.Print("this command has no effect.  Either open CD with a different SpawnCycle", false);
+		GameInfo_CDCP.Print("or invoke this command with the name of a SpawnCycle.", false);
+		GameInfo_CDCP.Print("", false);
+		GameInfo_CDCP.Print("To see a list of available SpawnCycles, invoke CDSpawnPresets.", false);
 		return;
 	}
 	else if ( wis == WIS_PARSE_ERROR )
@@ -466,7 +473,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 		if ( WorldInfo.NetMode == NM_StandAlone )
 		{
 			AssumedPlayerCount = 1 + FakePlayers;
-			GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" players = 1 human + "$FakePlayers$" fake(s)...", false );
+			GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" players = 1 human + "$FakePlayers$" fake(s) in current game length...", false );
 		}
 		else
 		{
@@ -478,7 +485,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 	}
 	else if ( 0 < AssumedPlayerCount )
 	{
-		GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" players...", false );
+		GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" players in current game length...", false );
 	}
 	else
 	{
@@ -546,7 +553,6 @@ function EWaveInfoStatus GetWaveInfosForConsoleCommand( string CycleName, out ar
 
 	if ( CycleName == "unmodded" )
 	{
-		CDPrintSpawnDetailsHelp();
 		return WIS_SPAWNCYCLE_NOT_MODDED;
 	}
 
@@ -566,10 +572,18 @@ function EWaveInfoStatus GetWaveInfosForConsoleCommand( string CycleName, out ar
 
 function CDPrintSpawnDetailsHelp()
 {
-	GameInfo_CDCP.Print( "  This command displays the exact composition and ordering of zed squads that", false );
-	GameInfo_CDCP.Print( "  spawn when the CD option SpawnCycle is not \"unmodded\" (the default).", false );
-	GameInfo_CDCP.Print( "  Either change SpawnCycle to something other than \"unmodded\" or invoke", false );
-	GameInfo_CDCP.Print( "  this command with the name of the SpawnCycle that you want to examine.", false );
+	GameInfo_CDCP.Print("", false);
+	GameInfo_CDCP.Print("Usage: CDSpawnDetails(Verbose) <optional SpawnCycle name>", false);
+	GameInfo_CDCP.Print("", false);
+	GameInfo_CDCP.Print("This command displays precise zed squad composition for a SpawnCycle.", false);
+	GameInfo_CDCP.Print("It uses the optional SpawnCycle name param when provided, but otherwise", false);
+	GameInfo_CDCP.Print("defaults to whatever SpawnCycle was used to open CD.", false);
+	GameInfo_CDCP.Print("", false);
+	GameInfo_CDCP.Print("Because the current effective SpawnCycle setting is \"unmodded\",", false);
+	GameInfo_CDCP.Print("this command has no effect.  Either open CD with a different SpawnCycle", false);
+	GameInfo_CDCP.Print("or invoke this command with the name of a SpawnCycle.", false);
+	GameInfo_CDCP.Print("", false);
+	GameInfo_CDCP.Print("To see a list of available SpawnCycles, invoke CDSpawnPresets.", false);
 }
 
 exec function CDSpawnPresets()
@@ -579,15 +593,11 @@ exec function CDSpawnPresets()
 
 private function PrintScheduleSlug( string CycleName )
 {
-	if ( CycleName == "unmodded" )
-	{
-		GameInfo_CDCP.Print("Considering SpawnCycle="$CycleName$" (zeds spawn randomly, as in standard KF2)", false);
-	}
-	else if ( CycleName == "ini" )
+	if ( CycleName == "ini" )
 	{
 		GameInfo_CDCP.Print("Considering SpawnCycle="$CycleName$" (zeds spawn according to the config file)", false);
 	}
-	else
+	else if ( CycleName != "unmodded" )
 	{
 		GameInfo_CDCP.Print("Considering SpawnCycle="$CycleName$" (if a preset with that name exists)", false);
 	}

@@ -81,20 +81,21 @@ function PrintPresets()
 	local int i;
 	local CD_SpawnCycle_Preset SCPreset;
 
-	CDCP.Print( "  Total available SpawnCycle presets: "$ SpawnCyclePresetList.length, false );
+	CDCP.Print( "Total available SpawnCycle presets: "$ SpawnCyclePresetList.length, false );
 
 	if ( 0 < SpawnCyclePresetList.length )
 	{
-		CDCP.Print( "  Listing format:", false);
-		CDCP.Print( "    <SpawnCycle name> [SML]", false );
-		CDCP.Print( "  The SML letters denote supported game lengths (Short/Medium/Long)", false);
-		CDCP.Print( "  --------------------------------------------------------------------------", false );
+		CDCP.Print( "Listing format:", false);
+		CDCP.Print( "    <SpawnCycle name> by <author> (<accession date>) [SML]", false );
+		CDCP.Print( "The SML letters denote supported game lengths (Short/Medium/Long)", false);
+		CDCP.Print( "-------------------------------------------------------------------", false );
 	}
 
 	for ( i = 0; i < SpawnCyclePresetList.length; i++ )
 	{
 		SCPreset = SpawnCyclePresetList[i];
-		CDCP.Print( "    "$ SCPreset.GetName()$" "$ GetLengthBadgeForPreset( SCPreset ), false );
+		CDCP.Print( "    "$ SCPreset.GetName()$" by "$ SCPreset.GetAuthor() $
+		            " ("$ SCPreset.GetDate() $") "$ GetLengthBadgeForPreset( SCPreset ) , false );
 	}
 }
 
@@ -144,7 +145,9 @@ private function InitSpawnCyclePresetList()
 {
 	if ( 0 == SpawnCyclePresetList.length )
 	{
-		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_beta_hoe_avg');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_light');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_average');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_heavy');
 	}
 }
 
