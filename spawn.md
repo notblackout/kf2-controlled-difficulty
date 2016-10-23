@@ -17,7 +17,7 @@ Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When
 
 To turn it off, set `SpawnCycle=unmodded`.  It is off by default.
 
-With this system, it is possible to define fixed waves of zeds at virtually any difficulty level. Crucially, `SpawnCycle` makes zeds spawn in a way that is stable and repeatable.  This removes a significant aspect of luck when comparing challenge runs.  Only selection of spawn locations is left to chance, but that tends to have relatively little importance on linear challenge maps, where zeds come from a single entry point.
+Crucially, `SpawnCycle` makes zeds spawn in a way that is stable and repeatable.  This removes a significant aspect of luck when comparing challenge runs.  Only selection of spawn locations is left to chance, but that tends to have relatively little importance on linear challenge maps, where zeds come from a single entry point.
 
 
 ## Background
