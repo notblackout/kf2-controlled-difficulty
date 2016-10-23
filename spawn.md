@@ -73,7 +73,7 @@ Values for `SpawnCycle`:
 
 A single `SpawnCycleDefs` line for a wave is a comma-separated list of squads.  Squads are comprised of one or more underscore-separated elements, where each element is a number and a zed type.  This allows for heterogeneous squads.
 
-The squads on each `SpawnCycleDefs` are spawned in the order listed.  If only part of a squad can be spawned (because of `MaxMonsters`), then zeds are spawned left-to-right within the squad.  For example, assume we have a game in progress and already at the `MaxMonsters` cap, so that new nothing can spawn.  One zed dies.  The next squad to spawn is 1Stalker_1Cyst.  CD will spawn the stalker first.  Another zed dies.  CD will then spawn the cyst.
+The squads on each `SpawnCycleDefs` are spawned in the order listed.  If only part of a squad can be spawned (because of `MaxMonsters`), then zeds are spawned left-to-right within the squad.  For example, assume we have a game in progress and already at the `MaxMonsters` cap, so that new nothing can spawn.  One zed dies.  The next squad to spawn is 2Stalker_1Cyst.  CD will spawn one stalker.  Another zed dies.  CD spawns the second stalker.  Another zed dies.  CD will then spawn the cyst.
 
 If CD reaches the end of a `SpawnCycleDefs` list before the end of the wave, then CD goes back to the beginning of the `SpawnCycleDefs` line and repeats it.  This is why they're called cycles.  They repeat as necessary to supply the number of zeds required for the selected difficulty, wave number, and player count.
 
