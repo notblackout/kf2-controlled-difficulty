@@ -108,7 +108,9 @@ For example, any of the following strings is a valid way to spell a fleshpound:
 * Fp
 * FL
 * Fl
+* fle
 * flesh
+* fleshp
 * FleshPound
 
 Whereas all of the following strings are invalid:
