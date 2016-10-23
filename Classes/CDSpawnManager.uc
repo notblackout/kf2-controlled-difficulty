@@ -99,18 +99,18 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 {
 	local KFSpawnVolume KFSV;
 	local int SpawnerAmount, VolumeAmount, FinalAmount, i;
-    local bool bCanSpawnPlayerBoss;
+	local bool bCanSpawnPlayerBoss;
 
 `if(`notdefined(ShippingPC))
 	local KFGameReplicationInfo KFGRI;
 	local vector VolumeLocation;
 `endif
 
-    // Since this is called from multiple locations, early out if we're not in a wave
-    if( !IsWaveActive() )
-    {
-        return 0;
-    }
+	// Since this is called from multiple locations, early out if we're not in a wave
+	if( !IsWaveActive() )
+	{
+		return 0;
+	}
 
 	// first check scripted spawners
 	if( ActiveSpawner != None && ActiveSpawner.CanSpawnHere(DesiredSquadType) )
@@ -130,40 +130,40 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 			VolumeLocation=KFSV.Location;
 `endif
 
-            KFSV.VolumeChosenCount++;
+			KFSV.VolumeChosenCount++;
 
-            if( bLogAISpawning )
-            {
-    			LogMonsterList(AIToSpawn, "SpawnSquad Pre Spawning");
-            }
+			if( bLogAISpawning )
+			{
+				LogMonsterList(AIToSpawn, "SpawnSquad Pre Spawning");
+			}
 
-            bCanSpawnPlayerBoss = (bIsVersusGame && MyKFGRI.WaveNum == MyKFGRI.WaveMax) ? CanSpawnPlayerBoss() : false;
+			bCanSpawnPlayerBoss = (bIsVersusGame && MyKFGRI.WaveNum == MyKFGRI.WaveMax) ? CanSpawnPlayerBoss() : false;
 
-            if( !bIsVersusGame || MyKFGRI.WaveNum < MyKFGRI.WaveMax || !bCanSpawnPlayerBoss )
-            {
-    			VolumeAmount = KFSV.SpawnWave(AIToSpawn, true);
-                LastAISpawnVolume = KFSV;
-            }
+			if( !bIsVersusGame || MyKFGRI.WaveNum < MyKFGRI.WaveMax || !bCanSpawnPlayerBoss )
+			{
+				VolumeAmount = KFSV.SpawnWave(AIToSpawn, true);
+				LastAISpawnVolume = KFSV;
+			}
 
-            if( bIsVersusGame && !bSkipHumanZedSpawning && MyKFGRI.WaveNum == MyKFGRI.WaveMax )
-            {
-                AIToSpawn.Length = 0;
-            }
+			if( bIsVersusGame && !bSkipHumanZedSpawning && MyKFGRI.WaveNum == MyKFGRI.WaveMax )
+			{
+				AIToSpawn.Length = 0;
+			}
 
-		    `log("KFAISpawnManager.SpawnAI() AIs spawned:" @ VolumeAmount @ "in Volume:" @ KFSV, bLogAISpawning);
+			`log("KFAISpawnManager.SpawnAI() AIs spawned:" @ VolumeAmount @ "in Volume:" @ KFSV, bLogAISpawning);
 
-            if( bLogAISpawning )
-            {
-                LogMonsterList(AIToSpawn, "SpawnSquad Post Spawning");
-            }
+			if( bLogAISpawning )
+			{
+				LogMonsterList(AIToSpawn, "SpawnSquad Post Spawning");
+			}
 
 `if(`notdefined(ShippingPC))
-        	// Let the GRI know that a spawn volume was just used
-        	KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
-        	if( KFGRI != none && KFGRI.bTrackingMapEnabled )
-        	{
-        		KFGRI.AddRecentSpawnVolume(KFSV.Location);
-        	}
+			// Let the GRI know that a spawn volume was just used
+			KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
+			if( KFGRI != none && KFGRI.bTrackingMapEnabled )
+			{
+				KFGRI.AddRecentSpawnVolume(KFSV.Location);
+			}
 `endif
 		}
 
@@ -179,43 +179,43 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 
 	if( AIToSpawn.Length > 0 )
 	{
-        //`warn(self@GetFuncName()$" Didn't spawn the whole list of AI!!!");
+		//`warn(self@GetFuncName()$" Didn't spawn the whole list of AI!!!");
 
 `if(`notdefined(ShippingPC))
-    	// Let the GRI know that a spawn volume failed to spawn some AI
-    	if( !IsZero(VolumeLocation) )
-    	{
-        	KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
-        	if( KFGRI != none && KFGRI.bTrackingMapEnabled )
-        	{
-        		KFGRI.AddFailedSpawn(VolumeLocation);
-        	}
-    	}
+		// Let the GRI know that a spawn volume failed to spawn some AI
+		if( !IsZero(VolumeLocation) )
+		{
+			KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
+			if( KFGRI != none && KFGRI.bTrackingMapEnabled )
+			{
+				KFGRI.AddFailedSpawn(VolumeLocation);
+			}
+		}
 `endif
 
-        if( bLogAISpawning )
-        {
-            LogMonsterList(AIToSpawn, "SpawnSquad Incomplete Spawn Remaining");
-            LogMonsterList(LeftoverSpawnSquad, "Failed Spawn Before Adding To Leftovers");
-        }
-    	// Add any failed spawns back into the LeftoverSpawnSquad to rapidly spawn somewhere else
-        for ( i = AIToSpawn.Length - 1 ; 0 <= i ; i-- )
-    	{
+		if( bLogAISpawning )
+		{
+			LogMonsterList(AIToSpawn, "SpawnSquad Incomplete Spawn Remaining");
+			LogMonsterList(LeftoverSpawnSquad, "Failed Spawn Before Adding To Leftovers");
+		}
+		// Add any failed spawns back into the LeftoverSpawnSquad to rapidly spawn somewhere else
+		for ( i = AIToSpawn.Length - 1 ; 0 <= i ; i-- )
+		{
 			LeftoverSpawnSquad.Insert(0, 1);
-            LeftoverSpawnSquad[0] = AIToSpawn[i];
-    	}
+			LeftoverSpawnSquad[0] = AIToSpawn[i];
+		}
 
-        if( bLogAISpawning )
-        {
-    	   LogMonsterList(LeftoverSpawnSquad, "Failed Spawn After Adding To Leftovers");
-    	}
+		if( bLogAISpawning )
+		{
+		   LogMonsterList(LeftoverSpawnSquad, "Failed Spawn After Adding To Leftovers");
+		}
 	}
 
-    /* __TW_ANALYTICS_ */
+	/* __TW_ANALYTICS_ */
 	if( bEnableGameAnalytics )
-    	RecordSpawnInformation( KFSV, FinalAmount );
+		RecordSpawnInformation( KFSV, FinalAmount );
 
-    return FinalAmount;
+	return FinalAmount;
 }
 
 /** Returns a random AIGroup from the "waiting" list */
@@ -223,31 +223,31 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 {
 	local array< class<KFPawn_Monster> >  NewSquad, RequiredSquad;
 	local int RandNum, AINeeded;
-    local bool bNeedsNewDesiredSquadType;
-    local int EntryIdx;
+	local bool bNeedsNewDesiredSquadType;
+	local int EntryIdx;
 
 	if( !IsAISquadAvailable() )
 	{
 		if( !bSummoningBossMinions )
 		{
-            // WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
-            if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
-            {
-                //`log("Recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
-                GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
-                ++NumSpecialSquadRecycles;
-            }
-            else
-            {
-                //`log("Not recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
-                GetAvailableSquads(MyKFGRI.WaveNum - 1);
-            }
-        }
-        else
-        {
-            // Replace the regular squads with boss minions
-            AvailableSquads = BossMinionsSpawnSquads;
-        }
+			// WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
+			if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
+			{
+				//`log("Recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
+				GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
+				++NumSpecialSquadRecycles;
+			}
+			else
+			{
+				//`log("Not recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
+				GetAvailableSquads(MyKFGRI.WaveNum - 1);
+			}
+		}
+		else
+		{
+			// Replace the regular squads with boss minions
+			AvailableSquads = BossMinionsSpawnSquads;
+		}
 	}
 
 	if (0 < CustomWaves.length && MyKFGRI.WaveNum - 1 < CustomWaves.length )
@@ -264,14 +264,14 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	// If we're forcing the required squad, and it already got picked, clear the flag
 	if( bForceRequiredSquad && RandNum == (AvailableSquads.Length - 1) )
 	{
-       //`log("We spawned the required squad!");
+	   //`log("We spawned the required squad!");
 	   bForceRequiredSquad=false;
 	}
 
-    if( bLogAISpawning )
-    {
-        LogAvailableSquads();
-    }
+	if( bLogAISpawning )
+	{
+		LogAvailableSquads();
+	}
 
 	`log("KFAISpawnManager.GetNextAIGroup() Wave:"@MyKFGRI.WaveNum@"Squad:"@AvailableSquads[RandNum]@"Index:"@RandNum, bLogAISpawning);
 
@@ -282,47 +282,47 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	// if we're about to run out of zeds we can spawn, and the special squad hasn't spawned yet
 	if( bForceRequiredSquad )
 	{
-    	// generate list of classes to spawn
-    	GetSpawnListFromSquad((AvailableSquads.Length - 1), AvailableSquads, RequiredSquad);
+		// generate list of classes to spawn
+		GetSpawnListFromSquad((AvailableSquads.Length - 1), AvailableSquads, RequiredSquad);
 
-        if( (NumAISpawnsQueued + NewSquad.Length + RequiredSquad.Length) > WaveTotalAI )
-        {
-            NewSquad = RequiredSquad;
-            RandNum = (AvailableSquads.Length - 1);
-            //LogMonsterList(NewSquad, "RequiredSquad");
-            //`log("Spawning required squad NumAISpawnsQueued: "$NumAISpawnsQueued$" NewSquad.Length: "$NewSquad.Length$" RequiredSquad.Length: "$RequiredSquad.Length$" WaveTotalAI: "$WaveTotalAI);
-            bForceRequiredSquad=false;
-        }
+		if( (NumAISpawnsQueued + NewSquad.Length + RequiredSquad.Length) > WaveTotalAI )
+		{
+			NewSquad = RequiredSquad;
+			RandNum = (AvailableSquads.Length - 1);
+			//LogMonsterList(NewSquad, "RequiredSquad");
+			//`log("Spawning required squad NumAISpawnsQueued: "$NumAISpawnsQueued$" NewSquad.Length: "$NewSquad.Length$" RequiredSquad.Length: "$RequiredSquad.Length$" WaveTotalAI: "$WaveTotalAI);
+			bForceRequiredSquad=false;
+		}
 	}
 
 	// remove selected squad from the list of available squads
 	AvailableSquads.Remove(RandNum, 1);
 
-    if( bLogAISpawning )
-    {
-        LogAvailableSquads();
-    }
+	if( bLogAISpawning )
+	{
+		LogAvailableSquads();
+	}
 
-    // Use the LeftoverSpawnSquad if it exists
-    if( LeftoverSpawnSquad.Length > 0 )
-    {
-        if( bLogAISpawning )
-        {
-            LogMonsterList(LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad");
-        }
+	// Use the LeftoverSpawnSquad if it exists
+	if( LeftoverSpawnSquad.Length > 0 )
+	{
+		if( bLogAISpawning )
+		{
+			LogMonsterList(LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad");
+		}
 
-        // Insert the leftover squad, in order, before the new squad
-        while( LeftoverSpawnSquad.Length > 0 )
-        {
-            EntryIdx = LeftoverSpawnSquad.Length-1;
-            NewSquad.Insert( 0, 1 );
-            NewSquad[0] = LeftoverSpawnSquad[EntryIdx];
-            LeftoverSpawnSquad.Length = EntryIdx;
-        }
+		// Insert the leftover squad, in order, before the new squad
+		while( LeftoverSpawnSquad.Length > 0 )
+		{
+			EntryIdx = LeftoverSpawnSquad.Length-1;
+			NewSquad.Insert( 0, 1 );
+			NewSquad[0] = LeftoverSpawnSquad[EntryIdx];
+			LeftoverSpawnSquad.Length = EntryIdx;
+		}
 
-        // Set our desired squad type at the end of the function
-        bNeedsNewDesiredSquadType = true;
-    }
+		// Set our desired squad type at the end of the function
+		bNeedsNewDesiredSquadType = true;
+	}
 
 	// Clamp list by NumAINeeded()
 	AINeeded = GetNumAINeeded();
@@ -330,32 +330,32 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	{
 		LeftoverSpawnSquad = NewSquad;
 		// Clear out the monsters we're about to spawn from the leftover list
-        LeftoverSpawnSquad.Remove(0,AINeeded);
+		LeftoverSpawnSquad.Remove(0,AINeeded);
 
-        // Cut off the leftovers from the new monster list
-        NewSquad.Length = AINeeded;
+		// Cut off the leftovers from the new monster list
+		NewSquad.Length = AINeeded;
 
-        // Set our desired squad type at the end of the function
-        bNeedsNewDesiredSquadType = true;
+		// Set our desired squad type at the end of the function
+		bNeedsNewDesiredSquadType = true;
 	}
 	else
 	{
-        // If we're spawning all the monsters in the list, there are no leftovers
-        LeftoverSpawnSquad.Length = 0;
+		// If we're spawning all the monsters in the list, there are no leftovers
+		LeftoverSpawnSquad.Length = 0;
 	}
 
-    if( bLogAISpawning )
-    {
-    	LogMonsterList(NewSquad, "NewSquad");
-    	LogMonsterList(LeftoverSpawnSquad, "LeftoverSpawnSquad");
-    }
+	if( bLogAISpawning )
+	{
+		LogMonsterList(NewSquad, "NewSquad");
+		LogMonsterList(LeftoverSpawnSquad, "LeftoverSpawnSquad");
+	}
 
-    if( bNeedsNewDesiredSquadType )
-    {
-        // Make sure we properly initialize the DesiredSquadType for the leftover squads,
-        // otherwise they will just use whatever size data was left in the system
-        SetDesiredSquadTypeForZedList( NewSquad );
-    }
+	if( bNeedsNewDesiredSquadType )
+	{
+		// Make sure we properly initialize the DesiredSquadType for the leftover squads,
+		// otherwise they will just use whatever size data was left in the system
+		SetDesiredSquadTypeForZedList( NewSquad );
+	}
 
 	return NewSquad;
 }
@@ -437,16 +437,16 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 			}
 
 			if( TempSpawnList[TempSpawnList.Length - 1].default.MinSpawnSquadSizeType < LargestMonsterSquadType )
-            {
-                LargestMonsterSquadType = TempSpawnList[TempSpawnList.Length - 1].default.MinSpawnSquadSizeType;
-            }
+			{
+				LargestMonsterSquadType = TempSpawnList[TempSpawnList.Length - 1].default.MinSpawnSquadSizeType;
+			}
 		}
 	}
 
 	if( TempSpawnList.Length > 0 )
 	{
-        // Copy temp spawn list to AISpawnList, one element at a time
-        while( TempSpawnList.Length > 0 )
+		// Copy temp spawn list to AISpawnList, one element at a time
+		while( TempSpawnList.Length > 0 )
 		{
 			if ( UsingCustomSquads )
 			{
@@ -466,10 +466,10 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		DesiredSquadType = Squad.MinVolumeType;
 
 		if( LargestMonsterSquadType < DesiredSquadType )
-        {
-            DesiredSquadType = LargestMonsterSquadType;
-            //`log("adjusted largest squad for squad "$Squad$" to "$GetEnum(enum'ESquadType',DesiredSquadType));
-        }
+		{
+			DesiredSquadType = LargestMonsterSquadType;
+			//`log("adjusted largest squad for squad "$Squad$" to "$GetEnum(enum'ESquadType',DesiredSquadType));
+		}
 	}
 
 	if ( !AlbinoCrawlers && !UsingCustomSquads )
