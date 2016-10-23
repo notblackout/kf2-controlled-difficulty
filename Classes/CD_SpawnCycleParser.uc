@@ -77,26 +77,24 @@ private function ClearParserState()
 	ParserState.ParseError = false;
 }
 
-function array<CD_AIWaveInfo> ParseFullSpawnCycle( const array<string> fullRawSchedule, const out array< class< KFPawn_Monster > > AIClassList )
+function bool ParseFullSpawnCycle( const array<string> fullRawSchedule, const out array< class< KFPawn_Monster > > AIClassList, out array<CD_AIWaveInfo> WaveInfos )
 {
-	local array<CD_AIWaveInfo> WaveInfosFromConfig;
-
 	ClearParserState();
 
 	for ( ParserState.WaveIndex = 0; ParserState.WaveIndex < fullRawSchedule.length; ParserState.WaveIndex++ )
 	{
 		`log("Attempting to parse wave "$(ParserState.WaveIndex + 1)$"...");
-		WaveInfosFromConfig.AddItem( ParseSpawnCycleDef( fullRawSchedule[ParserState.WaveIndex], AIClassList ) );
+		WaveInfos.AddItem( ParseSpawnCycleDef( fullRawSchedule[ParserState.WaveIndex], AIClassList ) );
 		
 		// If the wave was empty, log a fatal parse error, but keep processing later waves to
 		// try to log as much information/errors as possible
-		if ( WaveInfosFromConfig[WaveInfosFromConfig.length - 1].CustomSquads.length < 1 )
+		if ( WaveInfos[WaveInfos.length - 1].CustomSquads.length < 1 )
 		{
 			PrintWaveParseError("No valid squads found in this wave");
 		}
 	}
 
-	return WaveInfosFromConfig;
+	return !HasParseError();
 }
 
 private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, const out array< class< KFPawn_Monster > > AIClassList )

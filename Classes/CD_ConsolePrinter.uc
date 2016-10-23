@@ -15,5 +15,3 @@ function Print( string message, optional bool autoPrefix = true )
 		CachedGVC.ViewportConsole.OutputTextLine(message);
 	}
 }
-
-

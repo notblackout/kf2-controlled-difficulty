@@ -53,17 +53,17 @@ function string GetString()
 {
 	local string s;
 
-	s =	" Crawler="$ZeroPadIntString(Crawlers, 4)$
+	s =	"Crawl="$ZeroPadIntString(Crawlers, 4)$
 		" Cyst="$ZeroPadIntString(Cysts, 4)$
 		" Alpha="$ZeroPadIntString(Alphas, 4)$
-		" Slasher="$ZeroPadIntString(Slashers, 4)$
-		" Stalker="$ZeroPadIntString(Stalkers, 4)$
-		" Gorefast="$ZeroPadIntString(Gorefasts, 4)$
+		" Slash="$ZeroPadIntString(Slashers, 4)$
+		" Stalk="$ZeroPadIntString(Stalkers, 4)$
+		" Gore="$ZeroPadIntString(Gorefasts, 4)$
 		" Bloat="$ZeroPadIntString(Bloats, 3)$
 		" Husk="$ZeroPadIntString(Husks, 3)$
 		" Siren="$ZeroPadIntString(Sirens, 3)$
-		" Scrake="$ZeroPadIntString(Scrakes, 2)$
-		" Fleshpound="$ZeroPadIntString(Fleshpounds, 2)$
+		" SC="$ZeroPadIntString(Scrakes, 2)$
+		" FP="$ZeroPadIntString(Fleshpounds, 2)$
 		" // TOTALS:"$
 		" Trash="$ZeroPadIntString(GetTrash(), 4)$
 		" Medium="$ZeroPadIntString(GetMedium(), 3)$
@@ -112,7 +112,7 @@ function int GetTotal()
 	return GetTrash() + GetMedium() + GetBig();
 }
 
-static function string ZeroPadIntString( int numberToFormat, int totalWidth )
+private static function string ZeroPadIntString( int numberToFormat, int totalWidth )
 {
 	local string numberAsString;
 
