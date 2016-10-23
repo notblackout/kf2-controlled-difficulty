@@ -24,7 +24,7 @@ A squad is a predefined group of zeds that the game attempts to spawn simultaneo
 * 2 slashers, 3 gorefasts, and a scrake
 * 3 fleshpounds
 
-Standard KF2\* comes with predefined squad definitions, called "archetypes", created by  Tripwire.  For each combination of difficulty+gamelength+wavenumber, the game also has a list of squad archetypes allowed to spawn in that wave.  For a full list of these archetypes, consult [Simple Cat's KF2 spreadsheet](https://docs.google.com/spreadsheets/d/1GDpg2mN1l_86U_RaDug0glFx8cZCuErwxZLiBKl9SyY) or open the KF2 SDK and browse Packages->Gameplay->GP_Spawning_ARCH
+Standard KF2 comes with predefined squad definitions, called "archetypes", created by  Tripwire.  For each combination of difficulty+gamelength+wavenumber, the game also has a list of squad archetypes allowed to spawn in that wave.  For a full list of these archetypes, consult [Simple Cat's KF2 spreadsheet](https://docs.google.com/spreadsheets/d/1GDpg2mN1l_86U_RaDug0glFx8cZCuErwxZLiBKl9SyY) or open the KF2 SDK and browse Packages->Gameplay->GP_Spawning_ARCH
 
 When a wave starts, the game creates an initially-empty list.  The game adds all of the wave's "normal squads" as described in Simple Cat's spreadsheet to the list.  The game then randomly selects one "special squad" as described in Simple Cat's spreadsheet and adds it to the list.  The game then randomly shuffles the entire list.
 
@@ -42,8 +42,6 @@ This system removes player control over difficulty.  It has two key problems:
 * Shuffling the squad list creates unpredictably distributed big zeds.  They could all spawn at the same time, or they could be evenly-spaced among trash spawns with rest time in between.
   
   Consider the beginning of Wave 10 HOE.  The normal squads guarantee two scrakes in one squad each.  For the sake of discussion, say that the game randomly chooses the 2 FP + 2 SC special squad at the start of the wave.  The game then shuffles the list.  This could result in 6 SC + 2 FP spawning nearly consecutively (if all of those squads happen to randomly shuffle next to each other), or it could result in the squads being spread out over the wave, so that two scrakes march out one at a time with a short break, and then the 2 FP + 2 SC squad emerges alone later.  This variation can actually be even more severe than described, since it is possible that the big zed squads from one list might immediately precede big zed squads from the next list, depending on how the shuffles went.
-
-\* current as of v1043
 
 ## Benefits of CD's `SpawnCycle` System
 
