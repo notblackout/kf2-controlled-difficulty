@@ -8,9 +8,6 @@ class CD_AIWaveInfo extends KFAIWaveInfo;
 // no deep reason it has to be this way; a mere interface
 // could have avoided all of this idiocy.
 
-/** Once a squad is dead, do not reuse them */
-var bool CustombRecycleWave;
-
 /** List of available squads to spawn for each wave */
 var array<CD_AISpawnSquad> CustomSquads;
 
@@ -30,22 +27,3 @@ function CopySquads(out array<KFAISpawnSquad> out_SquadList)
 		}
 	}
 }
-
-//interface CD_AIWaveInfo;
-//
-///** Once a squad is dead, do not reuse them
-//    In practice, isRecycleWave = !isNotBossWave */
-//function bool CanRecycleWave();
-//
-///** List of available squads to spawn for each wave */
-//function array<CD_AISpawnSquad> GetRegularSquads();
-//
-///** The special squads - spawned once per wave */
-//function array<CD_AISpawnSquad> GetSpecialSquads();
-//
-///** Total number of AI that spawn for 1 player on Normal */
-//function int GetMaxAI();
-////var	int	MaxAI<ClampMin=1|ClampMax=200|DisplayName=TotalAIBase>;	// make this max=42 for release
-//
-///** Squads that can be triggered to spawn */
-//function array<CD_AISpawnSquad> GetEventSquads();
