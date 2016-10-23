@@ -113,10 +113,11 @@ For example, any of the following strings is a valid way to spell a fleshpound:
 * fleshp
 * FleshPound
 
-Whereas all of the following strings are invalid:
+Whereas all of the following strings are *invalid* (don't do this):
 
 * flp
-* FLPOUND
+* FPound
+* POUND
 
 
 ### Albino/Special Zed Variants
