@@ -1,5 +1,18 @@
+//=============================================================================
+// CD_WaveInfoUtils
+//=============================================================================
+// Static helper methods for displaying SpawnCycles/CD_AIWaveInfos
+//=============================================================================
+
 class CD_WaveInfoUtils extends Object;
 
+/*
+ * Print the exact list of squads in each wave of the
+ * supplied WaveInfos, one wave per line.
+ *
+ * Verbosity controls the level of abbreviation, if any,
+ * applied to zed names.  Can be tiny, full, or short.
+ */
 static function PrintSpawnDetails(
 	const out array<CD_AIWaveInfo> WaveInfos,
 	const string Verbosity,
@@ -55,6 +68,14 @@ static function PrintSpawnDetails(
 	}
 }
 
+/*
+ * Project how many of each type of zed would spawn for each
+ * wave in the supplied WaveInfos, at the supplied GameLength,
+ * for the supplied total PlayerCount and difficulty settings.
+ *
+ * Also display a grand total line summing zed categories from
+ * all waves (except the boss wave).
+ */
 static function PrintSpawnSummaries(
 	const out array<CD_AIWaveInfo> WaveInfos,
 	int PlayerCount,

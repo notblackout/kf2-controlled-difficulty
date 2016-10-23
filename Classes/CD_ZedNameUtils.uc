@@ -1,3 +1,10 @@
+//=============================================================================
+// CD_ZedNameUtils
+//=============================================================================
+// Static helper methods for manipulating zed name strings and their
+// equivalent EAIType enum values
+//=============================================================================
+
 class CD_ZedNameUtils extends Object
 	Abstract;
 

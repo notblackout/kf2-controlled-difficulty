@@ -335,12 +335,7 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 }
 
 /*
- * Configure CD_SpawnManager according to user-specified options, including:
- *
- *  - SpawnCycle
- *  - Boss
- *  - AlbinoAlphas
- *  - AlbinoCrawlers
+ * Configure CD_SpawnManager (particularl MaxMonsters and SpawnCycle)
  */ 
 function InitSpawnManager()
 {

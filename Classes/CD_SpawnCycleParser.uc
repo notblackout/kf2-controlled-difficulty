@@ -1,3 +1,9 @@
+//=============================================================================
+// CD_SpawnCycleParser
+//=============================================================================
+// Turns a SpawnCycle represented by array<string> into  array<CD_AIWaveInfo>
+//=============================================================================
+
 class CD_SpawnCycleParser extends Object;
 
 struct StructParserState
@@ -31,6 +37,10 @@ function SetConsolePrinter( const CD_ConsolePrinter NewCDCP )
 	CDCP = NewCDCP;
 }
 
+/* 
+ * True or false depending on whether the last call to
+ * ParseFullSpawnCycle failed or succeeded, respectively.
+ */
 function bool HasParseError()
 {
 	return ParserState.ParseError;
@@ -77,6 +87,12 @@ private function ClearParserState()
 	ParserState.ParseError = false;
 }
 
+/*
+ * Convert fullRawSchedule into a list of CD_AIWaveinfo, putting
+ * the result in the pass-by-ref WaveInfos parameter.
+ *
+ * AIClassList should be copied from the GameInfo instance.
+ */
 function bool ParseFullSpawnCycle( const array<string> fullRawSchedule, const out array< class< KFPawn_Monster > > AIClassList, out array<CD_AIWaveInfo> WaveInfos )
 {
 	ClearParserState();
@@ -97,6 +113,9 @@ function bool ParseFullSpawnCycle( const array<string> fullRawSchedule, const ou
 	return !HasParseError();
 }
 
+/*
+ * Parse a single wave.
+ */
 private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, const out array< class< KFPawn_Monster > > AIClassList )
 {
 	local array<string> SquadDefs;
@@ -180,6 +199,9 @@ private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, con
 	return CurWaveInfo;
 }
 
+/*
+ * Parse a single squad.
+ */
 private function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
 {
 	local int ElemStrLen, UnicodePoint, ElemCount, i;

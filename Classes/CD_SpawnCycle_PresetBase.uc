@@ -1,3 +1,11 @@
+//=============================================================================
+// CD_SpawnCycle_PresetBase
+//=============================================================================
+// An abstract base class intended for CD_SpawnCycle_Preset implementations
+// Implementations do not have to use this; it's just a convenience that takes
+// care of boilerplate that would tend to be repeated across separate impls.
+//=============================================================================
+
 class CD_SpawnCycle_PresetBase extends Object abstract;
 
 // I initially tried implementing this base class with three
@@ -23,8 +31,6 @@ function string GetName()
 	result = string( self.class );
 
 	result = Repl( result, "CD_SpawnCycle_Preset_", "", true );
-
-	`log( "Munged name: "$ result );
 
 	return result;
 }

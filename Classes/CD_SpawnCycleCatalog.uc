@@ -1,3 +1,11 @@
+//=============================================================================
+// CD_SpawnCycleCatalog
+//=============================================================================
+// SpawnCycle preset/inidata parsing.  This class exposes the highest level
+// of abstraction for SpawnCycle handling; it is the main entry point for other
+// components trying to manipulate or load SpawnCycles.
+//=============================================================================
+
 class CD_SpawnCycleCatalog extends Object;
 
 var private array< class< KFPawn_Monster > > AIClassList;
@@ -13,6 +21,14 @@ function Initialize( const out array< class< KFPawn_Monster > > NewAIClassList, 
 	InitSpawnCyclePresetList();
 }
 
+/*
+ * Resolve a SpawnCycle preset name, check that it is defined
+ * under the supplied GameLength, and then parse it and copy
+ * its wave data into the WaveInfos pass-by-ref parameter.
+ *
+ * Returns true if successful, false if unsuccessful.  If false
+ * the WaveInfos should be ignored.
+ */
 function bool ParseSquadCyclePreset( const string CycleName, const int GameLength, out array<CD_AIWaveInfo> WaveInfos )
 {
 	local array<string> CycleDefs;
@@ -37,6 +53,14 @@ function bool ParseSquadCyclePreset( const string CycleName, const int GameLengt
 	return true;
 }
 
+/*
+ * Convert the supplied list of CycleDefs into WaveInfos, checking
+ * that the number of CycleDefs matches the number of non-boss waves
+ * on GameRLength.
+ *
+ * Returns true if successful, false if unsuccessful.  If false
+ * the WaveInfos should be ignored.
+ */
 function bool ParseIniSquadCycle( const array<string> CycleDefs, const int GameLength, out array<CD_AIWaveInfo> WaveInfos )
 {
 	local int ExpectedWaveCount;
@@ -76,6 +100,10 @@ function bool ParseIniSquadCycle( const array<string> CycleDefs, const int GameL
 	return true;
 }
 
+/*
+ * Print recognized SpawnCycle presets -- that is, everything
+ * but unmodded or ini -- to the console.
+ */
 function PrintPresets()
 {
 	local int i;
@@ -99,6 +127,13 @@ function PrintPresets()
 	}
 }
 
+/*
+ * Lookup a CD_SpawnCycle_Preset object corresponding to CycleName,
+ * copying its wave definition strings into CycleDefs if found.
+ *
+ * Returns true if successful.  Returns false otherwise, in which
+ * case CycleDefs should be ignored.
+ */
 private function CD_SpawnCycle_Preset ResolvePreset( const string CycleName, const int GameLength, out array<string> CycleDefs )
 {
 	local CD_SpawnCycle_Preset SCPreset;
@@ -151,6 +186,11 @@ private function InitSpawnCyclePresetList()
 	}
 }
 
+/*
+ * Return a string in the form
+ * "Short (GameLength=0), Medium (GameLength=1), Long (GameLength=2)"
+ * denoting game lengths supported by the supplied preset.
+ */
 private static function string GetSupportedGameLengthString( CD_SpawnCycle_Preset SCPreset )
 {
 	local array<string> defs;
@@ -179,6 +219,10 @@ private static function string GetSupportedGameLengthString( CD_SpawnCycle_Prese
 	return Left( result, Len( result ) - 2 );
 }
 
+/*
+ * Return a string in the form [SML] denoting game lengths
+ * supported by the supplied preset.
+ */
 private static function string GetLengthBadgeForPreset( CD_SpawnCycle_Preset SCPreset )
 {
 	local string result;
