@@ -12,7 +12,7 @@ With those caveats, here's the draft documentation...
 
 Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When enabled, it bypasses standard KF2's random zed spawns and instead spawns a user-specified list of zed squads in predictable order.  _TODO: I want eventually include popular spawn lists in CD itself, selectable by a simple in-game option, with no manual list-editing required.  I will mention it here when implemented._
 
-With this system, it is possible to define waves of zeds with practically any difficulty level. Crucially, it is stable and repeatable.  Runs made with this system in place are easier to compare, because players using the same config will see the same zeds in the same spawn order on every attempt.
+With this system, it is possible to define waves of zeds with practically any difficulty level. Crucially, it is stable and repeatable.  Runs made with this system in place are easier to compare, because players using the same config will see the same zeds in the same spawn order on every attempt.  Only selection of spawnpoints is left to chance, but that tends to have relatively little importance on linear challenge maps.
 
 This removes a significant aspect of luck when comparing challenge runs.
 
