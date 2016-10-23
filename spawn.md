@@ -69,7 +69,7 @@ Values for `SpawnCycle`:
 
 `SpawnCycle=<value>` can be appended to the `open` command used to start CD.
 
-`SpawnCycleDefs` can only appear in `KFGame.ini`, not in the `open` command.  This is an array of strings defining a list of squads to spawn in a particular wave.  The first `SpawnCycleDefs` that appears in `KFGame.ini` controls Wave 1, the second controls Wave 2, etc.  The number of `SpawnCycleDefs` must match the game length or an error message will be printed at game startup and CD will revert to unmodded spawn behavior.
+`SpawnCycleDefs` can only appear in `KFGame.ini` under the CD section.  There is no way to specify `SpawnCycleDefs` in the `open` command.  The first `SpawnCycleDefs` that appears in `KFGame.ini` controls Wave 1, the second controls Wave 2, etc.  The number of `SpawnCycleDefs` must match the game length or an error message will be printed at game startup and CD will revert to unmodded spawn behavior.
 
 A single `SpawnCycleDefs` line for a wave is a comma-separated list of squads.  Squads are comprised of one or more underscore-separated elements, where each element is a number and a zed type.  This allows for heterogeneous squads.
 
