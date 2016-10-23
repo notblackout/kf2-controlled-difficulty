@@ -15,6 +15,8 @@ Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When
 * `SpawnCycle=<name_of_preset>` activates one of CD's builtin, standard, handcrafted spawnlists.  The command `CDSpawnPresets` lists all available preset names.  This is easy to use and the presets are not customizable.
 * `SpawnCycle=ini` tells CD to look in KFGame.ini for a spawnlist.  This provides maximum control.  You can control every zed that spawns, in what squads, and in what order, on every wave.  This is highly customizable and comparatively harder to use than a named preset.
 
+To turn it off, set `SpawnCycle=unmodded`.  It is off by default.
+
 With this system, it is possible to define waves of zeds with practically any difficulty level. Crucially, it is stable and repeatable.  Runs made with this system in place are easier to compare, because players using the same config will see the same zeds in the same spawn order on every attempt.  Only selection of spawnpoints is left to chance, but that tends to have relatively little importance on linear challenge maps.
 
 This removes a significant aspect of luck when comparing challenge runs.
