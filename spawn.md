@@ -2,7 +2,7 @@
 
 Notes from 2016-10-23: This page is a work-in-progress.
 
-The command syntax (CDSpawnDetails, CDSpawnSummaries, CDSpawnPresets) has changed slightly to accommodate more options, support the SpawnCycle preset feature, and to fix a bug where I forgot to display gorefast counts in the spawn summary (doh).
+The command syntax (CDSpawnDetails, CDSpawnSummaries, CDSpawnPresets) has changed slightly to accommodate more options, support the SpawnCycle preset feature, and to fix a bug where I forgot to display gorefast counts in the spawn summary (doh).  This page has gotten out of date wrt CDSpawnDetails/Summaries/Presets, and I have to update the respective sections and screenshots before release.  Don't pay too much attention to those sections right now.
 
 The only aspect that is stable and extremely unlikely to change is the syntax of SpawnCycleDefs itself.  The language for specifying zed types is pretty much set.  I've been working with the current syntax for a couple of weeks and I'm pretty happy with it.  I may have to add forward-compatible extensionsr depending on what TWI does (e.g. for doublegorefast), but the existing SpawnCycleDef format will not break.
 
