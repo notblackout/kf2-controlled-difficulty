@@ -12,7 +12,7 @@ With those caveats, here's the draft documentation...
 
 Controlled Difficulty includes the `SpawnCycle` system.  This is optional.  When enabled, it bypasses standard KF2's random zed spawns and instead spawns a user-specified list of zed squads in predictable order.  There are two ways to activate this feature.
 
-* `SpawnCycle=<name_of_preset>` activates one of CD's builtin, standard, handcrafted spawnlists.  The command `CDSpawnPresets` lists all available preset names.  This is easy to use, though the presets are not customizable.
+* `SpawnCycle=<name_of_preset>` activates one of CD's builtin, standard, handcrafted spawnlists.  The command `CDSpawnPresets` lists all available preset names and the game lengths supported by each preset.  This is easy to use, though the presets are not customizable.
 * `SpawnCycle=ini` tells CD to look in KFGame.ini for a spawnlist.  This provides maximum control.  You can control every zed that spawns, in what squads, and in what order, on every wave.  This is highly customizable, though it requires editing KFGame.ini manually.
 
 To turn it off, set `SpawnCycle=unmodded`.  It is off by default.
