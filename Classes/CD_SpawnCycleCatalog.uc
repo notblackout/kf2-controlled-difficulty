@@ -180,9 +180,9 @@ private function InitSpawnCyclePresetList()
 {
 	if ( 0 == SpawnCyclePresetList.length )
 	{
-		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_light');
-		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_average');
-		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_heavy');
+//		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_light');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_moderate');
+//		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_heavy');
 	}
 }
 

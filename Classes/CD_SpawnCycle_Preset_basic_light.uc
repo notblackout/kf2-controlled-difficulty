@@ -2,6 +2,8 @@ class CD_SpawnCycle_Preset_basic_light
 	extends CD_SpawnCycle_PresetBase
 	implements (CD_SpawnCycle_Preset);
 
+// TODO needs overhaul, see basic_moderate for a template
+
 function GetShortSpawnCycleDefs( out array<string> sink )
 {
 	sink.length = 0;
@@ -95,5 +97,5 @@ function string GetDate()
 
 function string GetAuthor()
 {
-	return "blackout";
+	return "blackout + dandyboy";
 }
