@@ -137,9 +137,11 @@ The asterisk suffix makes these zeds albino/special.  For example, "Crawler\*" w
 
 ![loading the mod](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/0_load.png)
 
-![running cdspawnsummaries](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/1_summaries.png)
+![listing known presets](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/1_presets.png)
 
-![running cdspawndetails](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/2_details.png)
+![running cdspawnsummaries](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/2_summaries.png)
+
+![running cdspawndetails](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/3_details.png)
 
 ## Sample Configuration
 
