@@ -1,3 +1,35 @@
+8bd8ff84 built 2016-09-21
+-------------------------
+
+* Added AlbinoCrawlers=true|false option
+
+  When this is false, the game forces all crawlers to be regular black
+  crawlers.  Effectively, whenever the standard game would have
+  spawned an albino/gas crawler, AlbinoCrawlers=false converts that
+  crawler to a regular/non-gas one.  This neither reduces zed count
+  nor changes the squad or zed composition of a wave, aside from
+  replacing albino crawlers with regular ones.
+
+* Mod version and build date now print to console
+
+  This console line appears just above the lines displaying CD's
+  active settings.
+
+  I use abbreviated git commit hashes as version descriptors.  If you
+  wish, you can cross-reference the version string against the github
+  project's master branch history to see the exact source code you are
+  running:
+  https://github.com/notblackout/kf2-controlled-difficulty/commits/master
+
+* Fixed save-and-load for SpawnMod
+
+  The last build failed to save SpawnMod values to KFGame.ini.
+  SpawnMod was still displayed in the console and applied to the game
+  correctly.  You were affected by this if you left the SpawnMod
+  parameter off the `open` command and saw CD print a SpawnMod value
+  to the console that you did not expect.  The value printed to the
+  console was the effective one.
+
 e048b0e built 2016-09-15
 ------------------------
 * reword TraderTime console message
