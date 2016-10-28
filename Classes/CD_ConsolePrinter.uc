@@ -7,6 +7,8 @@
 
 class CD_ConsolePrinter extends Object;
 
+`include(CD_Log.uci)
+
 var GameViewportClient CachedGVC;
 
 // This class is so simple that you could argue it shouldn't exist.
@@ -21,10 +23,9 @@ function Print( string message, optional bool autoPrefix = true )
 
 	if ( autoPrefix )
 	{
-		CachedGVC.ViewportConsole.OutputTextLine("[ControlledDifficulty] "$message);
+		message = "[ControlledDifficulty] "$message;
 	}
-	else
-	{
-		CachedGVC.ViewportConsole.OutputTextLine(message);
-	}
+
+	CachedGVC.ViewportConsole.OutputTextLine(message);
+	`cdlog(message, true);
 }

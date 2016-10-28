@@ -8,6 +8,8 @@
 class CD_ZedNameUtils extends Object
 	Abstract;
 
+`include(CD_Log.uci)
+
 /**
     Get a zed EAIType from the name.
 
@@ -242,7 +244,6 @@ static function AppendAsteriskIfSpecialZedClass( const class CustomClass, out st
 	if ( CustomClass != None )
 	{
 	 	s = string( CustomClass.name );
-		`log("Classname: "$s);
 
 		if ( Left(s, 7) == "CD_Pawn" && Right(s, 8) == "_Special" )
 		{
@@ -251,35 +252,35 @@ static function AppendAsteriskIfSpecialZedClass( const class CustomClass, out st
 	}
 }
 
-static function class CheckClassRemap( const class OrigClass, const string InstigatorName )
+static function class CheckClassRemap( const class OrigClass, const string InstigatorName, const bool EnableLogging )
 {
 	local class<KFPawn_Monster> MonsterClass;
 
 	if ( ClassIsChildOf( OrigClass, class'KFPawn_Monster' ) )
 	{
 		MonsterClass = class<KFPawn_Monster>( OrigClass );
-		return CheckMonsterClassRemap( MonsterClass, InstigatorName );
+		return CheckMonsterClassRemap( MonsterClass, InstigatorName, EnableLogging );
 	}
 
-	`log("Letting non-monster class "$OrigClass$" stand via "$InstigatorName );
+	`cdlog("Letting non-monster class "$OrigClass$" stand via "$InstigatorName, EnableLogging );
 	return OrigClass;
 }
 
-static function class<Pawn> CheckPawnClassRemap( const class<Pawn> OrigClass, const string InstigatorName )
+static function class<Pawn> CheckPawnClassRemap( const class<Pawn> OrigClass, const string InstigatorName, const bool EnableLogging )
 {
 	local class<KFPawn_Monster> MonsterClass;
 
 	if ( ClassIsChildOf( OrigClass, class'KFPawn_Monster' ) )
 	{
 		MonsterClass = class<KFPawn_Monster>( OrigClass );
-		return CheckMonsterClassRemap( MonsterClass, InstigatorName );
+		return CheckMonsterClassRemap( MonsterClass, InstigatorName, EnableLogging );
 	}
 
-	`log("Letting non-monster class "$OrigClass$" stand via "$InstigatorName );
+	`cdlog("Letting non-monster class "$OrigClass$" stand via "$InstigatorName, EnableLogging );
 	return OrigClass;
 }
 
-static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn_Monster> OrigClass, const string InstigatorName )
+static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn_Monster> OrigClass, const string InstigatorName, const bool EnableLogging )
 {
 	local class<KFPawn_Monster> NewClass;
 
@@ -300,11 +301,11 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 	// Log what we just did
 	if ( OrigClass != NewClass )
 	{
-		`log("Masked monster class "$OrigClass$" with substitute class "$NewClass$" via "$InstigatorName );
+		`cdlog("Masked monster class "$OrigClass$" with substitute class "$NewClass$" via "$InstigatorName, EnableLogging );
 	}
 	else
 	{
-		`log("Letting monster class "$OrigClass$" stand via "$InstigatorName );
+		`cdlog("Letting monster class "$OrigClass$" stand via "$InstigatorName, EnableLogging );
 	}
 
 	return NewClass;

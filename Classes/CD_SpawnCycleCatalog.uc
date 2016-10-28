@@ -8,17 +8,27 @@
 
 class CD_SpawnCycleCatalog extends Object;
 
+`include(CD_Log.uci)
+
 var private array< class< KFPawn_Monster > > AIClassList;
 
 var private array<CD_SpawnCycle_Preset> SpawnCyclePresetList;
 
 var private CD_ConsolePrinter CDCP;
 
-function Initialize( const out array< class< KFPawn_Monster > > NewAIClassList, CD_ConsolePrinter NewCDCP )
+var private bool EnableLogging;
+
+function Initialize( const out array< class< KFPawn_Monster > > NewAIClassList, CD_ConsolePrinter NewCDCP, const bool NewEnableLogging )
 {
 	AIClassList = NewAIClassList;
 	CDCP = NewCDCP;
+	EnableLogging = NewEnableLogging;
 	InitSpawnCyclePresetList();
+}
+
+function SetLogging( bool b )
+{
+	EnableLogging = b;
 }
 
 /*
@@ -36,20 +46,21 @@ function bool ParseSquadCyclePreset( const string CycleName, const int GameLengt
 	
 	if ( None == ResolvePreset( CycleName, GameLength, CycleDefs ) )
 	{
-		`log("Unable to map SpawnCycle="$ CycleName $" to a preset");
+		`cdlog("Unable to map SpawnCycle="$ CycleName $" to a preset", EnableLogging);
 		return false;
 	}
 
 	SCParser = new class'CD_SpawnCycleParser';
 	SCParser.SetConsolePrinter( CDCP );
+	SCParser.SetLogging( EnableLogging );
 	
 	if ( !SCParser.ParseFullSpawnCycle( CycleDefs, AIClassList, WaveInfos ) )
 	{
-		`log("Found a preset corresponding to SpawnCycle="$ CycleName $", but failed to parse it");
+		`cdlog("Found a preset corresponding to SpawnCycle="$ CycleName $", but failed to parse it", EnableLogging);
 		return false;
 	}
 	
-	`log("Located and parsed preset corresponding to SpawnCycle="$ CycleName);
+	`cdlog("Located and parsed preset corresponding to SpawnCycle="$ CycleName, EnableLogging);
 	return true;
 }
 
@@ -75,6 +86,7 @@ function bool ParseIniSquadCycle( const array<string> CycleDefs, const int GameL
 
 	SCParser = new class'CD_SpawnCycleParser';
 	SCParser.SetConsolePrinter( CDCP );
+	SCParser.SetLogging( EnableLogging );
 	
 	if ( !SCParser.ParseFullSpawnCycle( CycleDefs, AIClassList, WaveInfos ) )
 	{
@@ -150,7 +162,7 @@ private function CD_SpawnCycle_Preset ResolvePreset( const string CycleName, con
 		}
 	}
 
-	`log("SCPreset: "$ SCPreset);
+	`cdlog("SCPreset: "$ SCPreset, EnableLogging);
 
 	if ( SCPreset == None )
 	{

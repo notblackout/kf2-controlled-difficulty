@@ -7,6 +7,7 @@
 class CD_Survival extends KFGameInfo_Survival;
 
 `include(CD_BuildInfo.uci)
+`include(CD_Log.uci)
 
 enum EWaveInfoStatus
 {
@@ -90,7 +91,7 @@ event InitGame( string Options, out string ErrorMessage )
  	Super.InitGame( Options, ErrorMessage );
 
 	SpawnCycleCatalog = new class'CD_SpawnCycleCatalog';
-	SpawnCycleCatalog.Initialize( AIClassList, GameInfo_CDCP );
+	SpawnCycleCatalog.Initialize( AIClassList, GameInfo_CDCP, bLogControlledDifficulty );
 
 //	AddMutator( "ControlledDifficulty.CD_Mutator", false );
 
@@ -106,49 +107,49 @@ event InitGame( string Options, out string ErrorMessage )
 	if ( HasOption(Options, "SpawnMod") )
 	{
 		SpawnModFromGameOptions = GetFloatOption( Options, "SpawnMod", 1.f );
-		`log("SpawnModFromGameOptions = "$SpawnModFromGameOptions$" (1.0=missing)", bLogControlledDifficulty);
+		`cdlog("SpawnModFromGameOptions = "$SpawnModFromGameOptions$" (1.0=missing)", bLogControlledDifficulty);
 		SpawnModFloat = SpawnModFromGameOptions;
 	}
 
 	if ( HasOption(Options, "MaxMonsters") )
 	{
 		MaxMonstersFromGameOptions = GetIntOption( Options, "MaxMonsters", -1 );
-		`log("MaxMonstersFromGameOptions = "$MaxMonstersFromGameOptions$" (-1=default)", bLogControlledDifficulty);
+		`cdlog("MaxMonstersFromGameOptions = "$MaxMonstersFromGameOptions$" (-1=default)", bLogControlledDifficulty);
 		MaxMonsters = MaxMonstersFromGameOptions;
 	}
 
 	if ( HasOption(Options, "AlbinoCrawlers") )
 	{
 		AlbinoCrawlersFromGameOptions = GetBoolOption( Options, "AlbinoCrawlers", true );
-		`log("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlersFromGameOptions$" (true=default)", bLogControlledDifficulty);
+		`cdlog("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlersFromGameOptions$" (true=default)", bLogControlledDifficulty);
 		AlbinoCrawlers = AlbinoCrawlersFromGameOptions;
 	}
 
 	if ( HasOption(Options, "AlbinoAlphas") )
 	{
 		AlbinoAlphasFromGameOptions = GetBoolOption( Options, "AlbinoAlphas", true );
-		`log("AlbinoAlphasFromGameOptions = "$AlbinoAlphasFromGameOptions$" (true=default)", bLogControlledDifficulty);
+		`cdlog("AlbinoAlphasFromGameOptions = "$AlbinoAlphasFromGameOptions$" (true=default)", bLogControlledDifficulty);
 		AlbinoAlphas = AlbinoAlphasFromGameOptions;
 	}
 
 	if ( HasOption(Options, "SpawnCycle") )
 	{
 		SpawnCycleFromGameOptions = ParseOption(Options, "SpawnCycle" );
-		`log("SpawnCycleFromGameOptions = "$SpawnCycleFromGameOptions, bLogControlledDifficulty);
+		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycleFromGameOptions, bLogControlledDifficulty);
 		SpawnCycle = SpawnCycleFromGameOptions;
 	}
 
 	if ( HasOption(Options, "Boss") )
 	{
 		BossFromGameOptions = ParseOption(Options, "Boss" );
-		`log("BossFromGameOptions = "$BossFromGameOptions, bLogControlledDifficulty);
+		`cdlog("BossFromGameOptions = "$BossFromGameOptions, bLogControlledDifficulty);
 		Boss = BossFromGameOptions;
 	}
 
 	// FClamp SpawnModFloat
 	SpawnModBeforeClamping = SpawnModFloat;
 	SpawnModFloat = FClamp(SpawnModFloat, 0.f, 1.f);
-	`log("FClamped SpawnMod = "$SpawnModFloat, bLogControlledDifficulty);
+	`cdlog("FClamped SpawnMod = "$SpawnModFloat, bLogControlledDifficulty);
 
 	if ( SpawnModFloat == SpawnModBeforeClamping )
 	{
@@ -162,10 +163,16 @@ event InitGame( string Options, out string ErrorMessage )
 	// Assign SpawnMod before we save our config (SpawnModFloat is not saved, only its SpawnMod copy)
 	SpawnMod = string(SpawnModFloat);
 
-	// Check validity of the Boss option
-	if ( Boss == "" )
+	// Initialize the Boss option if empty
+	if ( "" == Boss )
 	{
 		Boss = "unmodded";
+	}
+
+	// Initialize the SpawnCycle option if empty
+	if ( "" == SpawnCycle )
+	{
+		SpawnCycle = "unmodded";
 	}
 
 	if ( !isRandomBossString(Boss) && !isPatriarchBossString(Boss) && !isVolterBossString(Boss) )
@@ -213,7 +220,7 @@ function BroadcastDeathMessage(Controller Killer, Controller Other, class<Damage
 		{
 			if ( Killer.Pawn != none )
 			{
-				killerPawnClass = class'CD_ZedNameUtils'.static.CheckClassRemap( Killer.Pawn.Class, "CD_Survival.BroadcastDeathMessage" );
+				killerPawnClass = class'CD_ZedNameUtils'.static.CheckClassRemap( Killer.Pawn.Class, "CD_Survival.BroadcastDeathMessage", bLogControlledDifficulty );
 			}
 			else
 			{
@@ -237,7 +244,7 @@ function InitGameConductor()
 
 	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
 	{
-		`log("Checked that GameConductor "$GameConductor$" is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
+		`cdlog("Checked that GameConductor "$GameConductor$" is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
 	}
 	else
 	{
@@ -266,14 +273,14 @@ function CreateDifficultyInfo(string Options)
 	if ( HasOption(Options, "FakePlayers") )
 	{
 		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
-		`log("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		`cdlog("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
 		FakePlayers = FakePlayersFromGameOptions;
 	}
 
 	// Force FakePlayers onto the interval [0, 5]
 	FakePlayersBeforeClamping = FakePlayers;
 	FakePlayers = Clamp(FakePlayers, 0, 5);
-	`log("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
+	`cdlog("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
 
 	// Print FakePlayers to console
 	if ( FakePlayers != FakePlayersBeforeClamping )
@@ -289,7 +296,7 @@ function CreateDifficultyInfo(string Options)
 	if ( HasOption(Options, "TraderTime") )
 	{
 		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
-		`log("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		`cdlog("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
 		TraderTime = TraderTimeFromGameOptions;
 	}
 
@@ -306,7 +313,7 @@ function CreateDifficultyInfo(string Options)
 	}
 
 	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
-	`log("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
+	`cdlog("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
 }
 
 function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
@@ -321,21 +328,21 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 	// Only pass actual players to GetPlayerNumMaxAIModifier -- it adds fakes internally
 	LocalMaxAIMod = DifficultyInfo.GetPlayerNumMaxAIModifier(LocalNumPlayers);
 
-	`log("NumPlayers = "$LocalNumPlayers, bLogControlledDifficulty);
-	`log("NumFakes = "$LocalNumFakes, bLogControlledDifficulty);
-	`log("DifficultyInfo.GetPlayerNumMaxAIModifier(NumPlayers) = "$LocalMaxAIMod$"; this is fake-count-adjusted", bLogControlledDifficulty);
+	`cdlog("NumPlayers = "$LocalNumPlayers, bLogControlledDifficulty);
+	`cdlog("NumFakes = "$LocalNumFakes, bLogControlledDifficulty);
+	`cdlog("DifficultyInfo.GetPlayerNumMaxAIModifier(NumPlayers) = "$LocalMaxAIMod$"; this is fake-count-adjusted", bLogControlledDifficulty);
 
 	DoshMod = (LocalNumPlayers + LocalNumFakes) / LocalMaxAIMod;
 
-	`log("Starting Dosh Bounty: "$ModifiedValue$" DoshMod: "$DoshMod, bLogControlledDifficulty);
+	`cdlog("Starting Dosh Bounty: "$ModifiedValue$" DoshMod: "$DoshMod, bLogControlledDifficulty);
 
 	ModifiedValue *= DoshMod;
 
-	`log("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
+	`cdlog("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
 }
 
 /*
- * Configure CD_SpawnManager (particularl MaxMonsters and SpawnCycle)
+ * Configure CD_SpawnManager (particularly MaxMonsters and SpawnCycle)
  */ 
 function InitSpawnManager()
 {
@@ -347,7 +354,7 @@ function InitSpawnManager()
 
 	if ( SpawnManager.IsA( 'CDSpawnManager' ) )
 	{
-		`log("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
+		`cdlog("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
 		cdsm = CDSpawnManager( SpawnManager );
 	}
 	else
@@ -374,7 +381,7 @@ function InitSpawnManager()
 	}
 	else if ( SpawnCycle == "unmodded" )
 	{
-		`log("Not using a SpawnCycle (value="$SpawnCycle$")");
+		`cdlog("Not using a SpawnCycle (value="$SpawnCycle$")", bLogControlledDifficulty);
 	}
 	else
 	{
@@ -414,7 +421,7 @@ private function MaybeLoadIniWaveInfos()
 		AlreadyLoadedIniWaveInfos = true;
 
 		// This doesn't seem to work (am I forcing a SaveConfig() beforehand?)
-		//`log("Forcing a config reload because SpawnCycle="$SpawnCycle$"...");
+		//`cdlog("Forcing a config reload because SpawnCycle="$SpawnCycle$"...", bLogControlledDifficulty);
 		//ConsoleCommand("reloadcfg ControlledDifficulty.CD_Survival", true);
 		//ConsoleCommand("reloadcfg 'ControlledDifficulty.CD_Survival'", true);
 		//ConsoleCommand("reloadcfg \"ControlledDifficulty.CD_Survival\"", true);
@@ -429,7 +436,11 @@ private function MaybeLoadIniWaveInfos()
 exec function logControlledDifficulty( bool enabled )
 {
 	bLogControlledDifficulty = enabled;
-	`log("Set bLogControlledDifficulty = "$bLogControlledDifficulty);
+	if ( SpawnCycleCatalog != None )
+	{
+		SpawnCycleCatalog.SetLogging( enabled );
+	}
+	`cdlog("Set bLogControlledDifficulty = "$bLogControlledDifficulty, true);
 	SaveConfig();
 }
 
@@ -495,6 +506,8 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 
 	class'CD_WaveInfoUtils'.static.PrintSpawnSummaries( WaveInfosToSummarize, AssumedPlayerCount,
 		GameInfo_CDCP, GameLength, CustomDifficultyInfo, DWS );
+
+	CDConsolePrintLogfileHint();
 }
 
 exec function CDSpawnDetails( optional string CycleName )
@@ -509,6 +522,8 @@ exec function CDSpawnDetails( optional string CycleName )
 		GameInfo_CDCP.Print("Printing abbreviated zed spawn cycles for each wave...", false);
 
 		class'CD_WaveInfoUtils'.static.PrintSpawnDetails( WaveInfosToSummarize, "short", GameInfo_CDCP );
+
+		CDConsolePrintLogfileHint();
 	}
 	else if ( wis == WIS_SPAWNCYCLE_NOT_MODDED )
 	{
@@ -528,11 +543,19 @@ exec function CDSpawnDetailsVerbose( optional string CycleName )
 		GameInfo_CDCP.Print("Printing verbose zed spawn cycles for each wave...", false);
 
 		class'CD_WaveInfoUtils'.static.PrintSpawnDetails( WaveInfosToSummarize, "full", GameInfo_CDCP );
+
+		CDConsolePrintLogfileHint();
 	}
 	else if ( wis == WIS_SPAWNCYCLE_NOT_MODDED )
 	{
 		CDPrintSpawnDetailsHelp();
 	}
+}
+
+private function CDConsolePrintLogfileHint()
+{
+	GameInfo_CDCP.Print(" Need to copy-paste?  CD copies all console output to KF2's logfile, generally:", false);
+	GameInfo_CDCP.Print("  <HOME>\\Documents\\My Games\\KillingFloor2\\KFGame\\Logs\\Launch.log", false);
 }
 
 function EWaveInfoStatus GetWaveInfosForConsoleCommand( string CycleName, out array<CD_AIWaveInfo> WaveInfos )
@@ -584,6 +607,8 @@ function CDPrintSpawnDetailsHelp()
 exec function CDSpawnPresets()
 {
 	SpawnCycleCatalog.PrintPresets();
+
+	CDConsolePrintLogfileHint();
 }
 
 private function PrintScheduleSlug( string CycleName )

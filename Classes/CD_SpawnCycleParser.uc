@@ -6,6 +6,8 @@
 
 class CD_SpawnCycleParser extends Object;
 
+`include(CD_Log.uci)
+
 struct StructParserState
 {
 	// all indexes are zero-based
@@ -26,6 +28,8 @@ var private CD_ConsolePrinter CDCP;
 
 var private StructParserState ParserState;
 
+var private bool EnableLogging;
+
 const MinZedsInElement = 1;
 const MaxZedsInElement = 10;
 
@@ -35,6 +39,11 @@ const MaxZedsInSquad = 10;
 function SetConsolePrinter( const CD_ConsolePrinter NewCDCP )
 {
 	CDCP = NewCDCP;
+}
+
+function SetLogging( const bool l )
+{
+	EnableLogging = l;
 }
 
 /* 
@@ -99,7 +108,7 @@ function bool ParseFullSpawnCycle( const array<string> fullRawSchedule, const ou
 
 	for ( ParserState.WaveIndex = 0; ParserState.WaveIndex < fullRawSchedule.length; ParserState.WaveIndex++ )
 	{
-		`log("Attempting to parse wave "$(ParserState.WaveIndex + 1)$"...");
+		`cdlog("Attempting to parse wave "$(ParserState.WaveIndex + 1)$"...", EnableLogging);
 		WaveInfos.AddItem( ParseSpawnCycleDef( fullRawSchedule[ParserState.WaveIndex], AIClassList ) );
 		
 		// If the wave was empty, log a fatal parse error, but keep processing later waves to
@@ -157,7 +166,7 @@ private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, con
 				continue; // Parse error in that element
 			}
 
-			`log("[squad#"$ ParserState.SquadIndex $",elem#"$ ParserState.ElemIndex $"] "$CurElement.Num$"x"$CurElement.Type);
+			`cdlog("[squad#"$ ParserState.SquadIndex $",elem#"$ ParserState.ElemIndex $"] "$CurElement.Num$"x"$CurElement.Type, EnableLogging);
 
 			CurSquad.AddSquadElement( CurElement );
 			CurSquadSize += CurElement.Num;
@@ -191,7 +200,7 @@ private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, con
 		// judging from KFAISpawnManager and the shambholic state of this
 		// property on the official TWI squad archetypes
 		CurSquad.MinVolumeType = LargestVolumeInSquad;
-		`log("[squad#"$ ParserState.SquadIndex $"] Set spawn volume type: "$CurSquad.MinVolumeType);
+		`cdlog("[squad#"$ ParserState.SquadIndex $"] Set spawn volume type: "$CurSquad.MinVolumeType, EnableLogging);
 
 		CurWaveInfo.CustomSquads.AddItem(CurSquad);
 	}

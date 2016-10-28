@@ -70,8 +70,6 @@ function string GetString()
 		" Big="$ZeroPadIntString(GetBig(), 3)$
 		" ALL="$ZeroPadIntString(GetTotal(), 4);
 
-	`log(s);
-
 	return s;
 }
 

@@ -12,7 +12,6 @@ function TimerUpdate()
 {
 	CurrentSpawnRateModification = GetSpawnMod();
 	CurrentAIMovementSpeedMod = DifficultyInfo.GetAIGroundSpeedMod();
-//	`log("(GameConductor woken up) ControlledDifficulty forcing SpawnMod = "$CurrentSpawnRateModification$" AIMoveSpeedMod = "$CurrentAIMovementSpeedMod, bLogControlledDifficulty);
 }
 
 /**

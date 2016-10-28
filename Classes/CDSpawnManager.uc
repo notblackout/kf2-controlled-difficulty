@@ -6,10 +6,15 @@
 // convention inherited from the base game.
 // This lets us override GetMaxMonsters() once for all of the
 // game-length-specific subclasses.
+// The longer functions in this file are copied from KFAISpawnManager,
+// because those functions do not provide any easy extension points
+// short of overridding the whole thing (i.e. no variables to set or
+// ancillary functions to override in order to get the desired behavior).
 //=============================================================================
 class CDSpawnManager extends KFAISpawnManager
 	within CD_Survival;
 
+`include(CD_Log.uci)
 
 var array<CD_AIWaveInfo> CustomWaves;
 
@@ -34,12 +39,12 @@ function int GetMaxMonsters()
 
 	if (0 < mm)
 	{
-		`log("GetMaxMonsters(): Returning custom value "$mm, bLogControlledDifficulty);
+		`cdlog("GetMaxMonsters(): Returning custom value "$mm, bLogControlledDifficulty);
 	}
 	else
 	{
 		mm = super.GetMaxMonsters();
-		`log("GetMaxMonsters(): Returning default value "$mm, bLogControlledDifficulty);
+		`cdlog("GetMaxMonsters(): Returning default value "$mm, bLogControlledDifficulty);
 	}
 
 	return mm;
@@ -53,12 +58,12 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
 	{
 		wi = CustomWaves[MyWaveIndex];
 		wi.CopySquads( AvailableSquads );
-		`log("Copying squads from custom wave info");
+		`cdlog("Copying squads from custom wave info", bLogControlledDifficulty);
 	}
 	else
 	{
 		super.GetAvailableSquads(MyWaveIndex, bNeedsSpecialSquad);
-		`log("Using unmodded, randomly-selected squads");
+		`cdlog("Using unmodded, randomly-selected squads", bLogControlledDifficulty);
 	}
 }
 
@@ -233,13 +238,11 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 			// WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
 			if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
 			{
-				//`log("Recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
 				GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
 				++NumSpecialSquadRecycles;
 			}
 			else
 			{
-				//`log("Not recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
 				GetAvailableSquads(MyKFGRI.WaveNum - 1);
 			}
 		}
@@ -264,7 +267,6 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	// If we're forcing the required squad, and it already got picked, clear the flag
 	if( bForceRequiredSquad && RandNum == (AvailableSquads.Length - 1) )
 	{
-	   //`log("We spawned the required squad!");
 	   bForceRequiredSquad=false;
 	}
 
@@ -290,7 +292,6 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 			NewSquad = RequiredSquad;
 			RandNum = (AvailableSquads.Length - 1);
 			//LogMonsterList(NewSquad, "RequiredSquad");
-			//`log("Spawning required squad NumAISpawnsQueued: "$NumAISpawnsQueued$" NewSquad.Length: "$NewSquad.Length$" RequiredSquad.Length: "$RequiredSquad.Length$" WaveTotalAI: "$WaveTotalAI);
 			bForceRequiredSquad=false;
 		}
 	}
@@ -416,17 +417,17 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 				{
 					if ( Outer.isVolterBoss() )
 					{
-						`log("Spawning Hans Volter (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						`cdlog("Spawning Hans Volter (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[0]);
 					}
 					else if ( Outer.isPatriarchBoss() )
 					{
-						`log("Spawning Patriarch (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						`cdlog("Spawning Patriarch (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[1]);
 					}
 					else
 					{
-						`log("Spawning a random boss (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						`cdlog("Spawning a random boss (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[Rand(AIBossClassList.Length)]);
 					}
 				}
@@ -451,12 +452,12 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 			if ( UsingCustomSquads )
 			{
 				RandNum = 0;
-				`log("Prevented spawnlist shuffling", bLogControlledDifficulty);
+				`cdlog("Prevented spawnlist shuffling", bLogControlledDifficulty);
 			}
 			else
 			{
 				RandNum = Rand( TempSpawnList.Length );
-				`log("Permitted spawnlist shuffling", bLogControlledDifficulty);
+				`cdlog("Permitted spawnlist shuffling", bLogControlledDifficulty);
 			}
 
 			AISpawnList.AddItem( TempSpawnList[RandNum] );
@@ -468,7 +469,6 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		if( LargestMonsterSquadType < DesiredSquadType )
 		{
 			DesiredSquadType = LargestMonsterSquadType;
-			//`log("adjusted largest squad for squad "$Squad$" to "$GetEnum(enum'ESquadType',DesiredSquadType));
 		}
 	}
 
@@ -476,38 +476,38 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	{
 		crawlersForcedRegular = 0;
 
-		`log("AlbinoCrawlers="$AlbinoCrawlers$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx);
+		`cdlog("AlbinoCrawlers="$AlbinoCrawlers$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
 		// Replace all standard crawler classes with forced-regular crawers
 		for ( i = 0; i < AISpawnList.Length; i++ )
 		{
 			if ( AISpawnList[i] == AIClassList[AT_Crawler] )
 			{
 				AISpawnList[i] = class'ControlledDifficulty.CD_Pawn_ZedCrawler_Regular';
-				`log("Forcing crawler at AISpawnList["$i$"] to spawn as a regular crawler");
+				`cdlog("Forcing crawler at AISpawnList["$i$"] to spawn as a regular crawler", bLogControlledDifficulty);
 				crawlersForcedRegular += 1;
 			}
 		}
 
-		`log("Total crawlers forced regular in this AISpawnList: "$crawlersForcedRegular);
+		`cdlog("Total crawlers forced regular in this AISpawnList: "$crawlersForcedRegular, bLogControlledDifficulty);
 	}
 
 	if ( !AlbinoAlphas && !UsingCustomSquads )
 	{
 		alphasForcedRegular = 0;
 
-		`log("AlbinoAlphas="$AlbinoAlphas$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx);
+		`cdlog("AlbinoAlphas="$AlbinoAlphas$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
 		// Replace all standard alpha classes with forced-regular crawers
 		for ( i = 0; i < AISpawnList.Length; i++ )
 		{
 			if ( AISpawnList[i] == AIClassList[AT_AlphaClot] )
 			{
 				AISpawnList[i] = class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Regular';
-				`log("Forcing alpha at AISpawnList["$i$"] to spawn as a regular alpha");
+				`cdlog("Forcing alpha at AISpawnList["$i$"] to spawn as a regular alpha", bLogControlledDifficulty);
 				alphasForcedRegular += 1;
 			}
 		}
 
-		`log("Total alphas forced regular in this AISpawnList: "$alphasForcedRegular);
+		`cdlog("Total alphas forced regular in this AISpawnList: "$alphasForcedRegular, bLogControlledDifficulty);
 	}
 
 }

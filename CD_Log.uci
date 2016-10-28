@@ -1,0 +1,1 @@
+`define cdlog(text, cond) `log(`text, `cond, 'CD')
