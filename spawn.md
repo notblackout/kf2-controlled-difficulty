@@ -1,12 +1,4 @@
-# `SpawnCycle` Draft Docs
-
-Notes from 2016-10-23: This page is a work-in-progress.
-
-The command syntax (CDSpawnDetails, CDSpawnSummaries, CDSpawnPresets) has changed slightly to accommodate more options, support the SpawnCycle preset feature, and to fix a bug where I forgot to display gorefast counts in the spawn summary (doh).  This page has gotten out of date wrt CDSpawnDetails/Summaries/Presets, and I have to update the respective sections and screenshots before release.  Don't pay too much attention to those sections right now.
-
-The only aspect that is stable and extremely unlikely to change is the syntax of SpawnCycleDefs itself.  The language for specifying zed types is pretty much set.  I've been working with the current syntax for a couple of weeks and I'm pretty happy with it.  I may have to add forward-compatible extensionsr depending on what TWI does (e.g. for doublegorefast), but the existing SpawnCycleDef format will not break.
-
-With those caveats, here's the draft documentation...
+# `SpawnCycle` Docs
 
 ## Overview
 
@@ -55,21 +47,41 @@ CD lets the user define, for each wave, exactly what squads spawn and in what or
 
 **Reproducibility:** This system removes random spawn list shuffling.  The only random aspect is spawnpoint selection.  On solo maps like Hillside or Midnightpark, spawnpoint selection is nearly irrelevant, and only zed spawn order and rate really matters.  This is where deterministic spawns really help.  Once you've set the spawn list and rate, every run presents effectively identical difficulty.  The game doesn't randomly get harder or easier from one attempt to the next depending on random list generation and shuffling, like in the standard game.  This takes a major luck aspect out of challenges.
 
-## Configuration Syntax
+## Getting Started: Commands and Options
 
-All of the following options live under the `[ControlledDifficulty.CD_Survival` section of `KFGame.ini`.
+To control this feature, set `SpawnCycle=<some_value>` on your `open` command when starting CD.  `SpawnCycle` takes the following values:
 
-`SpawnCycle` is the most important option.  This tells CD whether to keep standard KF2 behavior, use a hardcoded spawn preset, or read a custom spawn list from `KFGame.ini`.
-
-Values for `SpawnCycle`:
-
-* unmodded: Use standard KF2's randomized spawn system
-* ini: Spawn zeds according to the `SpawnCycleDefs` settings in `KFGame.ini`
+* ini: Spawn zeds according to the `SpawnCycleDefs` settings in `KFGame.ini`.  The syntax for `SpawnCycleDefs` is described in a later section of this document.
 * anything else: Interpreted as the name of `SpawnCycle` preset.  Must be listed in `CDSpawnPresets` and must support the selected game length.
+* unmodded: Use standard KF2's randomized spawn system.  This effectively disables spawn cycles.
 
-`SpawnCycle=<value>` can be appended to the `open` command used to start CD.
+For example, this command would load `KF-Hillside-B4` with the `SpawnCycle` preset named `basic_moderate`:
 
-`SpawnCycleDefs` can only appear in `KFGame.ini` under the CD section.  There is no way to specify `SpawnCycleDefs` in the `open` command.  The first `SpawnCycleDefs` that appears in `KFGame.ini` controls Wave 1, the second controls Wave 2, etc.  The number of `SpawnCycleDefs` must match the game length or an error message will be printed at game startup and CD will revert to unmodded spawn behavior.
+```
+open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?SpawnCycle=basic_moderate
+```
+
+Some commands are available to display information about spawn cycles.
+
+`CDSpawnPresets` lists available `SpawnCycle` preset names, accession dates, and authors.
+
+`CDSpawnSummaries [optional_cycle_name [optional_player_count]]` projects the estimated number of zeds per wave, breaking fleshpounds, scrakes, sirens, husks, bloats, and trash into separate counts.  It considers the currently loaded `SpawnCycle` if no parameters are specified.  If the `optional_cycle_name` parameter is present, then it interprets it as a `SpawnCycle` value and projects for that one instead of whatever is loaded.  By default, it projects zed counts for one player plus the `FakePlayers` setting.  However, if running on a server or if you just want to see pro-forma numbers for a different player count, you can specify the `optional_player_count` parameter, which must be a positive integer.  This overrides the guessed 1 + fakes value when specified.  This command does not consider the boss wave.  It only considers regular waves.
+
+`CDSpawnDetails [optional_cycle_name]` lists the exact spawn squads scheduled for each wave.  Summaries just counts the number of cysts, gorefasts, crawlers, etc per wave; this command, on the other hand, describes exactly what squads spawn on each wave, and in what order.  It is more verbose than the summaries.
+
+![loading the mod](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/0_load.png)
+
+![listing known presets](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/1_presets.png)
+
+![running cdspawnsummaries](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/2_summaries.png)
+
+![running cdspawndetails](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/3_details.png)
+
+## INI Configuration Syntax
+
+When `SpawnCycle=ini` is specified on CD's `open` command, CD looks for `SpawnCycleDefs` lines in KFGame.ini's `[ControlledDifficulty.CD_Survival]` section.  `SpawnCycleDefs` can only appear in `KFGame.ini` under this section.  There is no way to specify `SpawnCycleDefs` in the `open` command.  This makes `SpawnCycle=ini` currently the only aspect of CD that requires manual config editing to use.
+
+The first `SpawnCycleDefs` that appears in `KFGame.ini` controls Wave 1, the second controls Wave 2, etc.  The number of `SpawnCycleDefs` must match the game length or an error message will be printed at game startup and CD will revert to unmodded spawn behavior.
 
 A single `SpawnCycleDefs` line for a wave is a comma-separated list of squads.  Squads are comprised of one or more underscore-separated elements, where each element is a number and a zed type.  This allows for heterogeneous squads.
 
@@ -119,7 +131,6 @@ Whereas all of the following strings are *invalid* (don't do this):
 * FPound
 * POUND
 
-
 ### Albino/Special Zed Variants
 
 At the time this document was last updated, there are two albino or special zed variants:
@@ -129,37 +140,23 @@ At the time this document was last updated, there are two albino or special zed 
 
 The asterisk suffix makes these zeds albino/special.  For example, "Crawler\*" would spawn a gas grawler and "AL\*" would spawn an albino alpha clot.  Appending a * character to a zed that has no albino variant generates an error message and causes the SpawnCycle to be rejected.
 
-## Diagnostic Commands
-
-`CDSpawnSummaries` projects the estimated number of zeds per wave, breaking fleshpounds, scrakes, sirens, husks, bloats, and trash into separate counts.  It accounts for the current `FakePlayers` setting automatically.  However, if you want to see what would happen on a particular player count, you can specify an integer argument, which will be interpreted as a player count override.  This command does not consider the boss wave; it only considers regular waves.
-
-`CDSpawnDetails` lists the exact spawn squads scheduled for each wave when not using `SpawnCycle=ini`.  Although the ini-parser prints warning messages to the console whenever it encounters a parse error, this command could be useful in case of an edge case that CD fails to warn about (though that would just be a temporary fix, since I will try to make CD warn about every error case that I know about).
-
-![loading the mod](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/0_load.png)
-
-![listing known presets](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/1_presets.png)
-
-![running cdspawnsummaries](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/2_summaries.png)
-
-![running cdspawndetails](https://raw.githubusercontent.com/notblackout/kf2-controlled-difficulty/master/img/spawns/3_details.png)
+CD's `AlbinoCrawlers` and `AlbinoAlphas` options only have an effect when `SpawnCycle=unmodded`.  If `SpawnCycle` is set to any other value (i.e. ini or a preset), then the cycle defs determine whether and when albino zeds spawn, regardless of the `AlbinoCrawlers` and `AlbinoAlphas` options.
 
 ## Sample Configuration
 
-The following `KFGame.ini` snippet contains a 10-wave configuration adapted from an average HOE Long game.  All of the squads used are present in HOE Long games.  The special squads have been selected to be average or slightly below average for their wave number.  Scrakes start at 5, FPs start at 7.  The big zeds are spread out a bit, but within the rules used by standard KF2.
-
-The overall effect of this set of `SpawnCycleDefs` is to mimic a moderate-difficulty HOE Long game as closely as possible.  To mimic the way the base game only spawns a special squad on every other spawn list, the following definitions repeat each trash list twice on one line, including a special squad only in the first half.
+The following `KFGame.ini` snippet reflects the `basic_moderate` preset.  This could be useful if you want to start tweaking an existing preset rather than starting from scratch.
 
 ```
 [ControlledDifficulty.CD_Survival]
 SpawnCycle=ini
-SpawnCycleDefs=4CC,3CC_1AL_1GF,6SL,4CC_1BL,3AL_1SL,4CC,3CC_1AL_1GF,4CC_1BL,3AL_1SL
-SpawnCycleDefs=3CC_1AL,3CC_1SL_1BL,2CR,2ST,3BL,1HU,1SL_2AL_1GF,2AL_2GF,3CC_1AL_1GF,4CC,4CR,3CC_1AL,3CC_1SL_1BL,2CR,2ST,1HU,1SL_2AL_1GF,2AL_2GF,3CC_1AL_1GF,4CC,4CR
-SpawnCycleDefs=4CR,3AL_1BL,2SL_3CR_1GF,3HU,3CC_1GF_1SI,1SL_3GF,1HU,3CC_1AL,2CR,2CR_2GF_2ST_1SI,4ST,4GF,4CR,3AL_1BL,2SL_3CR_1GF,3CC_1GF_1SI,1SL_3GF,1HU,3CC_1AL,2CR,2CR_2GF_2ST_1SI,4ST,4GF
-SpawnCycleDefs=3CC_1AL,3CC_1CR_2ST_1BL_1SI,1HU,4CR,3CC_1BL,2AL_2GF,3CC_1GF_1SI,9GF,2ST,1SL_3GF,3CC_1CR_2ST_1BL_1SI,6CR,4GF,2CR_2GF_2ST_1SI,3CC_1AL,3CC_1CR_2ST_1BL_1SI,1HU,4CR,3CC_1BL,2AL_2GF,3CC_1GF_1SI,2ST,1SL_3GF,3CC_1CR_2ST_1BL_1SI,6CR,4GF,2CR_2GF_2ST_1SI
-SpawnCycleDefs=2CR,4ST,2CR_2GF_2ST_1SI,4CR,3CC_1CR_2ST_1BL_1SI,2ST,1SC_6ST,3CC_1BL,2AL_1GF_1HU,4GF,6CR,2AL_2GF,1SL_3GF,3CC_1GF_1SI,3AL_1SL,2CR,4ST,2CR_2GF_2ST_1SI,4CR,3CC_1CR_2ST_1BL_1SI,2ST,3CC_1BL,2AL_1GF_1HU,4GF,6CR,2AL_2GF,1SL_3GF,3CC_1GF_1SI,3AL_1SL
-SpawnCycleDefs=2AL_1GF_1HU,4CR,3AL_1SL,2SL_2CR_2GF_2SI,1SC_4ST,3CC_1SL_1BL,2CR,2AL_1SC,2ST,1SL_2AL_1GF,4GF,6CR,2CR_2GF_2ST_1SI,1HU,1SL_3GF,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,4CC,4ST,3CC_1AL_1GF,2AL_1GF_1HU,4CR,3AL_1SL,2SL_2CR_2GF_2SI,3CC_1SL_1BL,2CR,2AL_1SC,2ST,1SL_2AL_1GF,4GF,6CR,2CR_2GF_2ST_1SI,1HU,1SL_3GF,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,4CC,4ST,3CC_1AL_1GF
-SpawnCycleDefs=1SL_2AL_1GF,2AL_2GF,2SL_3CR_1GF,2SC_4ST,3CC_1CR_2ST_1BL_1SI,3CC_1AL_1GF,4ST,4GF,2CR_2ST_1BL_2SI,3CC_1AL,2SL_2CR_2GF_2SI,6CR,2SL_3GF_1SC,4CR,3CC_1BL,2HU,4CC,1SL_2AL_1GF,2AL_2GF,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,3CC_1AL_1GF,4ST,4GF,2CR_2ST_1BL_2SI,3CC_1AL,2SL_2CR_2GF_2SI,6CR,2SL_3GF_1SC,4CR,3CC_1BL,2HU,4CC
-SpawnCycleDefs=4CC_1BL,2SL_3GF_1SC,2CR,2AL_1GF_1HU,2ST,1SL_2AL_1GF,2SL_2CR_2GF_2SI,3AL_1SL,4CR,2AL_2GF,1FP_1SC,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,1HU,4ST,2AL_1SC,4CC,4GF,2CR_2GF_2ST_1SI,6CR,4CC_1BL,2SL_3GF_1SC,2CR,2AL_1GF_1HU,2ST,1SL_2AL_1GF,2SL_2CR_2GF_2SI,3AL_1SL,4CR,2AL_2GF,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,1HU,4ST,2AL_1SC,4CC,4GF,2CR_2GF_2ST_1SI,6CR
-SpawnCycleDefs=4ST,2HU,4CC_1BL,2CR,3AL_1SL,2AL_1SC,6CR,2SL_2CR_2GF_2SI,4GF,2ST,1SL_2AL_1GF,2FP_1SC,4CR,2AL_2GF,2SL_3GF_1SC,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,4CC,2CR_2GF_2ST_1SI,4ST,2HU,4CC_1BL,2CR,3AL_1SL,2AL_1SC,6CR,2SL_2CR_2GF_2SI,4GF,2ST,1SL_2AL_1GF,4CR,2AL_2GF,2SL_3CR_1GF,3CC_1CR_2ST_1BL_1SI,2SL_3GF_1SC,4CC,2CR_2GF_2ST_1SI
-SpawnCycleDefs=1SL_2AL_1GF,4CR,2HU,3CC_1BL,2AL_1SC,2AL_2GF,2SL_3CR_1GF,2SL_2CR_2GF_2SI,3AL_1SL,2FP_2SC,1HU,4ST,4CC,2CR_2ST_1BL_2SI,2SL_3GF_1SC,6CR,3CC_1AL_1GF,3CC_1CR_2ST_1BL_1SI,4GF,1SL_2AL_1GF,4CR,2HU,3CC_1BL,2AL_1SC,2AL_2GF,2SL_3CR_1GF,2SL_2CR_2GF_2SI,3AL_1SL,1HU,4ST,2SL_3GF_1SC,4CC,2CR_2ST_1BL_2SI,6CR,3CC_1AL_1GF,3CC_1CR_2ST_1BL_1SI,4GF
+SpawnCycleDefs=4CY,3CY_1AL_1GF,6SL,4CY_1BL,3AL_1SL,4CY,3CY_1AL_1GF,4CY_1BL,3AL_1SL
+SpawnCycleDefs=3CY_1AL,3CY_1SL_1BL,2CR,2ST,4CY_1BL_2GF,1HU,1SL_2AL_1GF,2AL_2GF,3CY_1AL_1GF,4CY,4CR,3CY_1AL,3CY_1SL_1BL,2CR,2ST,1HU,1SL_2AL_1GF,2AL_2GF,3CY_1AL_1GF,4CY,4CR
+SpawnCycleDefs=4CR,3AL_1BL,2SL_3CR_1GF,8ST,3CY_1GF_1SI,1SL_3GF,1HU,3CY_1AL,2CR,2CR_2GF_2ST_1SI,4ST,4GF_1BL,4CR,4CY_1SI,3AL_2BL,2SL_3CR_1GF,3CY_1GF_1SI,1SL_3GF,1HU,3CY_1AL,2CR,2CR_2GF_2ST_1SI,4ST,4GF
+SpawnCycleDefs=3CY_1AL,3CY_1CR_2ST_1BL_1SI,1HU_4CR,3CY,2AL_2GF,3CY_1GF_1SI,9GF,2ST,1SL_3GF,3CY_2CR_2ST_1SI,6CR,4GF,2CR_2GF_2ST,1BL_4CY_1AL,3CY_1CR_2ST_1BL_1SI,4CR,3CY_2BL,2AL_2GF,1HU,3CY_1GF_1SI,2ST,1SL_3GF,3CY_1CR_2ST_1BL_1SI,6CR,2CY_1SL_1HU,4GF,2CR_2GF_2ST_1SI
+SpawnCycleDefs=2CR,2CR_2GF_2ST_1SI,4CR,3CY_1CR_2ST_1BL_1SI,1SC_6ST,2ST,3CY_1BL,4GF,6CR,4ST,2AL_2GF,2AL_1GF_1HU,1SL_3GF,3CY_1GF_1SI,3AL_1SL,2CR,4ST,2CR_2GF_2ST_1SI,4CR,3CY_1CR_2ST_1BL_1SI,1SC,2ST,3CY_1BL,4GF,2AL_1GF_1HU,6CR,2AL_2GF,1SL_3GF,3CY_1GF_1SI,3AL_1SL
+SpawnCycleDefs=2AL_1GF_1HU,4CR,3AL_1SL,2SL_2CR_2GF_2SI,2AL_1SC,3CY_1SL_1BL,2CR,2ST,1SL_2AL_1GF,4GF,6CR,2CR_2GF_2ST_1SI,1HU,1SL_3GF,2SL_3CR_1GF,3CY_1CR_2ST_1BL_1SI,1SC_4ST,4CY,4ST,3CY_1AL_1GF,2AL_1GF_1HU,4CR,3AL_1SL,2SL_2CR_2GF_2SI,3CY_1SL_1BL,2CR,2AL_1SC,2ST,1SL_2AL_1GF,4GF,6CR,2CR_2GF_2ST_1SI,1SC_3GF,1SL_3GF,2SL_3CR_1GF,1HU,3CY_1CR_2ST_1BL_1SI,4CY,4ST,3CY_1AL_1GF
+SpawnCycleDefs=1SL_2AL_1GF,2AL_2GF,1FP_1SC,2SL_3CR_1GF,3CY_1CR_2ST_1BL,3CY_1AL_1GF,4ST,4GF,1HU,2CR_2ST_1CY_1SI,4CY_1AL,2SL_2CR_2GF_2SI,6CR,2SL_3GF_1SC,1HU_4CR,3CY_1BL,4CY,1HU_1AL_2SL,1SL_2AL_1GF,2AL_2GF,2SL_3CR_1GF,3CY_1CR_2ST_1CY_1SI,2SL_2GF_2SC,3CY_1AL_1GF,4ST,4GF,2CR_2ST_1BL_2SI,3CY_1AL,2SL_2CR_2GF_2SI,6CR,4CR,3CY_1BL,4CY
+SpawnCycleDefs=2SL_3GF_1SC,4CY_1BL,2CR,2AL_1GF_1HU,2ST,1SL_2AL_1GF,2SL_2CR_2GF,2SI,3AL_1SL,4CR,2AL_2GF,1FP_1SC,2SL_3CR_1GF,3CY_1CR_2ST_1BL_1SI,4ST,4CY,4GF,1HU,2CR_2GF_2ST_1SI,2AL_1SC,6CR,4CY_1BL,2CR,2AL_1GF_1HU,2ST,1SL_2AL_1GF,2SL_2CR_2GF,2SI,3AL_1SL,4CR,2AL_2GF,2SL_3CR_1GF,2SL_3GF_1SC,3CY_1CR_2ST_1BL_1SI,2AL_1SC,1BL_4ST,4CY,4GF,2CR_2GF_2ST_1SI,6CR
+SpawnCycleDefs=1HU_4ST,2AL_1SC,4CY_1BL,2CR,3AL_1SL,6CR,2SL_2CR_2GF_2SI,4GF,2FP_1SC,2ST,1SL_2AL_1GF,4CR,2AL_2GF,2SL_3CR_1GF,3CY_1CR_2ST,2BL_1SI,2CR_2GF_2ST_1SI,4CY,2SL_3GF_1SC,4ST,4CY_1BL,2CR,1HU,3CY_2GF,3AL_1SL,6CR,2SL_2CR_2GF_2SI,4GF,2ST,1SL_2AL_1GF,4CR,2SL_3CR_1GF,2AL_2GF,2AL_1SC,3CY_1CR_2ST_1BL_1SI,2SL_3GF_1SC,4CY,2CR_2GF_2ST_1SI,1HU,3CY_1CR_2ST,1BL_1SI,4CY,3GF_1SL
+SpawnCycleDefs=1SL_2AL_1GF,4CR,2FP_2SC,3CY_1SL,2AL_2CY,2AL_2GF,4CY,2SL_3CR_1GF,2SL_2CR_2GF_1SI,3AL_1SL,4ST,2SL_3GF_1SC,6CR,1HU,2CR_2ST,1BL_2SI,3CY_1AL_1GF,3CY_1CR_2ST_1BL_1SI,4GF,1SL_2AL_1GF,4CR,3CY_2BL,2AL_1SC,1HU_3CY,2AL_2GF,2SL_3CR_1GF,2SL_2CR_2GF,2SI,2SL_3GF_1SC,3AL_1SL,4CY_1AL,4ST,1CR_2ST_1BL_1SI,6CR,3CY_1AL_1GF,4CY_1CR_2ST_1BL,4GF
 ```
