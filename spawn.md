@@ -142,9 +142,11 @@ The asterisk suffix makes these zeds albino/special.  For example, "Crawler\*" w
 
 CD's `AlbinoCrawlers` and `AlbinoAlphas` options only have an effect when `SpawnCycle=unmodded`.  If `SpawnCycle` is set to any other value (i.e. ini or a preset), then the cycle defs determine whether and when albino zeds spawn, regardless of the `AlbinoCrawlers` and `AlbinoAlphas` options.
 
-## Sample Configuration
+## Sample Configuration: `basic_moderate` Preset
 
 The following `KFGame.ini` snippet reflects the `basic_moderate` preset.  This could be useful if you want to start tweaking an existing preset rather than starting from scratch.
+
+Here are some charts visualizing how the preset's big zeds and husks are distributed: http://imgur.com/a/oKVmS
 
 ```
 [ControlledDifficulty.CD_Survival]
