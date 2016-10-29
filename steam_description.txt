@@ -1,7 +1,7 @@
 [h1]Summary[/h1]
 
-[b]Last tested on[/b]: KF2 EA version 1043 / Sep 21 2016
-[b]Mod version[/b]: 8bd8ff84 (built 2016-09-21)
+[b]Last tested on[/b]: KF2 EA version 1043 / Oct 28 2016
+[b]Mod version[/b]: 283bbd68 (built 2016-10-28)
 
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which supports the following:
 
@@ -9,8 +9,10 @@ This open source mod creates a custom game mode called ControlledDifficulty.CD_S
 * 'Faking' players; this increases the zed count (but not zed health) as though additional players were present
 * Setting an arbitrary, fixed spawn intensity, without conductor interference
 * Setting the max amount live zeds
+* Setting a SpawnCycle, which controls exactly which zeds spawn and in what order
 * Setting trader time
-* Optionally disabling albino crawlers (i.e. gas crawlers)
+* Disabling albino crawlers (i.e. gas crawlers) and albino alphas
+* Controlling which boss spawns
 
 Source: https://github.com/notblackout/kf2-controlled-difficulty
 
@@ -18,7 +20,7 @@ This mod is intended to support solo faked-player HOE challenges.
 
 In the vanilla game, the Game Conductor controls spawn intensity. This is expressed as a floating point number, where smaller numbers result in more frequent zed spawns and larger numbers result in less frequent zed spawns.
 
-The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  This makes the spawn rate feel unpredictable and theoretically encourages dumb strategies intended to cheese the conductor.  In CD, you set an exact spawn intensity from the console.  It does not change during play.  Your performance does not influence it.  For reference, HOE Game Conductor varies this value between 1.0 and 0.75, where 1.0 is easiest HOE intensity and 0.75 is toughest HOE intensity.  Choosing a value in this range is recommended.   Specifying 1.0 is like locking the game at constant minimum HOE spawn intensity (the mod defaults to this until you configure otherwise).  Specifying 0.75 is like locking the game at constant peak HOE spawn intensity.  Values from 0 to 1, inclusive, are supported (since version e048b0e, built 2016-09-15).
+The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  In this mod, you set a specific intensity value before starting the game.  It does not change during play.  Supported values from 0 to 1, inclusive, are supported (since version e048b0e, built 2016-09-15), where smaller numbers are more intense, i.e. more frequent spawns.  For reference, the standard game conductor varies this number between 1.0 (easiest) and 0.75 (hardest) on HOE.
 
 [h1]Installation[/h1]
 
@@ -26,7 +28,7 @@ Click subscribe.  Restart the game if it is running (to make the game sync works
 
 To play, paste one of the console commands listed in the next section.  You can run those commands from KF2's main menu.
 
-This mod only activates when you run an 'open' console command and specify the '?game=ControlledDifficulty.CD_Survival' parameter as shown in the next section.  This mod does not alter the vanilla game.  Games started through the GUI menus or without that parameter will continue to use vanilla difficulty settings.  Subscribing to the mod will not mess with your regular, menu-initiated solo games or games on servers you join.
+This mod only activates when you run an 'open' console command and specify the '?game=ControlledDifficulty.CD_Survival' parameter as shown in the next section.  Mulitplayer games and solo games started through the GUI are not affected by this mod.
 
 [h1]Console Command Examples (Start Here)[/h1]
 
@@ -35,8 +37,8 @@ The easiest way to get started is to open the KF2 console at the main menu (usin
 // One faked player (assuming solo play, that makes two total), 30 second trader time,
 // HOE difficulty, Long duration game, SpawnMod 0.85, MaxMonsters is 32, no gas.
 // SpawnMod is the 'spawn intensity' described in preceding sections.
-// Map is KF-Hillside-B3.  Must be typed/pasted as one line.
-[code]open KF-Hillside-B3?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?MaxMonsters=32?SpawnMod=0.85?AlbinoCrawlers=false[/code]
+// Map is KF-Hillside-B4.  Must be typed/pasted as one line.
+[code]open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?MaxMonsters=32?SpawnMod=0.85?AlbinoCrawlers=false[/code]
 
 // Five faked players, SpawnMod 0.75, MaxMonsters 24, TraderTime 45.
 // Length/Diff same as above.  Map is Burning Paris.
@@ -74,8 +76,21 @@ MaxMonsters values:
 * note: standard KF2 solo uses 16, standard KF2 multiplayer server uses 32
 
 AlbinoCrawlers values:
-* false forces all crawlers to be non-gas black crawlers
-* true allows albinos crawlers to spawn just like in standard KF2
+* false forces all crawlers to be ordinary crawlers
+* true allows albino crawlers to sometimes spawn just like in standard KF2
+
+AlbinoAlphas values:
+* false forces all alpha clots to be ordinary alphas
+* true allows albino alpha clots to sometimes spawn just like in standard KF2
+
+Boss values:
+* hans or volter: forces Hans Volter to spawn on the boss wave
+* patriarch or patty: forces the Patriarch to spawn on the boss wave
+* unmodded: random boss is selected on boss wave just like in standard KF2
+
+SpawnCycle values:
+* Try `CDSpawnPresets` to see valid options
+* For full docs on this option, see https://github.com/notblackout/kf2-controlled-difficulty/blob/master/spawn.md
 
 Parameters are order-insensitive.
 
@@ -120,18 +135,24 @@ Optionally, consider also enabling AISpawnManager logging of zed/squad spawns.  
 [KFGame.KFAISpawnManager]
 bLogAISpawning=true
 
-[h1]How does CD relate to the Project One mod?[/h1]
+[h1]How does CD relate to Skell's Faked Suite and Project One mods?[/h1]
 
-I made this because Project One has not been updated in a while (December 2015 atm).  I wasn't confident that a mod that old actually disabled the Game Conductor, and the source was not available for me to check.  So I made Controlled Difficulty.
+I made this mod after P1 went unmaintained, but before Skell returned to make FS.  FS has much stronger support for running on a multiplayer server than CD, support for ! chat commands, and the ability to extend trader time or disable zed block/dodge.  CD, on the other hand, has its unique SpawnCycle feature, which is not present in FS or anything else besides CD right now.
 
-[h1]Where can I get KF-Hillside-B3?[/h1]
+[h1]Where can I get KF-Hillside?[/h1]
 
 http://forums.tripwireinteractive.com/forum/killing-floor-2/killing-floor-2-modifications/level-design-ac/beta-map-releases-aa/114043-kf-hillside
 
 CD works with any map, not just Hillside.  But Hillside is good for a lot of solo challenges.
 
-[h1]Changelog & Internals[/h1]
+[h1]Changelog[/h1]
 
 Changelog: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/changelog.txt
 
-Internals: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/internals.txt
+[h1]Special Thanks[/h1]
+
+Thanks to the following people for variously testing the mod, helping find bugs, or sharing their insight (this does not imply that they endorse the mod):
+
+dandyboy66, Fat Cat, Kore, mike5879, Trance, Skell
+
+All bugs are still my fault :)

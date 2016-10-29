@@ -1,3 +1,75 @@
+283bbd68 built 2016-10-28
+-------------------------
+
+* New SpawnCycle option for deterministic spawns
+
+  This feature takes the luck out of what zeds spawn and when.  No
+  more guessing about whether you'll get 3FP or just 2SC.  It lets you
+  control what zeds spawn, in what squads, on what waves, in what
+  order.  This covers everything from big zed squads down to every
+  last crawler.  The only thing it does not cover is boss waves.
+
+  If you want, you can exercise full control over every spawn by
+  writing your own detailed SpawnCycle in KFGame.ini and setting
+  SpawnCycle=ini.  Or, you can use the SpawnCycle=basic_moderate
+  preset included in this release, in which case you don't have to
+  touch KFGame.ini at all.
+
+  Detailed documentation on this feature is available here:
+  https://github.com/notblackout/kf2-controlled-difficulty/blob/master/spawn.md
+
+  However, to just get started as quickly as possible without reading
+  anything, run this:
+
+  `open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?SpawnCycle=basic_moderate`
+
+  After the map loads, type this to see a summary of what you're about
+  to play:
+
+  `CDSpawnSummaries`
+
+  This basic_moderate preset feels similar to a roughly average HOE
+  Long game, with a few tweaks:
+
+  * Big zed presence increases smoothly and linearly, so that each
+    wave is a slight but distinct step up from the preceding wave.
+    There is a total of 54 bigs over the entire long game.
+  
+  * Only 47 husks spawn over the course of the entire game.  This is
+    only about two-thirds-ish the normal number of husks.  The husks
+    also tend to spawn one at a time.
+
+* New Boss=hans|patriarch|unmodded option
+
+  This controls which boss spawns at the end of a game.  It can be set
+  to unmodded to keep the default random behavior.
+
+  New AlbinoAlphas option to complement existing AlbinoCrawlers option
+
+  A past release introduced AlbinoCrawlers, but there was no way to
+  control whether albino alpha clots would spawn.  The new
+  AlbinoAlphas=true|false option does just that.
+
+  As noted in the documentation, activating a SpawnCycle effectively
+  disables the AlbinoAlphas and AlbinoCrawlers options.  Whether and
+  when albinos spawn is controlled by the SpawnCycle definition, in
+  that case.  basic_moderate has no albinos whatsoever, so you will
+  not see any when playing that preset no matter what the
+  AlbinoAlphas/-Crawlers options are set to.
+
+* Logging cleanup
+
+  The old "(GameConductor woken up) ControlledDifficulty forcing
+  SpawnMod =..." message no longer spams once a second into the log.
+  The underlying functionality has not changed, I just removed this
+  extremely noisy log message.
+
+  The mod is also much more consistent about honoring
+  bLogControlledDifficulty.  When bLogControlledDifficulty=false, the
+  only bits it unconditionally logs are error messages and a copy of
+  the information it prints to console (because the console doesn't
+  support copy-paste, but logfiles do).
+
 8bd8ff84 built 2016-09-21
 -------------------------
 
