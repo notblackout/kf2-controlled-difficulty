@@ -194,7 +194,7 @@ private function InitSpawnCyclePresetList()
 	{
 //		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_light');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_moderate');
-//		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_heavy');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_heavy');
 	}
 }
 
