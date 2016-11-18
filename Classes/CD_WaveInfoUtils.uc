@@ -82,7 +82,7 @@ static function PrintSpawnSummaries(
 	const out CD_ConsolePrinter CDCP,
 	const int GameLength,
 	const out CD_DifficultyInfo CustomDifficultyInfo,
-	const out sDifficultyWaveInfo DWS )
+	const out DifficultyWaveInfo DWS )
 {
 	local int WaveIndex;
 	local CD_AIWaveInfo WaveInfo;
@@ -122,7 +122,7 @@ private static function GetCDWaveSummary(
 	const int PlayerCount,
 	const int GameLength,
 	const out CD_DifficultyInfo CustomDifficultyInfo,
-	const out sDifficultyWaveInfo DWS,
+	const out DifficultyWaveInfo DWS,
 	out CD_WaveSummary result )
 {
 	local int WaveTotalAI;

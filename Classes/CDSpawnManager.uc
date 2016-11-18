@@ -67,7 +67,14 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
 	}
 }
 
-/** I overrode this function to change exactly one detail:
+/*  I overrode this function to ensure that the leftovers from a partially-
+    spawned squad go onto the beginning of the leftovers list, not on the end.
+    The standard game appends leftovers to the end of the list, even though
+    that list is emptied from the front.  The standard game behavior can result
+    in badly disordered squads -- this is not noticeable in the standard game
+    because the spawnlist is heavily randomized to begin with, but it is
+    obvious and crippling when using a CD SpawnCycle
+
     Despite the fact that this function invokes KFSV.SpawnWave with the
     parameter "bAllOrNothing" set to true, it still sometimes spawns only
     part of the squad, or perhaps spawns the whole squad but then immediately
@@ -96,9 +103,21 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
     (double digits) during ordinary play, so this can result in severely
     out-of-order spawns.
 
-    It might be possible to avoid duplication by calling the supermethod first
-    and then attempting to conditionally post-process AIToSpawn and
-    LeftoverSpawnSquads.  I may try that later.
+    It seems possible to avoid copyping most of this method.  I could just
+    invoke super.SpawnSquad and do some pre/post checks on LeftoverSpawnSquad's
+    size, moving elements from the beginning to the end according to the change
+    in size.  That would be way more elegant an involve no copy-pasting, but I
+    worried that the underlying assumption -- that all additional elements on the
+    end of LSS are failed spawn elements -- could be violated if TWI changes
+    SpawnSquad() upstream in a future patch.  For instance, TWI could decide that
+    SpawnSquad's LSS append is a good point for additional entropy injection and
+    do that by randomly shuffling the list every time elements are added.  That
+    would silently break the assumptions necessary for the override strategy, and
+    without causing a compiler or runtime error.  The spawnlist would just be
+    quietly randomized.  That's pretty much the worst failure mode because it is
+    the likeliest to get through testing, so even though
+    this is an unlikely scenario, I'm willing to put up with some ugly copy-paste
+    to preclude it.
 */
 function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool bSkipHumanZedSpawning=false )
 {
@@ -203,12 +222,22 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 			LogMonsterList(AIToSpawn, "SpawnSquad Incomplete Spawn Remaining");
 			LogMonsterList(LeftoverSpawnSquad, "Failed Spawn Before Adding To Leftovers");
 		}
-		// Add any failed spawns back into the LeftoverSpawnSquad to rapidly spawn somewhere else
+
+		//////////////////////////////
+		// Start of CD customization
+		//////////////////////////////
+		// Prepend AIToSpawn onto beginning of LSS.  In the standard game, leftovers
+        // go at the end, not the beginning.  This affects the game both with a
+        // SpawnCycle and without, but when a SpawnCycle is not in use, the spawn
+        // list is generally random anyway.
 		for ( i = AIToSpawn.Length - 1 ; 0 <= i ; i-- )
 		{
 			LeftoverSpawnSquad.Insert(0, 1);
 			LeftoverSpawnSquad[0] = AIToSpawn[i];
 		}
+		//////////////////////////////
+		// End of CD customization
+		//////////////////////////////
 
 		if( bLogAISpawning )
 		{
@@ -223,153 +252,180 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 	return FinalAmount;
 }
 
-/** Returns a random AIGroup from the "waiting" list */
+
+/* The sole reason for overriding this function is to suppress
+   the Rand()-based spawnlist shuffling when using a CD SpawnCycle.
+   The if statement in question is marked with banner-style comments.
+*/
 function array< class<KFPawn_Monster> > GetNextSpawnList()
 {
 	local array< class<KFPawn_Monster> >  NewSquad, RequiredSquad;
 	local int RandNum, AINeeded;
-	local bool bNeedsNewDesiredSquadType;
-	local int EntryIdx;
+    local bool bNeedsNewDesiredSquadType;
+    local int EntryIdx;
 
-	if( !IsAISquadAvailable() )
-	{
-		if( !bSummoningBossMinions )
+    if( DesiredSquadType == EST_Boss && LeftoverSpawnSquad.Length > 0 )
+    {
+    	LeftoverSpawnSquad.Length = 0;
+    }
+
+	AINeeded = GetNumAINeeded();
+    if( LeftoverSpawnSquad.Length < AINeeded )
+    {
+		if( !IsAISquadAvailable() )
 		{
-			// WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
-			if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
+			if( !bSummoningBossMinions )
 			{
-				GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
-				++NumSpecialSquadRecycles;
-			}
-			else
-			{
-				GetAvailableSquads(MyKFGRI.WaveNum - 1);
-			}
+	            // WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
+	            if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
+	            {
+	                //`log("Recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
+	                GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
+	                ++NumSpecialSquadRecycles;
+	            }
+	            else
+	            {
+	                //`log("Not recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
+	                GetAvailableSquads(MyKFGRI.WaveNum - 1);
+	            }
+	        }
+	        else
+	        {
+	            // Replace the regular squads with boss minions
+	            AvailableSquads = BossMinionsSpawnSquads;
+	        }
+		}
+
+		//////////////////////////////
+		// Start of CD customization
+		//////////////////////////////
+		if (0 < CustomWaves.length && MyKFGRI.WaveNum - 1 < CustomWaves.length )
+		{
+			// CD behavior: use available squads in first-to-last order
+			RandNum = 0;
 		}
 		else
 		{
-			// Replace the regular squads with boss minions
-			AvailableSquads = BossMinionsSpawnSquads;
+			// STANDARD game behavior: select a random squad from the list
+			RandNum = Rand(AvailableSquads.Length);
 		}
-	}
+		//////////////////////////////
+		// End of CD customization
+		//////////////////////////////
 
-	if (0 < CustomWaves.length && MyKFGRI.WaveNum - 1 < CustomWaves.length )
-	{
-		// CD behavior: use available squads in first-to-last order
-		RandNum = 0;
-	}
-	else
-	{
-		// STANDARD game behavior: select a random squad from the list
-		RandNum = Rand(AvailableSquads.Length);
-	}
+		// If we're forcing the required squad, and it already got picked, clear the flag
+		if( bForceRequiredSquad && RandNum == (AvailableSquads.Length - 1) )
+		{
+	       //`log("We spawned the required squad!");
+		   bForceRequiredSquad=false;
+		}
 
-	// If we're forcing the required squad, and it already got picked, clear the flag
-	if( bForceRequiredSquad && RandNum == (AvailableSquads.Length - 1) )
-	{
-	   bForceRequiredSquad=false;
-	}
+	    if( bLogAISpawning )
+	    {
+	        LogAvailableSquads();
+	    }
 
-	if( bLogAISpawning )
-	{
-		LogAvailableSquads();
-	}
+		`log("KFAISpawnManager.GetNextAIGroup() Wave:"@MyKFGRI.WaveNum@"Squad:"@AvailableSquads[RandNum]@"Index:"@RandNum, bLogAISpawning);
 
-	`log("KFAISpawnManager.GetNextAIGroup() Wave:"@MyKFGRI.WaveNum@"Squad:"@AvailableSquads[RandNum]@"Index:"@RandNum, bLogAISpawning);
-
-	// generate list of classes to spawn
-	GetSpawnListFromSquad(RandNum, AvailableSquads, NewSquad);
-
-	// Grab the required squad (special squad) which will be the last squad in the array,
-	// if we're about to run out of zeds we can spawn, and the special squad hasn't spawned yet
-	if( bForceRequiredSquad )
-	{
 		// generate list of classes to spawn
-		GetSpawnListFromSquad((AvailableSquads.Length - 1), AvailableSquads, RequiredSquad);
+		GetSpawnListFromSquad(RandNum, AvailableSquads, NewSquad);
 
-		if( (NumAISpawnsQueued + NewSquad.Length + RequiredSquad.Length) > WaveTotalAI )
+		// Grab the required squad (special squad) which will be the last squad in the array,
+		// if we're about to run out of zeds we can spawn, and the special squad hasn't spawned yet
+		if( bForceRequiredSquad )
 		{
-			NewSquad = RequiredSquad;
-			RandNum = (AvailableSquads.Length - 1);
-			//LogMonsterList(NewSquad, "RequiredSquad");
-			bForceRequiredSquad=false;
-		}
-	}
+	    	// generate list of classes to spawn
+	    	GetSpawnListFromSquad((AvailableSquads.Length - 1), AvailableSquads, RequiredSquad);
 
-	// remove selected squad from the list of available squads
-	AvailableSquads.Remove(RandNum, 1);
-
-	if( bLogAISpawning )
-	{
-		LogAvailableSquads();
-	}
-
-	// Use the LeftoverSpawnSquad if it exists
-	if( LeftoverSpawnSquad.Length > 0 )
-	{
-		if( bLogAISpawning )
-		{
-			LogMonsterList(LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad");
+	        if( (NumAISpawnsQueued + NewSquad.Length + RequiredSquad.Length) > WaveTotalAI )
+	        {
+	            NewSquad = RequiredSquad;
+	            RandNum = (AvailableSquads.Length - 1);
+	            //LogMonsterList(NewSquad, "RequiredSquad");
+	            //`log("Spawning required squad NumAISpawnsQueued: "$NumAISpawnsQueued$" NewSquad.Length: "$NewSquad.Length$" RequiredSquad.Length: "$RequiredSquad.Length$" WaveTotalAI: "$WaveTotalAI);
+	            bForceRequiredSquad=false;
+	        }
 		}
 
-		// Insert the leftover squad, in order, before the new squad
-		while( LeftoverSpawnSquad.Length > 0 )
-		{
-			EntryIdx = LeftoverSpawnSquad.Length-1;
-			NewSquad.Insert( 0, 1 );
-			NewSquad[0] = LeftoverSpawnSquad[EntryIdx];
-			LeftoverSpawnSquad.Length = EntryIdx;
-		}
+		// remove selected squad from the list of available squads
+		AvailableSquads.Remove(RandNum, 1);
 
-		// Set our desired squad type at the end of the function
-		bNeedsNewDesiredSquadType = true;
+	    if( bLogAISpawning )
+	    {
+	        LogAvailableSquads();
+	    }
 	}
+
+    // Use the LeftoverSpawnSquad if it exists
+    if( LeftoverSpawnSquad.Length > 0 )
+    {
+        if( bLogAISpawning )
+        {
+            LogMonsterList( LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad" );
+        }
+
+        // Insert the leftover squad, in order, before the new squad
+        while( LeftoverSpawnSquad.Length > 0 )
+        {
+            EntryIdx = LeftoverSpawnSquad.Length-1;
+            NewSquad.Insert( 0, 1 );
+            NewSquad[0] = LeftoverSpawnSquad[EntryIdx];
+            LeftoverSpawnSquad.Remove( EntryIdx, 1 );
+        }
+
+        // Set our desired squad type at the end of the function
+        bNeedsNewDesiredSquadType = true;
+    }
 
 	// Clamp list by NumAINeeded()
-	AINeeded = GetNumAINeeded();
 	if( AINeeded < NewSquad.Length )
 	{
 		LeftoverSpawnSquad = NewSquad;
 		// Clear out the monsters we're about to spawn from the leftover list
-		LeftoverSpawnSquad.Remove(0,AINeeded);
+        LeftoverSpawnSquad.Remove(0,AINeeded);
 
-		// Cut off the leftovers from the new monster list
-		NewSquad.Length = AINeeded;
+        // Cut off the leftovers from the new monster list
+        NewSquad.Length = AINeeded;
 
-		// Set our desired squad type at the end of the function
-		bNeedsNewDesiredSquadType = true;
+        // Set our desired squad type at the end of the function
+        bNeedsNewDesiredSquadType = true;
 	}
 	else
 	{
-		// If we're spawning all the monsters in the list, there are no leftovers
-		LeftoverSpawnSquad.Length = 0;
+        // If we're spawning all the monsters in the list, there are no leftovers
+        LeftoverSpawnSquad.Length = 0;
 	}
 
-	if( bLogAISpawning )
-	{
-		LogMonsterList(NewSquad, "NewSquad");
-		LogMonsterList(LeftoverSpawnSquad, "LeftoverSpawnSquad");
-	}
+    if( bLogAISpawning )
+    {
+    	LogMonsterList(NewSquad, "NewSquad");
+    	LogMonsterList(LeftoverSpawnSquad, "LeftoverSpawnSquad");
+    }
 
-	if( bNeedsNewDesiredSquadType )
-	{
-		// Make sure we properly initialize the DesiredSquadType for the leftover squads,
-		// otherwise they will just use whatever size data was left in the system
-		SetDesiredSquadTypeForZedList( NewSquad );
-	}
+    if( bNeedsNewDesiredSquadType )
+    {
+        // Make sure we properly initialize the DesiredSquadType for the leftover squads,
+        // otherwise they will just use whatever size data was left in the system
+        SetDesiredSquadTypeForZedList( NewSquad );
+    }
 
 	return NewSquad;
 }
 
-// This function is invoked by the spawning system in the base game.
-// It is obnoxiously difficult to modify the spawn chances for albino/regular
-// crawlers without introducing a new pawn class.  I would have much rather
-// they made this spawn chance table part of DifficultyInfo instead of hardcoding
-// it into defaultproperties and then reading it by static method invocation.
-//
-// This function does a few things.  If a custom squad schedule is in use, it
-// enforces it.  If not, it checks AlbinoCrawlers/AlbinoAlphas.  It also
-// enforces a Boss preference, if set.
+
+/* This function is overridden for a few reasons:
+
+   - if a boss preference is set and we're spawning a boss,
+     then bypass random boss selection and apply the preference
+
+   - if AlbinoAlphas=false and no SpawnCycle is in use, then 
+     replace all standard alpha pawns with equivalent pawns
+     that cannot have rally chance > 0
+
+   - if AlbinoCrawlers=false and no SpawnCycle is in use, then
+     replace all standard crawler pawns with equivalent pawns
+     that cannot spawn as gas crawlers
+*/
 function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > SquadsList, out array< class<KFPawn_Monster> >  AISpawnList)
 {
 	local int crawlersForcedRegular;

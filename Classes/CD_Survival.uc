@@ -447,7 +447,7 @@ exec function logControlledDifficulty( bool enabled )
 exec function CDSpawnSummaries( optional string CycleName, optional int AssumedPlayerCount = -255 )
 {
 	local array<CD_AIWaveInfo> WaveInfosToSummarize;
-	local sDifficultyWaveInfo DWS;
+	local DifficultyWaveInfo DWS;
 	local class<CDSpawnManager> cdsmClass;
 	local EWaveInfoStatus wis;
 
