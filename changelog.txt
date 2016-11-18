@@ -1,3 +1,49 @@
+39cdcc74 built 2016-11-18
+-------------------------
+
+* GetNextSpawnList() was substantially modified upstream.  TWI made
+  it so that new squads are not appended to the LeftoverSpawnSquad
+  unless LSS is incapable of supplying AINeeded.  This means that LSS
+  no longer grows monotonically in solo play.  Indeed, it's now hard
+  to get LSS.Length above single digits, and it is routinely emptied
+  during play now.
+
+  This has the side effect of slowing down the spawnrate, because
+  LSS.Length > 0 triggers an early "return 0" in
+  CalcNextSpawnGroupTime(). Now that LSS is kept small and repeatedly
+  emptied midwave, CNSGT() uses this early return less often, resulting
+  in more time overall between the first zed spawn and the last, assuming
+  the team kills fewer than a squad's worth of enemies each second (~5).
+
+  The preceding version of the game (v1043) only really applied any
+  spawnrate modifiers, including CD SpawnMod, for the first few squads.
+  After the first few squads spawned, and assuming the player killed less
+  than an entire squad a second on average, LeftoverSpawnSquad's size
+  would grow effectively without bound, and this would trigger early
+  return in CNSGT().  This basically meant the game overrode SpawnMod to
+  zero after the first few squads.  So, it is possible to emulate v1043
+  behavior by setting SpawnMod=0 in this new version.  It's not exactly
+  the same -- SpawnMod=0 is actually slightly harder, because you don't
+  get any slack for those first few squads -- but it is close.
+
+  In the long term, this is probably a good move by TWI, because it
+  makes SpawnMod influential throughout the wave instead of just for
+  the first few squads.  For that reason, and because a similar and
+  slightly more difficult behavior can be simulated with SpawnMod=0,
+  I've decided to adopt TWI's new behavior in CD.  Maintaining the old
+  behavior as an option would have been kind of error-prone and clumsy.
+
+  To follow this change, I copied GetNextSpawnList() from TWI's
+  KFAISpawnManager and reapplied my CD customizations (which relate
+  to disabling spawn shuffling when a SpawnCycle is in use).
+
+* TWI renamed sDifficultyWaveInfo to DifficultyWaveInfo.  CD used this
+  struct in a couple of places.  The actual struct contents and field
+  names have not changed, just the name of the struct type.
+
+* Added basic_heavy preset.  Thanks to Dandy Boy for helping me tune this
+  preset.
+
 283bbd68 built 2016-10-28
 -------------------------
 

@@ -1,7 +1,7 @@
 [h1]Summary[/h1]
 
-[b]Last tested on[/b]: KF2 EA version 1043 / Oct 28 2016
-[b]Mod version[/b]: 283bbd68 (built 2016-10-28)
+[b]Last tested on[/b]: KF2 v1048 / Nov 18 2016
+[b]Mod version[/b]: 39cdcc74 (built 2016-11-18)
 
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which supports the following:
 
@@ -20,7 +20,7 @@ This mod is intended to support solo faked-player HOE challenges.
 
 In the vanilla game, the Game Conductor controls spawn intensity. This is expressed as a floating point number, where smaller numbers result in more frequent zed spawns and larger numbers result in less frequent zed spawns.
 
-The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  In this mod, you set a specific intensity value before starting the game.  It does not change during play.  Supported values from 0 to 1, inclusive, are supported (since version e048b0e, built 2016-09-15), where smaller numbers are more intense, i.e. more frequent spawns.  For reference, the standard game conductor varies this number between 1.0 (easiest) and 0.75 (hardest) on HOE.
+The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  In this mod, you set a specific intensity value before starting the game.  It does not change during play.  Values from 0 to 1, inclusive, are supported (since version e048b0e, built 2016-09-15), where smaller numbers are more intense, i.e. more frequent spawns.  For reference, the standard game conductor varies this number between 1.0 (easiest) and 0.75 (hardest) on HOE.
 
 [h1]Installation[/h1]
 
