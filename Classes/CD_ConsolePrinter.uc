@@ -9,8 +9,6 @@ class CD_ConsolePrinter extends Object;
 
 `include(CD_Log.uci)
 
-var GameViewportClient CachedGVC;
-
 // This class is so simple that you could argue it shouldn't exist.
 // It could be replaced with purely static functions/defaultproperties.
 // However, I think this is still useful because it would facilitate
@@ -19,13 +17,19 @@ var GameViewportClient CachedGVC;
 
 function Print( string message, optional bool autoPrefix = true )
 {
-	CachedGVC = class'GameEngine'.static.GetEngine().GameViewport;
+	local GameViewportClient LocalGVC;
 
 	if ( autoPrefix )
 	{
 		message = "[ControlledDifficulty] "$message;
 	}
 
-	CachedGVC.ViewportConsole.OutputTextLine(message);
+	LocalGVC = class'GameEngine'.static.GetEngine().GameViewport;
+
+	if ( LocalGVC != None )
+	{
+		LocalGVC.ViewportConsole.OutputTextLine(message);
+	}
+
 	`cdlog(message, true);
 }

@@ -189,6 +189,74 @@ event InitGame( string Options, out string ErrorMessage )
 	SaveConfig();
 }
 
+/* We override PreLogin to disable a comically overzealous
+   GameMode integrity check added in v1046 or v1048 (not
+   sure exactly which, but it appeared after v1043 for sure).
+   Basically, TWI added a GameMode whitelist check that executes
+   every time a client quick joins, uses the server browser, or
+   just stays connected to a server through a map change.
+*/
+event PreLogin(string Options, string Address, const UniqueNetId UniqueId, bool bSupportsAuth, out string ErrorMessage)
+{
+	local bool bSpectator;
+	local bool bPerfTesting;
+//	local string DesiredDifficulty, DesiredWaveLength, DesiredGameMode;
+
+	// Check for an arbitrated match in progress and kick if needed
+	if (WorldInfo.NetMode != NM_Standalone && bUsingArbitration && bHasArbitratedHandshakeBegun)
+	{
+		ErrorMessage = PathName(WorldInfo.Game.GameMessageClass) $ ".ArbitrationMessage";
+		return;
+	}
+
+	// If this player is banned, reject him
+	if (AccessControl != none && AccessControl.IsIDBanned(UniqueId))
+	{
+		`log(Address@"is banned, rejecting...");
+		ErrorMessage = "<Strings:KFGame.KFLocalMessage.BannedFromServerString>";
+		return;
+	}
+
+//	// Check against what is expected from the client in the case of quick join/server browser. The server settings can change from the time the server gets the properties from the backend
+//	if( WorldInfo.NetMode == NM_DedicatedServer && !HasOption( Options, "bJoinViaInvite" ) )
+//	{
+//		DesiredDifficulty = ParseOption( Options, "Difficulty" );
+//		if( DesiredDifficulty != "" && int(DesiredDifficulty) != GameDifficulty )
+//		{
+//			`log("Got bad difficulty"@DesiredDifficulty@"expected"@GameDifficulty);
+//			ErrorMessage = "<Strings:KFGame.KFLocalMessage.ServerNoLongerAvailableString>";
+//			return;
+//		}
+//
+//		DesiredWaveLength = ParseOption( Options, "GameLength" );
+//		if( DesiredWaveLength != "" && int(DesiredWaveLength) != GameLength )
+//		{
+//			`log("Got bad wave length"@DesiredWaveLength@"expected"@GameLength);
+//			ErrorMessage = "<Strings:KFGame.KFLocalMessage.ServerNoLongerAvailableString>";
+//			return;
+//		}
+//
+//		DesiredGameMode = ParseOption( Options, "Game" );
+//		if( DesiredGameMode != "" && !(DesiredGameMode ~= GetFullGameModePath()) )
+//		{
+//			`log("Got bad wave length"@DesiredGameMode@"expected"@GetFullGameModePath());
+//			ErrorMessage = "<Strings:KFGame.KFLocalMessage.ServerNoLongerAvailableString>";
+//			return;
+//		}
+//	}
+
+
+	bPerfTesting = ( ParseOption( Options, "AutomatedPerfTesting" ) ~= "1" );
+	bSpectator = bPerfTesting || ( ParseOption( Options, "SpectatorOnly" ) ~= "1" ) || ( ParseOption( Options, "CauseEvent" ) ~= "FlyThrough" );
+
+	if (AccessControl != None)
+	{
+		AccessControl.PreLogin(Options, Address, UniqueId, bSupportsAuth, ErrorMessage, bSpectator);
+	}
+}
+
+
+
 /* 
  * We override this function for the sole purpose of hiding
  * our custom CD_ZedPawn classnames from the kill ticker.
@@ -277,9 +345,9 @@ function CreateDifficultyInfo(string Options)
 		FakePlayers = FakePlayersFromGameOptions;
 	}
 
-	// Force FakePlayers onto the interval [0, 5]
+	// Force FakePlayers onto the interval [0, 32]
 	FakePlayersBeforeClamping = FakePlayers;
-	FakePlayers = Clamp(FakePlayers, 0, 5);
+	FakePlayers = Clamp(FakePlayers, 0, 32);
 	`cdlog("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
 
 	// Print FakePlayers to console
