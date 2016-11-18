@@ -95,5 +95,5 @@ function string GetDate()
 
 function string GetAuthor()
 {
-	return "blackout";
+	return "blackout + dandyboy";
 }
