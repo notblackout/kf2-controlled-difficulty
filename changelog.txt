@@ -1,3 +1,25 @@
+4218dda3 built 2016-11-18
+-------------------------
+
+NM_DedicatedServer fixes
+
+Most importantly, this commit disables a gametype integrity check
+that TWI appears to have added after v1043 to make quickjoin less
+buggy.  The problem is that it executes every time the map changes,
+and it kicks everyone if the gametype is not standard.  CD's is
+not standard.
+
+I disabled this check. It didn't exist in v1043, and it's not
+really necessary for a custom gametype.
+
+This commit also contains two less-important fixes:
+
+* made CD_ConsolePrinter stop spamming (noisily but harmlessly)
+  about CachedGVC being None when running in dedicated server mode
+
+* expanded FakePlayers value range from [0,5] to [0,32]
+
+
 39cdcc74 built 2016-11-18
 -------------------------
 
