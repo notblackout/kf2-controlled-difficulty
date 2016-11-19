@@ -16,6 +16,27 @@ enum EWaveInfoStatus
 	WIS_SPAWNCYCLE_NOT_MODDED
 };
 
+enum CDAuthLevel
+{
+	CDAUTH_NONE,
+	CDAUTH_READ,
+	CDAUTH_WRITE
+};
+
+struct StructStagedConfig
+{
+	var int FakePlayers;
+	var int MaxMonsters;
+	var string SpawnCycle;
+	var float SpawnModFloat;
+};
+
+struct StructAuthorizedUsers
+{
+	var string SteamID;
+	var string Comment;
+};
+
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at
 // numplayers >= 3, and faking players this way does the same; you can always
@@ -78,6 +99,14 @@ var CD_ConsolePrinter GameInfo_CDCP;
 
 var CD_SpawnCycleCatalog SpawnCycleCatalog;
 
+var StructStagedConfig StagedConfig;
+
+var config array<StructAuthorizedUsers> AuthorizedUsers;
+
+var config CDAuthLevel DefaultAuthLevel;
+
+var config bool SuppressCDChatBanner;
+
 event InitGame( string Options, out string ErrorMessage )
 {
 	local float SpawnModFromGameOptions;
@@ -87,6 +116,10 @@ event InitGame( string Options, out string ErrorMessage )
 	local bool AlbinoAlphasFromGameOptions;
 	local string SpawnCycleFromGameOptions;
 	local string BossFromGameOptions;
+	local int FakePlayersFromGameOptions;
+	local int FakePlayersBeforeClamping;
+	local int TraderTimeFromGameOptions;
+
 
  	Super.InitGame( Options, ErrorMessage );
 
@@ -146,9 +179,51 @@ event InitGame( string Options, out string ErrorMessage )
 		Boss = BossFromGameOptions;
 	}
 
+	// Process FakePlayers command option, if present
+	if ( HasOption(Options, "FakePlayers") )
+	{
+		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
+		`cdlog("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		FakePlayers = FakePlayersFromGameOptions;
+	}
+
+	FakePlayersBeforeClamping = FakePlayers;
+	FakePlayers = ClampFakePlayers( FakePlayers );
+	`cdlog("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
+
+	// Print FakePlayers to console
+	if ( FakePlayers != FakePlayersBeforeClamping )
+	{
+		GameInfo_CDCP.Print("FakePlayers="$FakePlayers$" (clamped from "$FakePlayersBeforeClamping$")");
+	}
+	else
+	{
+		GameInfo_CDCP.Print("FakePlayers="$FakePlayers);
+	}
+
+	// Process TraderTime command option, if present
+	if ( HasOption(Options, "TraderTime") )
+	{
+		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
+		`cdlog("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		TraderTime = TraderTimeFromGameOptions;
+	}
+
+	// TraderTime is not clamped
+
+	// Print TraderTime to console
+	if ( 0 < TraderTime )
+	{
+		GameInfo_CDCP.Print("TraderTime="$TraderTime);
+	}
+	else
+	{
+		GameInfo_CDCP.Print("TraderTime=<unmodded default>");
+	}
+
 	// FClamp SpawnModFloat
 	SpawnModBeforeClamping = SpawnModFloat;
-	SpawnModFloat = FClamp(SpawnModFloat, 0.f, 1.f);
+	SpawnModFloat = ClampSpawnMod( SpawnModFloat );
 	`cdlog("FClamped SpawnMod = "$SpawnModFloat, bLogControlledDifficulty);
 
 	if ( SpawnModFloat == SpawnModBeforeClamping )
@@ -187,6 +262,16 @@ event InitGame( string Options, out string ErrorMessage )
 	}
 
 	SaveConfig();
+
+	// Setup the StagedConfig struct
+	StagedConfig.FakePlayers = FakePlayers;
+	StagedConfig.MaxMonsters = MaxMonsters;
+	StagedConfig.SpawnModFloat = SpawnModFloat;
+}
+
+private function float ClampSpawnMod( const float sm )
+{
+	return FClamp(sm, 0.f, 1.f);
 }
 
 /* We override PreLogin to disable a comically overzealous
@@ -310,6 +395,8 @@ function InitGameConductor()
 {
 	super.InitGameConductor();
 
+	`cdlog("FakePlayers in InitGameConductor(): "$ FakePlayers, bLogControlledDifficulty);
+
 	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
 	{
 		`cdlog("Checked that GameConductor "$GameConductor$" is an instance of CD_DummyGameConductor (OK)", bLogControlledDifficulty);
@@ -325,10 +412,6 @@ function InitGameConductor()
  */
 function CreateDifficultyInfo(string Options)
 {
-	local int FakePlayersFromGameOptions;
-	local int FakePlayersBeforeClamping;
-	local int TraderTimeFromGameOptions;
-
 	super.CreateDifficultyInfo(Options);
 
 	// Print CD's commit hash (version)
@@ -337,51 +420,14 @@ function CreateDifficultyInfo(string Options)
 	// the preceding call should have initialized DifficultyInfo
 	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
 
-	// Process FakePlayers command option, if present
-	if ( HasOption(Options, "FakePlayers") )
-	{
-		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
-		`cdlog("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
-		FakePlayers = FakePlayersFromGameOptions;
-	}
-
-	// Force FakePlayers onto the interval [0, 32]
-	FakePlayersBeforeClamping = FakePlayers;
-	FakePlayers = Clamp(FakePlayers, 0, 32);
-	`cdlog("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
-
-	// Print FakePlayers to console
-	if ( FakePlayers != FakePlayersBeforeClamping )
-	{
-		GameInfo_CDCP.Print("FakePlayers="$FakePlayers$" (clamped from "$FakePlayersBeforeClamping$")");
-	}
-	else
-	{
-		GameInfo_CDCP.Print("FakePlayers="$FakePlayers);
-	}
-
-	// Process TraderTime command option, if present
-	if ( HasOption(Options, "TraderTime") )
-	{
-		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
-		`cdlog("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
-		TraderTime = TraderTimeFromGameOptions;
-	}
-
-	// TraderTime is not clamped
-
-	// Print TraderTime to console
-	if ( 0 < TraderTime )
-	{
-		GameInfo_CDCP.Print("TraderTime="$TraderTime);
-	}
-	else
-	{
-		GameInfo_CDCP.Print("TraderTime=<unmodded default>");
-	}
-
 	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
 	`cdlog("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
+}
+
+private function int ClampFakePlayers( const int fp )
+{
+	// Force FakePlayers onto the interval [0, 32]
+	return Clamp(fp, 0, 32);
 }
 
 function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
@@ -409,6 +455,27 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 	`cdlog("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
 }
 
+private function string GetMaxMonstersStringForArg( const int mm )
+{
+	if (0 < mm)
+	{
+		return string(mm);
+	}
+	else if ( WorldInfo.NetMode == NM_StandAlone )
+	{
+		return string(class'CDSpawnManager'.default.MaxMonstersSolo[GameDifficulty]);
+	}
+	else
+	{
+		return string(class'CDSpawnManager'.default.MaxMonsters);
+	}
+}
+
+private function string GetMaxMonstersString()
+{
+	return GetMaxMonstersStringForArg( MaxMonsters );
+}
+
 /*
  * Configure CD_SpawnManager (particularly MaxMonsters and SpawnCycle)
  */ 
@@ -431,14 +498,7 @@ function InitSpawnManager()
 		return;
 	}
 
-	if (0 < MaxMonsters)
-	{
-		GameInfo_CDCP.Print("MaxMonsters="$MaxMonsters);
-	}
-	else
-	{
-		GameInfo_CDCP.Print("MaxMonsters=<unmodded default>");
-	}
+	GameInfo_CDCP.Print( "MaxMonsters=" $ GetMaxMonstersString() );
 
 	// Assign a spawn definition array to CycleDefs (unless SpawnCycle=random)
 	if ( SpawnCycle == "ini" )
@@ -480,6 +540,350 @@ function InitSpawnManager()
 		GameInfo_CDCP.Print( "AlbinoCrawlers=<ignored because SpawnCycle is not unmodded>" );
 		GameInfo_CDCP.Print( "AlbinoAlphas=<ignored because SpawnCycle is not unmodded>" );
 	}
+}
+
+event Broadcast (Actor Sender, coerce string Msg, optional name Type)
+{
+	super.Broadcast(Sender, Msg, Type);
+
+	if ( Type == 'Say' )
+	{
+		RunCDChatCommandIfAuthorized( Sender, Msg );
+	}
+}
+
+private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
+{
+	local CDAuthLevel AuthLevel;
+	local string ResponseMessage;
+	local array<string> CommandTokens;
+	local float TempFloat;
+	local int TempInt;
+	local name GameStateName;
+
+	// First, see if this chat message looks even remotely like a CD command
+	if ( 3 > Len( CommandString ) || !( Left( CommandString, 3 ) ~= "!cd" ) )
+	{
+		return;
+	}
+
+	`cdlog( "GetStateName(): " $ GetStateName() );
+
+	AuthLevel = GetAuthorizationLevelForUser( Sender );
+
+	if ( AuthLevel == CDAUTH_NONE )
+	{
+		return;
+	}
+
+	// Below this line, we can assume at least CDAUTH_READ permission
+
+	CommandString = Locs( CommandString );
+
+	ParseStringIntoArray( CommandString, CommandTokens, " ", true );
+
+	// Match the chat message against a defined and authorized command
+	// (or do nothing, if no match is found or authorization is not given)
+	ResponseMessage = "";
+	if ( 1 == CommandTokens.Length )
+	{
+		if ( "!cdfakeplayers" == CommandString )
+		{
+			ResponseMessage = GetFakePlayersChatLine();
+		}
+		else if ( "!cdinfo" == CommandString )
+		{
+			ResponseMessage = GetCDInfoChatString();
+		}
+		else if ( "!cdmaxmonsters" == CommandString )
+		{
+			ResponseMessage = GetMaxMonstersChatLine();
+		}
+		else if ( "!cdspawnmod" == CommandString )
+		{
+			ResponseMessage = GetSpawnModChatLine();
+		}
+	}
+	else if ( 2 == CommandTokens.Length && AuthLevel == CDAUTH_WRITE )
+	{
+		if ( "!cdfakeplayers" == CommandTokens[0] )
+		{
+			TempInt = int( CommandTokens[1] );
+			TempInt = ClampFakePlayers( TempInt );
+			StagedConfig.FakePlayers = TempInt;
+			ResponseMessage = "Staged: FakePlayers=" $ StagedConfig.FakePlayers $
+				"\nEffective after current wave"; 
+		}
+		else if ( "!cdmaxmonsters" == CommandTokens[0] )
+		{
+			TempInt = int( CommandTokens[1] );
+			if ( TempInt < 0 )
+			{
+				TempInt = 0;
+			} 
+			StagedConfig.MaxMonsters = TempInt;
+			ResponseMessage = "Staged: MaxMonsters=" $ StagedConfig.MaxMonsters $
+				"\nEffective after current wave"; 
+		}
+		else if ( "!cdspawnmod" == CommandTokens[0] )
+		{
+			TempFloat = float( CommandTokens[1] );
+			TempFloat = ClampSpawnMod( TempFloat );
+			StagedConfig.SpawnModFloat = TempFloat;
+			ResponseMessage = "Staged: SpawnMod=" $ StagedConfig.SpawnModFloat $
+				"\nEffective after current wave"; 
+		}
+
+		// Check whether we're allowed to modify settings right now.
+		// If so, change settings immediately and let ApplyStagedSettings()
+		// format an appropriate notification message.
+		GameStateName = GetStateName();
+		if ( GameStateName == 'PendingMatch' || GameStateName == 'MatchEnded' || GameStateName == 'TraderOpen' )
+		{
+			ApplyStagedConfig( ResponseMessage, "" );
+		}
+	}
+
+	// An authorized command match was found; the command may or may not
+	// have succeeded, but something was executed and a chat reply should
+	// be sent to all connected clients
+	if ( "" != ResponseMessage )
+	{
+		super.Broadcast(None, ResponseMessage, 'CDEcho');
+		return;
+	}
+}
+
+function WaveEnded( EWaveEndCondition WinCondition )
+{
+	local string CDSettingChangeMessage;
+
+	super.WaveEnded( WinCondition );
+
+	if ( ApplyStagedConfig( CDSettingChangeMessage, "Staged settings applied:" ) )
+	{
+		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
+	}
+}
+
+
+function StartWave()
+{
+	local string CDSettingChangeMessage;
+
+	if ( ApplyStagedConfig( CDSettingChangeMessage, "Staged settings applied:" ) )
+	{
+		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
+	}
+	
+	super.StartWave();
+
+	// If this is the first wave, print CD's settings
+	if ( 1 == WaveNum && !SuppressCDChatBanner )
+	{
+		SetTimer( 2.0f, false, 'DisplayWaveStartMessageInChat' );
+	}
+}
+
+private function DisplayWaveStartMessageInChat()
+{
+	super.Broadcast(None, "[Controlled Difficulty Active]\n" $ GetCDInfoChatString(), 'CDEcho');
+}
+
+private function bool ApplyStagedConfig( out string MessageToClients, const string BannerLine )
+{
+	local array<string> SettingChangeNotifications;
+
+	if ( StagedConfig.FakePlayers != FakePlayers )
+	{
+		SettingChangeNotifications.AddItem("FakePlayers="$ StagedConfig.FakePlayers $" (old: "$FakePlayers$")");
+		FakePlayers = StagedConfig.FakePlayers;
+	}
+
+	if ( StagedConfig.MaxMonsters != MaxMonsters )
+	{
+		SettingChangeNotifications.AddItem(
+			"MaxMonsters="$ GetMaxMonstersStringForArg( StagedConfig.MaxMonsters ) $
+			" (old: "$ GetMaxMonstersString() $")");
+		MaxMonsters = StagedConfig.MaxMonsters;
+	}
+
+	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, 0.001 ) )
+	{
+		SettingChangeNotifications.AddItem("SpawnMod="$ StagedConfig.SpawnModFloat $" (old: "$SpawnModFloat$")");
+		SpawnModFloat = StagedConfig.SpawnModFloat;
+		SpawnMod = string(SpawnModFloat);
+	}
+
+	if ( 0 < SettingChangeNotifications.Length )
+	{
+		if ( "" != BannerLine )
+		{
+			SettingChangeNotifications.InsertItem( 0, BannerLine );
+		}
+
+		JoinArray(SettingChangeNotifications, MessageToClients, "\n");
+
+		SaveConfig();
+
+		return true;
+	}
+
+	return false;
+}
+
+private function bool EpsilonClose( const float a, const float b, const float epsilon )
+{
+	return a == b || (a < b && b < (a + epsilon)) || (b < a && a < (b + epsilon ));
+}
+
+private function CDAuthLevel GetAuthorizationLevelForUser( Actor Sender )
+{
+	local KFPlayerReplicationInfo KFPRI;
+	local KFPlayerController SubjectPC;
+	local string SteamIdHexString;
+	local int SteamIdAccountNumber;
+	local string SteamIdSuffix;
+	local int i;
+	local int SteamIdSuffixLength;
+
+	SubjectPC = KFPlayerController( Sender );
+
+	if ( None == SubjectPC )
+	{
+		`cdlog("Actor "$ Sender $" does not appear to be a KFPlayerController.", bLogControlledDifficulty);
+		return DefaultAuthLevel;
+	}
+
+	KFPRI = KFPlayerReplicationInfo( SubjectPC.PlayerReplicationInfo );
+
+	if ( None == KFPRI )
+	{
+		`cdlog("Subject player controller "$ SubjectPC $" does not have replication info.", bLogControlledDifficulty);
+		return DefaultAuthLevel;
+	}
+
+	SteamIdHexString = OnlineSub.UniqueNetIdToString(KFPRI.UniqueId); 
+
+	`cdlog("Beginning authorization check for UniqueId=" $ SteamIdHexString $ " (current nickname: "$ KFPRI.PlayerName $")", bLogControlledDifficulty);
+
+	HexStringToInt( Right( SteamIdHexString, 8 ), SteamIdAccountNumber );
+
+	if ( -1 == SteamIdAccountNumber )
+	{
+		`cdlog("Parsing UniqueId=" $ SteamIdHexString $ " as hex failed; not a STEAMID? (current nickname: "$ KFPRI.PlayerName $")", bLogControlledDifficulty);
+		return DefaultAuthLevel;
+	}
+
+	`cdlog("Unpacked int32 steam account number: " $ SteamIdAccountNumber $ " (current nickname: "$ KFPRI.PlayerName $")", bLogControlledDifficulty); 
+
+	SteamIdSuffix = ":" $ string(SteamIdAccountNumber % 2) $ ":" $ string(SteamIdAccountNumber / 2);
+	SteamIdSuffixLength = Len( SteamIdSuffix );
+
+	`cdlog("Formatted account number as STEAMID2-style string: "$ SteamIdSuffix $ " (current nickname: "$ KFPRI.PlayerName $")", bLogControlledDifficulty); 
+
+	for ( i = 0; i < AuthorizedUsers.Length; i++ )
+	{
+		if ( Len( AuthorizedUsers[i].SteamID ) < SteamIdSuffixLength )
+		{
+			continue;
+		}
+
+		if ( Right( AuthorizedUsers[i].SteamID, SteamIdSuffixLength ) == SteamIdSuffix )
+		{
+			`cdlog("Found STEAMID2 auth match for " $
+			AuthorizedUsers[i].SteamID $ "; granting CDAUTH_WRITE (current nickname: " $ KFPRI.PlayerName $
+			", auth comment: " $ AuthorizedUsers[i].Comment $ ")", bLogControlledDifficulty);
+
+			return CDAUTH_WRITE;
+		}
+	}
+
+	`cdlog("No STEAMID2 auth match found for current user (current nickname: " $ KFPRI.PlayerName $ ")", bLogControlledDifficulty);
+
+	return DefaultAuthLevel;
+}
+
+private function int HexStringToInt( string hexstr, out int value )
+{
+	local int i;
+	local int multiplier;
+
+	hexstr = Locs(hexstr);
+
+	multiplier = 1;
+	value = 0;
+
+	for ( i = Len(hexstr) - 1 ; 0 <= i ; i-- )
+	{
+		switch (Mid(hexstr, i, 1))
+		{
+		case "0": break;
+		case "1": value += multiplier; break;
+		case "2": value += (multiplier * 2);  break;
+		case "3": value += (multiplier * 3);  break;
+		case "4": value += (multiplier * 4);  break;
+		case "5": value += (multiplier * 5);  break;
+		case "6": value += (multiplier * 6);  break;
+		case "7": value += (multiplier * 7);  break;
+		case "8": value += (multiplier * 8);  break;
+		case "9": value += (multiplier * 9);  break;
+		case "a": value += (multiplier * 10); break;
+		case "b": value += (multiplier * 11); break;
+		case "c": value += (multiplier * 12); break;
+		case "d": value += (multiplier * 13); break;
+		case "e": value += (multiplier * 14); break;
+		case "f": value += (multiplier * 15); break;
+		default: return -1;
+		}
+
+		multiplier *= 16; 
+	}
+
+	return value;
+}
+
+private function string GetCDInfoChatString()
+{
+	return GetFakePlayersChatLine() $ "\n" $
+	       GetMaxMonstersChatLine() $ "\n" $
+	       GetSpawnModChatLine() ;
+}
+
+
+private function string GetFakePlayersChatLine()
+{
+	local string FakePlayersLatchedString;
+
+	if ( StagedConfig.FakePlayers != FakePlayers )
+	{
+		FakePlayersLatchedString = " (staged: " $ StagedConfig.FakePlayers $ ")";
+	}
+
+	return "FakePlayers=" $ FakePlayers $ FakePlayersLatchedString;
+}
+private function string GetMaxMonstersChatLine()
+{
+	local string MaxMonstersLatchedString;
+
+	if ( StagedConfig.MaxMonsters != MaxMonsters )
+	{
+		MaxMonstersLatchedString = " (staged: " $ StagedConfig.MaxMonsters $ ")";
+	}
+
+	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
+}
+
+private function string GetSpawnModChatLine()
+{
+	local string SpawnModLatchedString;
+
+	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, 0.0001 ) )
+	{
+		SpawnModLatchedString = " (staged: " $ StagedConfig.SpawnModFloat $ ")";
+	}
+
+	return "SpawnMod="$ SpawnModFloat $ SpawnModLatchedString;
 }
 
 private function MaybeLoadIniWaveInfos()
