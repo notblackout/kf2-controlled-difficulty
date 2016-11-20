@@ -37,6 +37,10 @@ struct StructAuthorizedUsers
 	var string Comment;
 };
 
+////////////////////
+// Config options //
+////////////////////
+
 // increase zed count (but not hp) as though this many additional players were
 // present; note that the game normally increases dosh rewards for each zed at
 // numplayers >= 3, and faking players this way does the same; you can always
@@ -90,22 +94,40 @@ var config array<string> SpawnCycleDefs;
 // else: choose a random boss wave (unmodded game behavior)
 var config string Boss;
 
-var array<CD_AIWaveInfo> IniWaveInfos;
-var bool AlreadyLoadedIniWaveInfos;
-
-var CD_DifficultyInfo CustomDifficultyInfo;
-
-var CD_ConsolePrinter GameInfo_CDCP;
-
-var CD_SpawnCycleCatalog SpawnCycleCatalog;
-
-var StructStagedConfig StagedConfig;
-
+// Defines users always allowed to run any chat command
 var config array<StructAuthorizedUsers> AuthorizedUsers;
 
+// Defines chat command privileges for users who are not
+// defined in AuthorizedUsers (i.e. the general public)
 var config CDAuthLevel DefaultAuthLevel;
 
-var config bool SuppressCDChatBanner;
+////////////////////////////////////////////////////////////////
+// Internal runtime state (no config options below this line) //
+////////////////////////////////////////////////////////////////
+
+// SpawnCycle parsed out of the SpawnCycleDefs strings
+var array<CD_AIWaveInfo> IniWaveInfos;
+
+// Whether SpawnCycleDefs has been parsed into IniWaveInfos
+var bool AlreadyLoadedIniWaveInfos;
+
+// Reference to CD_DifficultyInfo
+var CD_DifficultyInfo CustomDifficultyInfo;
+
+// Console/log text output facility
+var CD_ConsolePrinter GameInfo_CDCP;
+
+// Authoritative list of known SpawnCycle presets
+var CD_SpawnCycleCatalog SpawnCycleCatalog;
+
+// Configuration changes latched through chat commands.
+// Chat commands always go through StagedConfig, but
+// the StagedConfig is only copied to the live config
+// if a wave is not currently in progress.  If a wave
+// is in progress, the new values sit here in StagedConfig
+// until the wave is over, at which time then CD copies
+// the staged values to their live counterparts.
+var StructStagedConfig StagedConfig;
 
 event InitGame( string Options, out string ErrorMessage )
 {
@@ -125,8 +147,6 @@ event InitGame( string Options, out string ErrorMessage )
 
 	SpawnCycleCatalog = new class'CD_SpawnCycleCatalog';
 	SpawnCycleCatalog.Initialize( AIClassList, GameInfo_CDCP, bLogControlledDifficulty );
-
-//	AddMutator( "ControlledDifficulty.CD_Mutator", false );
 
 	if (SpawnMod == "")
 	{
@@ -566,8 +586,6 @@ private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandStrin
 	{
 		return;
 	}
-
-	`cdlog( "GetStateName(): " $ GetStateName() );
 
 	AuthLevel = GetAuthorizationLevelForUser( Sender );
 
