@@ -18,7 +18,6 @@ enum EWaveInfoStatus
 
 enum CDAuthLevel
 {
-	CDAUTH_NONE,
 	CDAUTH_READ,
 	CDAUTH_WRITE
 };
@@ -294,13 +293,14 @@ private function float ClampSpawnMod( const float sm )
 	return FClamp(sm, 0.f, 1.f);
 }
 
-/* We override PreLogin to disable a comically overzealous
-   GameMode integrity check added in v1046 or v1048 (not
-   sure exactly which, but it appeared after v1043 for sure).
-   Basically, TWI added a GameMode whitelist check that executes
-   every time a client quick joins, uses the server browser, or
-   just stays connected to a server through a map change.
-*/
+/* 
+ * We override PreLogin to disable a comically overzealous
+ * GameMode integrity check added in v1046 or v1048 (not
+ * sure exactly which, but it appeared after v1043 for sure).
+ * Basically, TWI added a GameMode whitelist check that executes
+ * every time a client quick joins, uses the server browser, or
+ * just stays connected to a server through a map change.
+ */
 event PreLogin(string Options, string Address, const UniqueNetId UniqueId, bool bSupportsAuth, out string ErrorMessage)
 {
 	local bool bSpectator;
@@ -362,7 +362,7 @@ event PreLogin(string Options, string Address, const UniqueNetId UniqueId, bool 
 
 
 
-/* 
+/*
  * We override this function for the sole purpose of hiding
  * our custom CD_ZedPawn classnames from the kill ticker.
  * classname literals are embedded in the internationalization
@@ -409,7 +409,9 @@ function BroadcastDeathMessage(Controller Killer, Controller Other, class<Damage
 }
 
 /*
- * Check that the game conductor is lobotomized (or print a warning if not)
+ * Call super first, then check that the game conductor really
+ * is lobotomized.  If the game conductor has not been deactivated,
+ * print a scary warning.
  */
 function InitGameConductor()
 {
@@ -450,6 +452,10 @@ private function int ClampFakePlayers( const int fp )
 	return Clamp(fp, 0, 32);
 }
 
+/*
+ * We override this function to apply FakePlayers modifier
+ * to dosh rewards for killing zeds.
+ */
 function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 {
 	local float DoshMod;
@@ -589,20 +595,17 @@ private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandStrin
 
 	AuthLevel = GetAuthorizationLevelForUser( Sender );
 
-	if ( AuthLevel == CDAUTH_NONE )
-	{
-		return;
-	}
-
-	// Below this line, we can assume at least CDAUTH_READ permission
-
+	// Chat commands are case-insensitive.  Lowercase the command now
+	// so that we can do safely do string comparisons with lowercase
+	// operands below.
 	CommandString = Locs( CommandString );
 
+	// Split the chat command on spaces, dropping empty parts.
 	ParseStringIntoArray( CommandString, CommandTokens, " ", true );
 
-	// Match the chat message against a defined and authorized command
-	// (or do nothing, if no match is found or authorization is not given)
 	ResponseMessage = "";
+
+	// Match the chat message against a known read-only command
 	if ( 1 == CommandTokens.Length )
 	{
 		if ( "!cdfakeplayers" == CommandString )
@@ -622,6 +625,7 @@ private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandStrin
 			ResponseMessage = GetSpawnModChatLine();
 		}
 	}
+	// No read-only command matched.  Try write commands if authorized.
 	else if ( 2 == CommandTokens.Length && AuthLevel == CDAUTH_WRITE )
 	{
 		if ( "!cdfakeplayers" == CommandTokens[0] )
@@ -697,7 +701,7 @@ function StartWave()
 	super.StartWave();
 
 	// If this is the first wave, print CD's settings
-	if ( 1 == WaveNum && !SuppressCDChatBanner )
+	if ( 1 == WaveNum )
 	{
 		SetTimer( 2.0f, false, 'DisplayWaveStartMessageInChat' );
 	}
