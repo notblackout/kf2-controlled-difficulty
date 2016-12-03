@@ -24,10 +24,14 @@ enum CDAuthLevel
 
 struct StructStagedConfig
 {
-	var int FakePlayers;
-	var int MaxMonsters;
-	var string SpawnCycle;
-	var float SpawnModFloat;
+	var bool     AlbinoAlphas;
+	var bool     AlbinoCrawlers;
+	var string   Boss;
+	var int      FakePlayers;
+	var int      MaxMonsters;
+	var string   SpawnCycle;
+	var float    SpawnModFloat;
+//	var int      TraderTime;
 };
 
 struct StructAuthorizedUsers
@@ -128,6 +132,17 @@ var CD_SpawnCycleCatalog SpawnCycleCatalog;
 // the staged values to their live counterparts.
 var StructStagedConfig StagedConfig;
 
+// Differences in SpawnMod which are less than this
+// value will be considered neglible and ignored, for
+// the purpose of display, comparison, and setting mutation
+// This is effectively the maximum precision of SpawnMod
+var const float SpawnModEpsilon;
+
+// Holds KFGRI state when the countdown to close the
+// trader has been temporarily suspended by the user.
+var int PausedRemainingTime;
+var int PausedRemainingMinute;
+
 event InitGame( string Options, out string ErrorMessage )
 {
 	local float SpawnModFromGameOptions;
@@ -146,6 +161,9 @@ event InitGame( string Options, out string ErrorMessage )
 
 	SpawnCycleCatalog = new class'CD_SpawnCycleCatalog';
 	SpawnCycleCatalog.Initialize( AIClassList, GameInfo_CDCP, bLogControlledDifficulty );
+
+	// Print CD's commit hash (version)
+	GameInfo_CDCP.Print("Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded");
 
 	if (SpawnMod == "")
 	{
@@ -269,7 +287,7 @@ event InitGame( string Options, out string ErrorMessage )
 		SpawnCycle = "unmodded";
 	}
 
-	if ( !isRandomBossString(Boss) && !isPatriarchBossString(Boss) && !isVolterBossString(Boss) )
+	if ( !isValidBossString(Boss) )
 	{
 		GameInfo_CDCP.Print("WARNING invalid Boss setting \""$Boss$"\"; Valid alternatives: patriarch, hans, or unmodded");
 		GameInfo_CDCP.Print("Boss=unmodded (forced because \""$ Boss $"\" is invalid)");
@@ -283,14 +301,24 @@ event InitGame( string Options, out string ErrorMessage )
 	SaveConfig();
 
 	// Setup the StagedConfig struct
+	StagedConfig.AlbinoAlphas = AlbinoAlphas;
+	StagedConfig.AlbinoCrawlers = AlbinoCrawlers;
+	StagedConfig.Boss = Boss;
 	StagedConfig.FakePlayers = FakePlayers;
 	StagedConfig.MaxMonsters = MaxMonsters;
+	StagedConfig.SpawnCycle = SpawnCycle;
 	StagedConfig.SpawnModFloat = SpawnModFloat;
+//	StagedConfig.TraderTime = TraderTime;
 }
 
 private function float ClampSpawnMod( const float sm )
 {
 	return FClamp(sm, 0.f, 1.f);
+}
+
+private function bool isValidBossString( const string bs )
+{
+	return isRandomBossString(bs) || isPatriarchBossString(bs) || isVolterBossString(bs);
 }
 
 /* 
@@ -430,20 +458,17 @@ function InitGameConductor()
 }
 
 /*
- * Setup CD_DifficultyInfo, FakePlayers, and TraderTime.
+ * Sanity check on DifficultyInfo.
  */
 function CreateDifficultyInfo(string Options)
 {
 	super.CreateDifficultyInfo(Options);
 
-	// Print CD's commit hash (version)
-	GameInfo_CDCP.Print("Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded");
-
 	// the preceding call should have initialized DifficultyInfo
 	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
 
 	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
-	`cdlog("Finished instantiating and configuring CD_DifficultyInfo", bLogControlledDifficulty);
+	`cdlog("CD_DifficultyInfo ready: " $ CustomDifficultyInfo, bLogControlledDifficulty);
 }
 
 private function int ClampFakePlayers( const int fp )
@@ -526,24 +551,7 @@ function InitSpawnManager()
 
 	GameInfo_CDCP.Print( "MaxMonsters=" $ GetMaxMonstersString() );
 
-	// Assign a spawn definition array to CycleDefs (unless SpawnCycle=random)
-	if ( SpawnCycle == "ini" )
-	{
-		MaybeLoadIniWaveInfos();
-
-		ActiveWaveInfos = IniWaveInfos;
-	}
-	else if ( SpawnCycle == "unmodded" )
-	{
-		`cdlog("Not using a SpawnCycle (value="$SpawnCycle$")", bLogControlledDifficulty);
-	}
-	else
-	{
-		if ( !SpawnCycleCatalog.ParseSquadCyclePreset( SpawnCycle, GameLength, ActiveWaveInfos ) )
-		{
-			ActiveWaveInfos.length = 0;
-		}
-	}
+	LoadSpawnCycle( ActiveWaveInfos );
 
 	if ( 0 == ActiveWaveinfos.length && SpawnCycle != "unmodded" )
 	{
@@ -568,6 +576,28 @@ function InitSpawnManager()
 	}
 }
 
+private function LoadSpawnCycle( out array<CD_AIWaveInfo> ActiveWaveInfos )
+{
+	// Assign a spawn definition array to CycleDefs (unless SpawnCycle=unmodded)
+	if ( SpawnCycle == "ini" )
+	{
+		MaybeLoadIniWaveInfos();
+
+		ActiveWaveInfos = IniWaveInfos;
+	}
+	else if ( SpawnCycle == "unmodded" )
+	{
+		`cdlog("Not using a SpawnCycle (value="$SpawnCycle$")", bLogControlledDifficulty);
+	}
+	else
+	{
+		if ( !SpawnCycleCatalog.ParseSquadCyclePreset( SpawnCycle, GameLength, ActiveWaveInfos ) )
+		{
+			ActiveWaveInfos.length = 0;
+		}
+	}
+}
+
 event Broadcast (Actor Sender, coerce string Msg, optional name Type)
 {
 	super.Broadcast(Sender, Msg, Type);
@@ -583,9 +613,14 @@ private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandStrin
 	local CDAuthLevel AuthLevel;
 	local string ResponseMessage;
 	local array<string> CommandTokens;
+	local name GameStateName;
+
 	local float TempFloat;
 	local int TempInt;
-	local name GameStateName;
+	local string TempString;
+	local bool SkipStagedConfigApplication;
+
+	SkipStagedConfigApplication = false;
 
 	// First, see if this chat message looks even remotely like a CD command
 	if ( 3 > Len( CommandString ) || !( Left( CommandString, 3 ) ~= "!cd" ) )
@@ -608,61 +643,236 @@ private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandStrin
 	// Match the chat message against a known read-only command
 	if ( 1 == CommandTokens.Length )
 	{
-		if ( "!cdfakeplayers" == CommandString )
+		if ( "!cdalbinoalphas" == CommandString )
 		{
-			ResponseMessage = GetFakePlayersChatLine();
+			ResponseMessage = GetAlbinoAlphasChatString();
+		}
+		else if ( "!cdalbinocrawlers" == CommandString )
+		{
+			ResponseMessage = GetAlbinoCrawlersChatString();
+		}
+		else if ( "!cdboss" == CommandString )
+		{
+			ResponseMessage = GetBossChatString();
+		}
+		else if ( "!cdfakeplayers" == CommandString )
+		{
+			ResponseMessage = GetFakePlayersChatString();
 		}
 		else if ( "!cdinfo" == CommandString )
 		{
-			ResponseMessage = GetCDInfoChatString();
+			ResponseMessage = GetCDInfoChatString( "brief" );
 		}
 		else if ( "!cdmaxmonsters" == CommandString )
 		{
-			ResponseMessage = GetMaxMonstersChatLine();
+			ResponseMessage = GetMaxMonstersChatString();
+		}
+		else if ( "!cdspawncycle" == CommandString )
+		{
+			ResponseMessage = GetSpawnCycleChatString();
 		}
 		else if ( "!cdspawnmod" == CommandString )
 		{
-			ResponseMessage = GetSpawnModChatLine();
+			ResponseMessage = GetSpawnModChatString();
+		}
+		else if ( "!cdtradertime" == CommandString )
+		{
+			ResponseMessage = GetTraderTimeChatString();
 		}
 	}
-	// No read-only command matched.  Try write commands if authorized.
-	else if ( 2 == CommandTokens.Length && AuthLevel == CDAUTH_WRITE )
+	else if ( 2 == CommandTokens.Length )
 	{
-		if ( "!cdfakeplayers" == CommandTokens[0] )
+		if ( "!cdinfo" == CommandTokens[0] )
 		{
-			TempInt = int( CommandTokens[1] );
-			TempInt = ClampFakePlayers( TempInt );
-			StagedConfig.FakePlayers = TempInt;
-			ResponseMessage = "Staged: FakePlayers=" $ StagedConfig.FakePlayers $
-				"\nEffective after current wave"; 
+			TempString = CommandTokens[1];
+			ResponseMessage = GetCDInfoChatString( TempString );
 		}
-		else if ( "!cdmaxmonsters" == CommandTokens[0] )
-		{
-			TempInt = int( CommandTokens[1] );
-			if ( TempInt < 0 )
-			{
-				TempInt = 0;
-			} 
-			StagedConfig.MaxMonsters = TempInt;
-			ResponseMessage = "Staged: MaxMonsters=" $ StagedConfig.MaxMonsters $
-				"\nEffective after current wave"; 
-		}
-		else if ( "!cdspawnmod" == CommandTokens[0] )
-		{
-			TempFloat = float( CommandTokens[1] );
-			TempFloat = ClampSpawnMod( TempFloat );
-			StagedConfig.SpawnModFloat = TempFloat;
-			ResponseMessage = "Staged: SpawnMod=" $ StagedConfig.SpawnModFloat $
-				"\nEffective after current wave"; 
-		}
+	}
 
-		// Check whether we're allowed to modify settings right now.
-		// If so, change settings immediately and let ApplyStagedSettings()
-		// format an appropriate notification message.
-		GameStateName = GetStateName();
-		if ( GameStateName == 'PendingMatch' || GameStateName == 'MatchEnded' || GameStateName == 'TraderOpen' )
+	// No read-only command appears to match the user's input.
+	// Try write commands, if authorized.
+	if ( AuthLevel == CDAUTH_WRITE )
+	{
+		if ( 1 == CommandTokens.Length )
 		{
-			ApplyStagedConfig( ResponseMessage, "" );
+			if ( "!cdpt" == CommandTokens[0] || "!cdpausetrader" == CommandTokens[0] ||
+			     ( ( "!cdupt" == CommandTokens[0] || "!cdunpausetrader" == CommandTokens[0] ) && MyKFGRI.bStopCountDown ) )
+			{
+				// Only process these commands in trader time
+				GameStateName = GetStateName();
+				if ( GameStateName != 'TraderOpen' )
+				{
+					ResponseMessage = "Trader not open";
+				}
+				else
+				{
+					SkipStagedConfigApplication = true;
+
+					MyKFGRI.bStopCountDown = !MyKFGRI.bStopCountDown;
+	
+					if ( MyKFGRI.bStopCountDown )
+					{
+						PausedRemainingTime = MyKFGRI.RemainingTime;
+						PausedRemainingMinute = MyKFGRI.RemainingMinute;
+						ClearTimer( 'CloseTraderTimer' );
+						`cdlog("Killed CloseTraderTimer", bLogControlledDifficulty);
+						ResponseMessage = "Paused Trader";
+					}
+					else
+					{
+						MyKFGRI.RemainingTime = PausedRemainingTime;
+						MyKFGRI.RemainingMinute = PausedRemainingMinute;
+						SetTimer( MyKFGRI.RemainingTime, False, 'CloseTraderTimer' );
+						`cdlog("Installed CloseTraderTimer at "$ MyKFGRI.RemainingTime $" (non-recurring)", bLogControlledDifficulty);
+						ResponseMessage = "Unpaused Trader";
+					}
+	
+					`cdlog("MyKFGRI.RemainingTime: "$ MyKFGRI.RemainingTime, bLogControlledDifficulty);
+					`cdlog("MyKFGRI.RemainingMinute: "$ MyKFGRI.RemainingMinute, bLogControlledDifficulty);
+					`cdlog("MyKFGRI.bStopCountDown: "$ MyKFGRI.bStopCountDown, bLogControlledDifficulty);
+				}
+			}
+		}
+		else if ( 2 == CommandTokens.Length )
+		{
+			if ( "!cdalbinoalphas" == CommandTokens[0] )
+			{
+				StagedConfig.AlbinoAlphas = bool( CommandTokens[1] );
+				if ( AlbinoAlphas != StagedConfig.AlbinoAlphas )
+				{
+					ResponseMessage = "Staged: AlbinoAlphas=" $ StagedConfig.AlbinoAlphas $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "AlbinoAlphas is already " $ AlbinoAlphas;
+				}
+			}
+			else if ( "!cdalbinocrawlers" == CommandTokens[0] )
+			{
+				StagedConfig.AlbinoCrawlers = bool( CommandTokens[1] );
+				if ( AlbinoCrawlers != StagedConfig.AlbinoCrawlers )
+				{
+					ResponseMessage = "Staged: AlbinoCrawlers=" $ StagedConfig.AlbinoCrawlers $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "AlbinoCrawlers is already " $ AlbinoCrawlers;
+				}
+			}
+			else if ( "!cdboss" == CommandTokens[0] )
+			{
+				TempString = Locs( CommandTokens[1] );
+
+				if ( TempString == Boss )
+				{
+					ResponseMessage = "Boss is already " $ Boss;
+				}
+				// I could check for pointless changes here
+				// (e.g. "unmodded" -> "random", equivalent but different strings)
+				// but it is hard to describe the associated subtlety in a chat response
+				else if ( isValidBossString( TempString ) )
+				{
+					StagedConfig.Boss = TempString;
+					ResponseMessage = "Staged: Boss=" $ StagedConfig.Boss $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "Not a valid boss string\n" $
+						"Try hans, pat, or unmodded"; 
+				}
+			}
+			else if ( "!cdfakeplayers" == CommandTokens[0] )
+			{
+				TempInt = int( CommandTokens[1] );
+				TempInt = ClampFakePlayers( TempInt );
+				StagedConfig.FakePlayers = TempInt;
+				if ( FakePlayers != StagedConfig.FakePlayers )
+				{
+					ResponseMessage = "Staged: FakePlayers=" $ StagedConfig.FakePlayers $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "FakePlayers is already " $ FakePlayers;
+				}
+			}
+			else if ( "!cdmaxmonsters" == CommandTokens[0] )
+			{
+				TempInt = int( CommandTokens[1] );
+				if ( TempInt < 0 )
+				{
+					TempInt = 0;
+				} 
+				StagedConfig.MaxMonsters = TempInt;
+				if ( MaxMonsters != StagedConfig.MaxMonsters )
+				{
+					ResponseMessage = "Staged: MaxMonsters=" $ StagedConfig.MaxMonsters $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "MaxMonsters is already " $ MaxMonsters;
+				}
+			}
+			else if ( "!cdspawncycle" == CommandTokens[0] )
+			{
+				StagedConfig.SpawnCycle = CommandTokens[1];
+				if ( SpawnCycle != StagedConfig.SpawnCycle )
+				{
+					ResponseMessage = "Staged: SpawnCycle=" $ StagedConfig.SpawnCycle $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "SpawnCycle is already " $ SpawnCycle;
+				}
+			}
+			else if ( "!cdspawnmod" == CommandTokens[0] )
+			{
+				TempFloat = float( CommandTokens[1] );
+				TempFloat = ClampSpawnMod( TempFloat );
+				StagedConfig.SpawnModFloat = TempFloat;
+				if ( !EpsilonClose( SpawnModFloat, StagedConfig.SpawnModFloat, SpawnModEpsilon ) )
+				{
+					ResponseMessage = "Staged: SpawnMod=" $ StagedConfig.SpawnModFloat $
+						"\nEffective after current wave"; 
+				}
+				else
+				{
+					ResponseMessage = "SpawnMod is already " $ SpawnMod;
+				}
+			}
+			else if ( "!cdtradertime" == CommandTokens[0] )
+			{
+				ResponseMessage = "Use !cdpt instead\nto toggle-pause trader";
+//				TempInt = int( CommandTokens[1] );
+//				if ( TempInt < 0 )
+//				{
+//					TempInt = 0;
+//				}
+//				StagedConfig.TraderTime = TempInt;
+//				if ( TraderTime != StagedConfig.TraderTime )
+//				{
+//					ResponseMessage = "Staged: TraderTime=" $ StagedConfig.TraderTime $
+//						"\nEffective after current wave"; 
+//				}
+//				else
+//				{
+//					ResponseMessage = "TraderTime is already " $ TraderTime;
+//				}
+			}
+	
+			// Check whether we're allowed to modify settings right now.
+			// If so, change settings immediately and let ApplyStagedSettings()
+			// format an appropriate notification message.
+			GameStateName = GetStateName();
+			if ( !SkipStagedConfigApplication && ( GameStateName == 'PendingMatch' || GameStateName == 'MatchEnded' || GameStateName == 'TraderOpen' ) )
+			{
+				ApplyStagedConfig( ResponseMessage, "" );
+			}
 		}
 	}
 
@@ -709,12 +919,32 @@ function StartWave()
 
 private function DisplayWaveStartMessageInChat()
 {
-	super.Broadcast(None, "[Controlled Difficulty Active]\n" $ GetCDInfoChatString(), 'CDEcho');
+	super.Broadcast(None, "[Controlled Difficulty Active]\n" $ GetCDInfoChatString( "brief" ), 'CDEcho');
 }
 
 private function bool ApplyStagedConfig( out string MessageToClients, const string BannerLine )
 {
 	local array<string> SettingChangeNotifications;
+	local string TempString;
+	local array<CD_AIWaveInfo> ActiveWaveInfos;
+
+	if ( StagedConfig.AlbinoAlphas != AlbinoAlphas )
+	{
+		SettingChangeNotifications.AddItem("AlbinoAlphas="$ StagedConfig.AlbinoAlphas $" (old: "$AlbinoAlphas$")");
+		AlbinoAlphas = StagedConfig.AlbinoAlphas;
+	}
+
+	if ( StagedConfig.AlbinoCrawlers != AlbinoCrawlers )
+	{
+		SettingChangeNotifications.AddItem("AlbinoCrawlers="$ StagedConfig.AlbinoCrawlers $" (old: "$AlbinoCrawlers$")");
+		AlbinoCrawlers = StagedConfig.AlbinoCrawlers;
+	}
+
+	if ( StagedConfig.Boss != Boss )
+	{
+		SettingChangeNotifications.AddItem("Boss="$ StagedConfig.Boss $" (old: "$Boss$")");
+		Boss = StagedConfig.Boss;
+	}
 
 	if ( StagedConfig.FakePlayers != FakePlayers )
 	{
@@ -730,12 +960,46 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 		MaxMonsters = StagedConfig.MaxMonsters;
 	}
 
-	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, 0.001 ) )
+	if ( StagedConfig.SpawnCycle != SpawnCycle )
+	{
+		TempString = SpawnCycle;
+		SpawnCycle = StagedConfig.SpawnCycle;
+
+		LoadSpawnCycle( ActiveWaveInfos );
+
+		if ( 0 == ActiveWaveinfos.length && SpawnCycle != "unmodded" )
+		{
+			// The new SpawnCycle was invalid or could not be loaded (gamelength incompatibility?)
+			// Revert to the old SC
+			SpawnCycle = TempString;
+			// Warn the user
+			SettingChangeNotifications.AddItem("Setting SpawnCycle=" $ StagedConfig.SpawnCycle $ " failed!");
+			SettingChangeNotifications.AddItem("Kept SpawnCycle=" $ SpawnCycle);
+			// Overwrite the user's staged SC choice
+			StagedConfig.SpawnCycle = SpawnCycle;
+			// Reload original SC into ActiveWaveInfos
+			LoadSpawnCycle( ActiveWaveInfos );
+		}
+		else
+		{
+			// the new SpawnCycle is either "unmodded" or was successfully loaded
+			CDSpawnManager( SpawnManager ).SetCustomWaves( ActiveWaveInfos );
+			SettingChangeNotifications.AddItem("SpawnCycle="$ StagedConfig.SpawnCycle $" (old: "$TempString$")");
+		}
+	}
+
+	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, SpawnModEpsilon ) )
 	{
 		SettingChangeNotifications.AddItem("SpawnMod="$ StagedConfig.SpawnModFloat $" (old: "$SpawnModFloat$")");
 		SpawnModFloat = StagedConfig.SpawnModFloat;
 		SpawnMod = string(SpawnModFloat);
 	}
+
+//	if ( StagedConfig.TraderTime != TraderTime )
+//	{
+//		SettingChangeNotifications.AddItem("TraderTime="$ StagedConfig.TraderTime $" (old: "$TraderTime$")");
+//		TraderTime = StagedConfig.TraderTime;
+//	}
 
 	if ( 0 < SettingChangeNotifications.Length )
 	{
@@ -768,6 +1032,12 @@ private function CDAuthLevel GetAuthorizationLevelForUser( Actor Sender )
 	local string SteamIdSuffix;
 	local int i;
 	local int SteamIdSuffixLength;
+
+	// NM_StandAlone bypasses authorization.  Multiuser authorization would not be meaningful in solo.
+	if ( WorldInfo.NetMode == NM_StandAlone )
+	{
+		return CDAUTH_WRITE;
+	}
 
 	SubjectPC = KFPlayerController( Sender );
 
@@ -865,15 +1135,65 @@ private function int HexStringToInt( string hexstr, out int value )
 	return value;
 }
 
-private function string GetCDInfoChatString()
+private function string GetCDInfoChatString( const string Verbosity )
 {
-	return GetFakePlayersChatLine() $ "\n" $
-	       GetMaxMonstersChatLine() $ "\n" $
-	       GetSpawnModChatLine() ;
+	if ( Verbosity == "full" )
+	{
+		return GetAlbinoAlphasChatString() $ "\n" $
+		       GetAlbinoCrawlersChatString() $ "\n" $
+		       GetBossChatString() $ "\n" $
+		       GetFakePlayersChatString() $ "\n" $
+		       GetMaxMonstersChatString() $ "\n" $
+		       GetSpawnCycleChatString() $ "\n" $
+		       GetSpawnModChatString() $ "\n" $
+		       GetTraderTimeChatString();
+	}
+	else
+	{
+		return GetFakePlayersChatString() $ "\n" $
+		       GetMaxMonstersChatString() $ "\n" $
+		       GetSpawnModChatString() $ "\n" $
+		       GetSpawnCycleChatString();
+	}
 }
 
+private function string GetAlbinoAlphasChatString()
+{
+	local string AlbinoAlphasLatchedString;
 
-private function string GetFakePlayersChatLine()
+	if ( StagedConfig.AlbinoAlphas != AlbinoAlphas )
+	{
+		AlbinoAlphasLatchedString = " (staged: " $ StagedConfig.AlbinoAlphas $ ")";
+	}
+
+	return "AlbinoAlphas=" $ AlbinoAlphas $ AlbinoAlphasLatchedString;
+}
+
+private function string GetAlbinoCrawlersChatString()
+{
+	local string AlbinoCrawlersLatchedString;
+
+	if ( StagedConfig.AlbinoCrawlers != AlbinoCrawlers )
+	{
+		AlbinoCrawlersLatchedString = " (staged: " $ StagedConfig.AlbinoCrawlers $ ")";
+	}
+
+	return "AlbinoCrawlers=" $ AlbinoCrawlers $ AlbinoCrawlersLatchedString;
+}
+
+private function string GetBossChatString()
+{
+	local string BossLatchedString;
+
+	if ( StagedConfig.Boss != Boss )
+	{
+		BossLatchedString = " (staged: " $ StagedConfig.Boss $ ")";
+	}
+
+	return "Boss=" $ Boss $ BossLatchedString;
+}
+
+private function string GetFakePlayersChatString()
 {
 	local string FakePlayersLatchedString;
 
@@ -884,29 +1204,57 @@ private function string GetFakePlayersChatLine()
 
 	return "FakePlayers=" $ FakePlayers $ FakePlayersLatchedString;
 }
-private function string GetMaxMonstersChatLine()
+
+private function string GetMaxMonstersChatString()
 {
 	local string MaxMonstersLatchedString;
 
 	if ( StagedConfig.MaxMonsters != MaxMonsters )
 	{
-		MaxMonstersLatchedString = " (staged: " $ StagedConfig.MaxMonsters $ ")";
+		MaxMonstersLatchedString = " (staged: " $ GetMaxMonstersStringForArg(StagedConfig.MaxMonsters) $ ")";
 	}
 
 	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
 }
 
-private function string GetSpawnModChatLine()
+private function string GetSpawnCycleChatString()
+{
+	local string SpawnCycleLatchedString;
+
+	if ( StagedConfig.SpawnCycle != SpawnCycle )
+	{
+		SpawnCycleLatchedString = " (staged: " $ StagedConfig.SpawnCycle $ ")";
+	}
+
+	return "SpawnCycle=" $ SpawnCycle $ SpawnCycleLatchedString;
+}
+
+private function string GetSpawnModChatString()
 {
 	local string SpawnModLatchedString;
 
-	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, 0.0001 ) )
+	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, SpawnModEpsilon ) )
 	{
 		SpawnModLatchedString = " (staged: " $ StagedConfig.SpawnModFloat $ ")";
 	}
 
 	return "SpawnMod="$ SpawnModFloat $ SpawnModLatchedString;
 }
+
+private function string GetTraderTimeChatString()
+{
+	local string TraderTimeLatchedString;
+
+//	if ( StagedConfig.TraderTime != TraderTime )
+//	{
+//		TraderTimeLatchedString = " (staged: " $ StagedConfig.TraderTime $ ")";
+//	}
+
+	TraderTimeLatchedString = "";
+
+	return "TraderTime=" $ TraderTime $ TraderTimeLatchedString;
+}
+
 
 private function MaybeLoadIniWaveInfos()
 {
@@ -1192,4 +1540,6 @@ defaultproperties
 	End Object
 
 	GameInfo_CDCP=Default_CDCP
+
+	SpawnModEpsilon=0.0001
 }
