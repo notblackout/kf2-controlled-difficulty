@@ -67,13 +67,17 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
 	}
 }
 
-/*  I overrode this function to ensure that the leftovers from a partially-
-    spawned squad go onto the beginning of the leftovers list, not on the end.
-    The standard game appends leftovers to the end of the list, even though
-    that list is emptied from the front.  The standard game behavior can result
-    in badly disordered squads -- this is not noticeable in the standard game
-    because the spawnlist is heavily randomized to begin with, but it is
-    obvious and crippling when using a CD SpawnCycle
+/*  I overrode this function to ensure that the leftover spawn squad list does
+    not get reordered during spawning.  In v<=1048, elements would be taken from
+    the head of the LSS for spawning.  If too many elements were taken (limited
+    by AINeeded/MaxMonsters), then surplus leftovers would be appended to the
+    tail of the LSS.  This is a problem.  Whenever leftovers partially spawned,
+    LSS is effectively partially reordered by this process.
+
+    It would be better if surplus leftovers were pushed back onto the head of
+    the list, where they were taken from, rather than the tail.
+    This can get really noticeable with a CD SpawnCycle, because LSS can get
+    into double digit length in normal solo play.
 
     Despite the fact that this function invokes KFSV.SpawnWave with the
     parameter "bAllOrNothing" set to true, it still sometimes spawns only
