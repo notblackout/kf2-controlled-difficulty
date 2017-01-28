@@ -264,17 +264,26 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 {
 	local array< class<KFPawn_Monster> >  NewSquad, RequiredSquad;
 	local int RandNum, AINeeded;
-    local bool bNeedsNewDesiredSquadType;
-    local int EntryIdx;
 
     if( DesiredSquadType == EST_Boss && LeftoverSpawnSquad.Length > 0 )
     {
     	LeftoverSpawnSquad.Length = 0;
     }
-
-	AINeeded = GetNumAINeeded();
-    if( LeftoverSpawnSquad.Length < AINeeded )
+	
+	if( LeftoverSpawnSquad.Length > 0 )
     {
+        if( bLogAISpawning )
+        {
+            LogMonsterList(LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad");
+        }
+        NewSquad = LeftoverSpawnSquad;
+
+        // Make sure we properly initialize the DesiredSquadType for the leftover squads, otherwise they will just use whatever size data was left in the system
+        SetDesiredSquadTypeForZedList( NewSquad );
+    }
+    else
+    {
+    	// Get a new monster list
 		if( !IsAISquadAvailable() )
 		{
 			if( !bSummoningBossMinions )
@@ -359,39 +368,16 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	    }
 	}
 
-    // Use the LeftoverSpawnSquad if it exists
-    if( LeftoverSpawnSquad.Length > 0 )
-    {
-        if( bLogAISpawning )
-        {
-            LogMonsterList( LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad" );
-        }
-
-        // Insert the leftover squad, in order, before the new squad
-        while( LeftoverSpawnSquad.Length > 0 )
-        {
-            EntryIdx = LeftoverSpawnSquad.Length-1;
-            NewSquad.Insert( 0, 1 );
-            NewSquad[0] = LeftoverSpawnSquad[EntryIdx];
-            LeftoverSpawnSquad.Remove( EntryIdx, 1 );
-        }
-
-        // Set our desired squad type at the end of the function
-        bNeedsNewDesiredSquadType = true;
-    }
-
 	// Clamp list by NumAINeeded()
+	AINeeded = GetNumAINeeded();
 	if( AINeeded < NewSquad.Length )
 	{
 		LeftoverSpawnSquad = NewSquad;
 		// Clear out the monsters we're about to spawn from the leftover list
-        LeftoverSpawnSquad.Remove(0,AINeeded);
+        LeftoverSpawnSquad.Remove( 0, AINeeded );
 
         // Cut off the leftovers from the new monster list
         NewSquad.Length = AINeeded;
-
-        // Set our desired squad type at the end of the function
-        bNeedsNewDesiredSquadType = true;
 	}
 	else
 	{
@@ -401,20 +387,12 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 
     if( bLogAISpawning )
     {
-    	LogMonsterList(NewSquad, "NewSquad");
-    	LogMonsterList(LeftoverSpawnSquad, "LeftoverSpawnSquad");
-    }
-
-    if( bNeedsNewDesiredSquadType )
-    {
-        // Make sure we properly initialize the DesiredSquadType for the leftover squads,
-        // otherwise they will just use whatever size data was left in the system
-        SetDesiredSquadTypeForZedList( NewSquad );
+    	LogMonsterList( NewSquad, "NewSquad" );
+    	LogMonsterList( LeftoverSpawnSquad, "LeftoverSpawnSquad" );
     }
 
 	return NewSquad;
 }
-
 
 /* This function is overridden for a few reasons:
 
