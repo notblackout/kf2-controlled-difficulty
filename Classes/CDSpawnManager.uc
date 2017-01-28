@@ -394,24 +394,17 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	return NewSquad;
 }
 
-/* This function is overridden for a few reasons:
+/* This function is overridden for a couple reasons:
 
    - if a boss preference is set and we're spawning a boss,
      then bypass random boss selection and apply the preference
 
-   - if AlbinoAlphas=false and no SpawnCycle is in use, then 
-     replace all standard alpha pawns with equivalent pawns
-     that cannot have rally chance > 0
-
-   - if AlbinoCrawlers=false and no SpawnCycle is in use, then
-     replace all standard crawler pawns with equivalent pawns
-     that cannot spawn as gas crawlers
+   - if AlbinoAlphas=false/AlbinoCrawlers=false/AlbinoGorefasts=false,
+     then we replace all of the standard alpha/crawler/gorefast classes
+     with subclasses that forcibly disable special behavior and appearance
 */
 function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > SquadsList, out array< class<KFPawn_Monster> >  AISpawnList)
 {
-	local int crawlersForcedRegular;
-	local int alphasForcedRegular;
-
 	local KFAISpawnSquad Squad;
 	local EAIType AIType;
 	local int i, j, RandNum, waveIndex;
@@ -420,6 +413,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	local array<AISquadElement> SquadElements;
 	local CD_AISpawnSquad CustomSquad;
 	local bool UsingCustomSquads;
+	local array< class< KFPawn_Monster > > MatchClasses;
 
 	Squad = SquadsList[SquadIdx];
 
@@ -509,42 +503,69 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		}
 	}
 
-	if ( !AlbinoCrawlers && !UsingCustomSquads )
+	if ( !AlbinoCrawlers )
 	{
-		crawlersForcedRegular = 0;
-
 		`cdlog("AlbinoCrawlers="$AlbinoCrawlers$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
+
 		// Replace all standard crawler classes with forced-regular crawers
-		for ( i = 0; i < AISpawnList.Length; i++ )
-		{
-			if ( AISpawnList[i] == AIClassList[AT_Crawler] )
-			{
-				AISpawnList[i] = class'ControlledDifficulty.CD_Pawn_ZedCrawler_Regular';
-				`cdlog("Forcing crawler at AISpawnList["$i$"] to spawn as a regular crawler", bLogControlledDifficulty);
-				crawlersForcedRegular += 1;
-			}
-		}
-
-		`cdlog("Total crawlers forced regular in this AISpawnList: "$crawlersForcedRegular, bLogControlledDifficulty);
+		MatchClasses.Length = 2;
+		MatchClasses[0] = AIClassList[AT_Crawler];
+		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedCrawler_Special';
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedCrawler_Regular',
+		                 AISpawnList );
 	}
 
-	if ( !AlbinoAlphas && !UsingCustomSquads )
+	if ( !AlbinoAlphas )
 	{
-		alphasForcedRegular = 0;
-
 		`cdlog("AlbinoAlphas="$AlbinoAlphas$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
-		// Replace all standard alpha classes with forced-regular crawers
-		for ( i = 0; i < AISpawnList.Length; i++ )
-		{
-			if ( AISpawnList[i] == AIClassList[AT_AlphaClot] )
-			{
-				AISpawnList[i] = class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Regular';
-				`cdlog("Forcing alpha at AISpawnList["$i$"] to spawn as a regular alpha", bLogControlledDifficulty);
-				alphasForcedRegular += 1;
-			}
-		}
 
-		`cdlog("Total alphas forced regular in this AISpawnList: "$alphasForcedRegular, bLogControlledDifficulty);
+		// Replace all standard alpha classes with forced-regular alphas
+		MatchClasses.Length = 2;
+		MatchClasses[0] = AIClassList[AT_AlphaClot];
+		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Special';
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Regular',
+		                 AISpawnList );
 	}
 
+	if ( !AlbinoGorefasts )
+	{
+		`cdlog("AlbinoGorefasts="$AlbinoGorefasts$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
+
+		// Replace all standard gorefast classes with forced-regular gorefasts
+		MatchClasses.Length = 2;
+		MatchClasses[0] = AIClassList[AT_GoreFast];
+		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedGorefast_Special';
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedGorefast_Regular',
+		                 AISpawnList );
+	}
+}
+
+function ReplaceZedClass( const array< class< KFPawn_Monster > > MatchClasses,
+                          const class< KFPawn_Monster > ReplacementClass,
+                          out array< class<KFPawn_Monster> >  AISpawnList )
+{
+	local int conversions;
+	local int i;
+	local int j;
+
+	conversions = 0;
+
+	// Replace all standard alpha classes with forced-regular crawers
+	for ( i = 0; i < AISpawnList.Length; i++ )
+	{
+		for ( j = 0; j < MatchClasses.Length; j++ )
+		{
+			if ( AISpawnList[i] == MatchClasses[j] )
+			{
+				AISpawnList[i] = ReplacementClass;
+				`cdlog("Converting "$ string(MatchClasses[j]) $" at AISpawnList["$i$"] to "$ string(ReplacementClass), bLogControlledDifficulty);
+				conversions += 1;
+			}
+		}
+	}
+
+	`cdlog("Total zeds in this spawnlist converted to "$ string(ReplacementClass) $": "$ conversions, bLogControlledDifficulty);
 }

@@ -322,6 +322,12 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 			class'CD_Pawn_ZedCrawler_Special' :
 			class'CD_Pawn_ZedCrawler_Regular' ;
 	}
+	else if ( ElemEAIType == AT_GoreFast )
+	{
+		SquadElement.CustomClass = IsSpecial ?
+			class'CD_Pawn_ZedGorefast_Special' :
+			class'CD_Pawn_ZedGorefast_Regular' ;
+	}
 	else
 	{
 		SquadElement.CustomClass = None;

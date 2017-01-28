@@ -83,6 +83,9 @@ var config bool AlbinoCrawlers;
 // same value sense as for AlbinoCrawlers, but for alpha clots
 var config bool AlbinoAlphas;
 
+// same value sense as for AlbinoCrawlers, but for double bladed gorefasts
+var config bool AlbinoGorefasts;
+
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
 
@@ -150,6 +153,7 @@ event InitGame( string Options, out string ErrorMessage )
 	local int MaxMonstersFromGameOptions;
 	local bool AlbinoCrawlersFromGameOptions;
 	local bool AlbinoAlphasFromGameOptions;
+	local bool AlbinoGorefastsFromGameOptions;
 	local string SpawnCycleFromGameOptions;
 	local string BossFromGameOptions;
 	local int FakePlayersFromGameOptions;
@@ -200,6 +204,13 @@ event InitGame( string Options, out string ErrorMessage )
 		AlbinoAlphasFromGameOptions = GetBoolOption( Options, "AlbinoAlphas", true );
 		`cdlog("AlbinoAlphasFromGameOptions = "$AlbinoAlphasFromGameOptions$" (true=default)", bLogControlledDifficulty);
 		AlbinoAlphas = AlbinoAlphasFromGameOptions;
+	}
+
+	if ( HasOption(Options, "AlbinoGorefasts") )
+	{
+		AlbinoGorefastsFromGameOptions = GetBoolOption( Options, "AlbinoGorefasts", true );
+		`cdlog("AlbinoGorefastsFromGameOptions = "$AlbinoGorefastsFromGameOptions$" (true=default)", bLogControlledDifficulty);
+		AlbinoGorefasts = AlbinoGorefastsFromGameOptions;
 	}
 
 	if ( HasOption(Options, "SpawnCycle") )
@@ -564,16 +575,9 @@ function InitSpawnManager()
 		GameInfo_CDCP.Print( "SpawnCycle="$ SpawnCycle );
 	}
 
-	if ( SpawnCycle == "unmodded" )
-	{
-		GameInfo_CDCP.Print( "AlbinoCrawlers="$AlbinoCrawlers );
-		GameInfo_CDCP.Print( "AlbinoAlphas="$AlbinoAlphas );
-	}
-	else
-	{
-		GameInfo_CDCP.Print( "AlbinoCrawlers=<ignored because SpawnCycle is not unmodded>" );
-		GameInfo_CDCP.Print( "AlbinoAlphas=<ignored because SpawnCycle is not unmodded>" );
-	}
+	GameInfo_CDCP.Print( "AlbinoAlphas="$AlbinoAlphas );
+	GameInfo_CDCP.Print( "AlbinoCrawlers="$AlbinoCrawlers );
+	GameInfo_CDCP.Print( "AlbinoGorefasts="$AlbinoGorefasts );
 }
 
 private function LoadSpawnCycle( out array<CD_AIWaveInfo> ActiveWaveInfos )
