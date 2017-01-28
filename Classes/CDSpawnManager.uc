@@ -123,7 +123,7 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
     this is an unlikely scenario, I'm willing to put up with some ugly copy-paste
     to preclude it.
 */
-function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool bSkipHumanZedSpawning=false )
+function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional bool bSkipHumanZedSpawning=false )
 {
 	local KFSpawnVolume KFSV;
 	local int SpawnerAmount, VolumeAmount, FinalAmount, i;
@@ -231,9 +231,9 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 		// Start of CD customization
 		//////////////////////////////
 		// Prepend AIToSpawn onto beginning of LSS.  In the standard game, leftovers
-        // go at the end, not the beginning.  This affects the game both with a
-        // SpawnCycle and without, but when a SpawnCycle is not in use, the spawn
-        // list is generally random anyway.
+		// go at the end, not the beginning.  This affects the game both with a
+		// SpawnCycle and without, but when a SpawnCycle is not in use, the spawn
+		// list is generally random anyway.
 		for ( i = AIToSpawn.Length - 1 ; 0 <= i ; i-- )
 		{
 			LeftoverSpawnSquad.Insert(0, 1);
@@ -255,7 +255,6 @@ function int SpawnSquad( array< class<KFPawn_Monster> > AIToSpawn, optional bool
 
 	return FinalAmount;
 }
-
 
 /* The sole reason for overriding this function is to suppress
    the Rand()-based spawnlist shuffling when using a CD SpawnCycle.

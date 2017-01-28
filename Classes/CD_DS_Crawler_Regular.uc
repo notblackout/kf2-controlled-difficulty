@@ -5,7 +5,7 @@
 class CD_DS_Crawler_Regular extends KFDifficulty_Crawler
 	abstract;
 
-static function float GetSpecialCrawlerChance( KFPawn_ZedCrawler CrawlerPawn , KFGameReplicationInfo KFGRI )
+static function float GetSpecialCrawlerChance( KFGameReplicationInfo KFGRI )
 {
 	return 0.f;
 }
