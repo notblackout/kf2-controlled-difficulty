@@ -1686,7 +1686,7 @@ private function string GetTraderTimeChatString()
 
 private function string GetCDVersionChatString()
 {
-	return "Version=" $ `CD_COMMIT_HASH;
+	return "Ver=" $ `CD_COMMIT_HASH $ "\nDate=" $ `CD_AUTHOR_TIMESTAMP;
 }
 
 
