@@ -1557,7 +1557,8 @@ private function string GetCDInfoChatString( const string Verbosity )
 		       GetMaxMonstersChatString() $ "\n" $
 		       GetSpawnCycleChatString() $ "\n" $
 		       GetSpawnModChatString() $ "\n" $
-		       GetTraderTimeChatString();
+		       GetTraderTimeChatString() $ "\n" $
+		       GetWeaponTimeoutChatString();
 	}
 	else
 	{
