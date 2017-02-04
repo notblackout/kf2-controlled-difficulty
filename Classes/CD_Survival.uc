@@ -1325,6 +1325,12 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 		AlbinoCrawlers = StagedConfig.AlbinoCrawlers;
 	}
 
+	if ( StagedConfig.AlbinoGorefasts != AlbinoGorefasts )
+	{
+		SettingChangeNotifications.AddItem("AlbinoGorefasts="$ StagedConfig.AlbinoGorefasts $" (old: "$AlbinoGorefasts$")");
+		AlbinoGorefasts = StagedConfig.AlbinoGorefasts;
+	}
+
 	if ( StagedConfig.Boss != Boss )
 	{
 		SettingChangeNotifications.AddItem("Boss="$ StagedConfig.Boss $" (old: "$Boss$")");
