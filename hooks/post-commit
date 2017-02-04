@@ -1,9 +1,0 @@
-#!/bin/sh
-
-hash_abbrev=$(git rev-parse --short=8 HEAD)
-author_timestamp_utc=$(date -d "`git log -n 1 --pretty=format:%ai`" -u --iso-8601=seconds)
-author=$(git log -n 1 --pretty=format:%an)
-
-echo '`'"define CD_COMMIT_HASH \"$hash_abbrev\"" > CD_BuildInfo.uci
-echo '`'"define CD_AUTHOR_TIMESTAMP \"$author_timestamp_utc\"" >> CD_BuildInfo.uci
-echo '`'"define CD_AUTHOR \"$author\"" >> CD_BuildInfo.uci
