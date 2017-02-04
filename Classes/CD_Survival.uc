@@ -33,6 +33,7 @@ struct StructStagedConfig
 	var string   SpawnCycle;
 	var float    SpawnModFloat;
 //	var int      TraderTime;
+	var string   WeaponTimeout;
 };
 
 struct StructAuthorizedUsers
@@ -112,6 +113,22 @@ var config array<string> SpawnCycleDefs;
 // else: choose a random boss wave (unmodded game behavior)
 var config string Boss;
 
+// Time, in seconds, that dropped weapons remain on the ground before
+// disappearing.  This must be either a valid integer in string form,
+// or the string "max".
+// If set to a negative value, then the game's builtin
+// default value is not modified.  At the time I wrote this comment,
+// the game's default was 300 seconds (5 minutes), but that could change;
+// setting this to -1 will use whatever TWI chose as the default, even
+// if they change the default in future patches.
+// If set to a positive value, it overrides the TWI default.  All dropped
+// weapons will remain on the ground for as many seconds as this variable's
+// value, regardless of whether the weapon was dropped by a dying player
+// or a live player who pressed his dropweapon key.
+// If set to zero, CD behaves as though it had been set to 1.
+// If set to "max", the value 2^31 - 1 is used.
+var config string WeaponTimeout;
+
 // Defines users always allowed to run any chat command
 var config array<StructAuthorizedUsers> AuthorizedUsers;
 
@@ -168,6 +185,7 @@ event InitGame( string Options, out string ErrorMessage )
 	local float SpawnModFromGameOptions;
 	local float SpawnModBeforeClamping;
 	local int MaxMonstersFromGameOptions;
+	local string WeaponTimeoutFromGameOptions;
 	local bool AlbinoCrawlersFromGameOptions;
 	local bool AlbinoAlphasFromGameOptions;
 	local bool AlbinoGorefastsFromGameOptions;
@@ -208,6 +226,17 @@ event InitGame( string Options, out string ErrorMessage )
 		`cdlog("MaxMonstersFromGameOptions = "$MaxMonstersFromGameOptions$" (-1=default)", bLogControlledDifficulty);
 		MaxMonsters = MaxMonstersFromGameOptions;
 	}
+
+	if ( HasOption(Options, "WeaponTimeout") )
+	{
+		WeaponTimeoutFromGameOptions = ParseOption(Options, "WeaponTimeout" );
+		`cdlog("WeaponTimeoutFromGameOptions = "$WeaponTimeoutFromGameOptions, bLogControlledDifficulty);
+		WeaponTimeout = WeaponTimeoutFromGameOptions;
+	}
+
+	WeaponTimeout = ClampWeaponTimeout( WeaponTimeout );
+	`cdlog("Clamped WeaponTimeout = "$WeaponTimeout, bLogControlledDifficulty);
+	GameInfo_CDCP.Print("WeaponTimeout="$ GetWeaponTimeoutString() );
 
 	if ( HasOption(Options, "AlbinoCrawlers") )
 	{
@@ -340,6 +369,59 @@ event InitGame( string Options, out string ErrorMessage )
 	StagedConfig.SpawnCycle = SpawnCycle;
 	StagedConfig.SpawnModFloat = SpawnModFloat;
 //	StagedConfig.TraderTime = TraderTime;
+	StagedConfig.WeaponTimeout = WeaponTimeout;
+}
+
+function bool CheckRelevance(Actor Other)
+{
+	local KFDroppedPickup Weap;
+	local bool SuperRelevant;
+
+	SuperRelevant = super.CheckRelevance(Other);
+
+	if ( !SuperRelevant )
+	{
+		// Early return if this is going to be destroyed anyway
+		return SuperRelevant;
+	}
+
+	Weap = KFDroppedPickup(Other);
+
+	if ( None != Weap )
+	{
+		OverrideWeaponLifespan(Weap);
+	}
+
+	// Should always be true, due to the early return when false
+	return SuperRelevant;
+}
+
+private function OverrideWeaponLifespan(KFDroppedPickup Weap)
+{
+	local int seconds;
+
+	seconds = GetWeaponTimeoutSeconds();
+
+	if ( 0 < seconds )
+	{
+		Weap.Lifespan = seconds;
+	}
+	else if ( 0 == seconds )
+	{
+		Weap.Lifespan = 1;
+	}
+}
+
+private function int GetWeaponTimeoutSeconds()
+{
+	if ( "max" == WeaponTimeout )
+	{
+		return 2147483647;
+	}
+	else
+	{
+		return int( WeaponTimeout );
+	}
 }
 
 private function SetupSimpleReadCommand( out StructChatCommand scc, const string CmdName, const string Desc, const delegate<ChatCommandNullaryImpl> Impl )
@@ -385,6 +467,7 @@ private function SetupChatCommands()
 
 	ChatCommands.Length = 0;
 
+	// Setup pause commands
 	n.Length = 2;
 	n[0] = "!cdpausetrader";
 	n[1] = "!cdpt";
@@ -409,17 +492,42 @@ private function SetupChatCommands()
 	scc.ModifiesConfig = false;
 	ChatCommands.AddItem( scc );
 
+	// Setup info commands
+	n.Length = 1;
+	n[0] = "!cdinfo";
+	scc.Names = n;
+	scc.ParamCount = 0;
+	scc.NullaryImpl = GetCDInfoChatStringDefault;
+	scc.ParamsImpl = None;
+	scc.Description = "Display CD config summary";
+	scc.AuthLevel = CDAUTH_READ;
+	scc.ModifiesConfig = false;
+	ChatCommands.AddItem( scc );
+
+	n.Length = 1;
+	n[0] = "!cdinfo";
+	scc.Names = n;
+	scc.ParamCount = 1;
+	scc.NullaryImpl = None;
+	scc.ParamsImpl = GetCDInfoChatStringCommand;
+	scc.Description = "Display full CD config";
+	scc.AuthLevel = CDAUTH_READ;
+	scc.ModifiesConfig = false;
+	ChatCommands.AddItem( scc );
+
 	SetupSimpleReadCommand( scc, "!cdalbinoalphas", "Display AlbinoAlphas setting", GetAlbinoAlphasChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
 //	SetupSimpleReadCommand( scc, "!cdhelp", "Display list of CD's chat commands", GetCDHelpChatString );
 	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", GetFakePlayersChatString );
-	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
+//	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
 	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", GetMaxMonstersChatString );
 	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
 	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", GetSpawnModChatString );
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
+	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
+	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
 
 	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", SetAlbinoAlphasChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", SetAlbinoCrawlersChatCommand );
@@ -429,6 +537,7 @@ private function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", SetMaxMonstersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", SetSpawnCycleChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", SetSpawnModChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", SetWeaponTimeoutChatCommand );
 }
 
 private function string GetCDHelpChatString()
@@ -560,6 +669,21 @@ private function string SetFakePlayersChatCommand( const out array<string> param
 	}
 }
 
+private function string SetWeaponTimeoutChatCommand( const out array<string> params )
+{
+	StagedConfig.WeaponTimeout = ClampWeaponTimeout( params[0] );
+
+	if ( WeaponTimeout != StagedConfig.WeaponTimeout )
+	{
+		return "Staged: WeaponTimeout=" $ GetWeaponTimeoutStringForArg( StagedConfig.WeaponTimeout ) $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "WeaponTimeout is already " $ WeaponTimeout;
+	}
+}
+
 private function string SetMaxMonstersChatCommand( const out array<string> params )
 {
 	local int TempInt;
@@ -570,9 +694,10 @@ private function string SetMaxMonstersChatCommand( const out array<string> param
 		TempInt = 0;
 	} 
 	StagedConfig.MaxMonsters = TempInt;
+
 	if ( MaxMonsters != StagedConfig.MaxMonsters )
 	{
-		return "Staged: MaxMonsters=" $ StagedConfig.MaxMonsters $
+		return "Staged: MaxMonsters=" $ GetMaxMonstersStringForArg( StagedConfig.MaxMonsters ) $
 			"\nEffective after current wave"; 
 	}
 	else
@@ -629,7 +754,7 @@ private function string PauseTraderTime()
 		return "Trader already paused";
 	}
 
-	if ( MyKFGRI.RemainingTime <= 5 )
+	if ( WorldInfo.NetMode != NM_StandAlone && MyKFGRI.RemainingTime <= 5 )
 	{
 		return "Pausing requires at least 5 seconds remaining";
 	}
@@ -844,6 +969,48 @@ private function int ClampFakePlayers( const int fp )
 	return Clamp(fp, 0, 32);
 }
 
+private function string ClampWeaponTimeout( const out string wt )
+{
+	local int ParsedSeconds;
+
+	if ( "max" == wt )
+	{
+		return wt;
+	}
+
+	if ( "" != wt )
+	{
+		ParsedSeconds = int(wt);
+
+		if ( 0 == ParsedSeconds )
+		{
+			if ( "0" == wt )
+			{
+				// User specified the exact string "0"; accept it as-is
+				return wt;
+			}
+			else
+			{
+				// This nonempty string converted to 0 (the default value),
+				// but the string itself is not "0".  unrealscript's
+				// string-to-int parser never actually fails, it just stops
+				// when it finds a character it doesn't understand.  this
+				// means the user probably gave us a garbage string.
+				// replace it with "-1", which means use TWI's default
+				// weapon timeout (a safe default).
+				return string(-1);
+			}
+		}
+		else
+		{
+			return string( ParsedSeconds );
+		}
+	}
+
+	return string(-1);
+}
+
+
 /*
  * We override this function to apply FakePlayers modifier
  * to dosh rewards for killing zeds.
@@ -892,6 +1059,32 @@ private function string GetMaxMonstersStringForArg( const int mm )
 private function string GetMaxMonstersString()
 {
 	return GetMaxMonstersStringForArg( MaxMonsters );
+}
+
+private function string GetWeaponTimeoutStringForArg( const string wt )
+{
+	local int seconds;
+
+	if ( "max" == wt )
+	{
+		return "max";
+	}
+
+	seconds = int(wt);
+
+	if ( 0 > seconds )
+	{
+		return "<unmodded default>";
+	}
+	else
+	{
+		return string(seconds);
+	}
+}
+
+private function string GetWeaponTimeoutString()
+{
+	return GetWeaponTimeoutStringForArg( WeaponTimeout );
 }
 
 /*
@@ -1151,6 +1344,15 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 			" (old: "$ GetMaxMonstersString() $")");
 		MaxMonsters = StagedConfig.MaxMonsters;
 	}
+
+	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
+	{
+		SettingChangeNotifications.AddItem(
+			"WeaponTimeout="$ GetWeaponTimeoutStringForArg( StagedConfig.WeaponTimeout ) $
+			" (old: "$ GetWeaponTimeoutString() $")");
+		WeaponTimeout = StagedConfig.WeaponTimeout;
+	}
+
 
 	if ( StagedConfig.SpawnCycle != SpawnCycle )
 	{
@@ -1432,6 +1634,18 @@ private function string GetMaxMonstersChatString()
 	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
 }
 
+private function string GetWeaponTimeoutChatString()
+{
+	local string WeaponTimeoutLatchedString;
+
+	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
+	{
+		WeaponTimeoutLatchedString = " (staged: " $ GetWeaponTimeoutStringForArg(StagedConfig.WeaponTimeout) $ ")";
+	}
+
+	return "WeaponTimeout="$ GetWeaponTimeoutString() $ WeaponTimeoutLatchedString;
+}
+
 private function string GetSpawnCycleChatString()
 {
 	local string SpawnCycleLatchedString;
@@ -1468,6 +1682,11 @@ private function string GetTraderTimeChatString()
 	TraderTimeLatchedString = "";
 
 	return "TraderTime=" $ TraderTime $ TraderTimeLatchedString;
+}
+
+private function string GetCDVersionChatString()
+{
+	return "Version=" $ `CD_COMMIT_HASH;
 }
 
 
