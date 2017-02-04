@@ -300,7 +300,7 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	// If the ElemDef requested a special zed, then we need to
 	// check that the zed described by ElemType actually has a
 	// special/albino variant.
-	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler ) )
+	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler || ElemEAIType == AT_GoreFast ) )
 	{
 		return PrintElemParseError("\""$ ElemType $"\" does not have a special variant."$
 		      "  Remove the trailing asterisk from \""$ ElemDef $"\" to spawn a non-special equivalent.");
