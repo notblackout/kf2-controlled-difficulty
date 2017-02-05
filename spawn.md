@@ -133,14 +133,15 @@ Whereas all of the following strings are *invalid* (don't do this):
 
 ### Albino/Special Zed Variants
 
-At the time this document was last updated, there are two albino or special zed variants:
+At the time this document was last updated, there are three albino zed variants in survival, also known as elite variants or special variants:
 
 * AL(PHA)\*, CA\*, ClotA\* (Albino Alpha Clot)
 * CR(AWLER)\* (Albino Crawler)
+* G(OREFAST)\*, GF* (Albino Gorefast -- two blades)
 
 The asterisk suffix makes these zeds albino/special.  For example, "Crawler\*" would spawn a gas grawler and "AL\*" would spawn an albino alpha clot.  Appending a * character to a zed that has no albino variant generates an error message and causes the SpawnCycle to be rejected.
 
-CD's `AlbinoCrawlers` and `AlbinoAlphas` options only have an effect when `SpawnCycle=unmodded`.  If `SpawnCycle` is set to any other value (i.e. ini or a preset), then the cycle defs determine whether and when albino zeds spawn, regardless of the `AlbinoCrawlers` and `AlbinoAlphas` options.
+When CD's `AlbinoCrawlers`, `AlbinoAlphas`, and `AlbinoGorefasts` options are set to false, the associated zed albino type cannot spawn, even if the SpawnCycle says so.  When those options are set to true, the associated albino zed type spawns whenever the SpawnCycle dictates.  If the SpawnCycle does not include any albino zeds, then none will spawn even if one of the `Albino...` options is set to true.
 
 ## Sample Configuration: `basic_moderate` Preset
 
