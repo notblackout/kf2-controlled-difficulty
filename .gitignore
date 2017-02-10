@@ -1,3 +1,4 @@
 *~
 CD_BuildInfo.uci
-make.bat
+local_paths.sh.in
+wsup_specfile.txt

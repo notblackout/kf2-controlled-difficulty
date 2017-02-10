@@ -1,12 +1,9 @@
 [h1]Summary[/h1]
 
-[b]Last tested on[/b]: KF2 v1050 / Feb 2 2017
-[b]Mod version[/b]: 59c61682 (2017-02-05)
-
 This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which supports the following:
 
 * Disabling the game conductor's variation of the zed spawn intensity and move speed
-* 'Faking' players; this increases the zed count (but not zed health) as though additional players were present
+* "Faking" players; this increases the zed count (but not zed health) as though additional players were present
 * Setting an arbitrary, fixed spawn intensity, without conductor interference
 * Setting the max amount live zeds
 * Setting a SpawnCycle, which controls exactly which zeds spawn and in what order
@@ -16,7 +13,10 @@ This open source mod creates a custom game mode called ControlledDifficulty.CD_S
 * Controlling which boss spawns
 * Chat commands to read and modify the configuration
 
-Source: https://github.com/notblackout/kf2-controlled-difficulty
+[b]Version[/b]: $MOD_VERSION
+[b]Date[/b]: $MOD_DATE
+[b]Last Tested KF2 Version[/b]: KF2 v1050
+[b]Source[/b]: https://github.com/notblackout/kf2-controlled-difficulty
 
 This mod is intended to support solo faked-player HOE challenges.
 
