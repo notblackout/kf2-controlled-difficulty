@@ -45,7 +45,7 @@ struct StructAuthorizedUsers
 struct StructChatCommand
 {
 	var array<string> Names; 
-	var int ParamCount; 
+	var array<string> ParamHints; 
 	var delegate<ChatCommandNullaryImpl> NullaryImpl;
 	var delegate<ChatCommandParamsImpl> ParamsImpl;
 	var string Description;
@@ -427,12 +427,14 @@ private function int GetWeaponTimeoutSeconds()
 private function SetupSimpleReadCommand( out StructChatCommand scc, const string CmdName, const string Desc, const delegate<ChatCommandNullaryImpl> Impl )
 {
 	local array<string> n;
+	local array<string> empty;
 
+	empty.length = 0;
 	n.Length = 1;
 	n[0] = CmdName;
 
 	scc.Names = n;
-	scc.ParamCount = 0;
+	scc.ParamHints = empty;
 	scc.NullaryImpl = Impl;
 	scc.ParamsImpl = None;
 	scc.Description = Desc;
@@ -442,15 +444,19 @@ private function SetupSimpleReadCommand( out StructChatCommand scc, const string
 	ChatCommands.AddItem( scc );
 }
 
-private function SetupSimpleWriteCommand( out StructChatCommand scc, const string CmdName, const string Desc, const delegate<ChatCommandParamsImpl> Impl )
+private function SetupSimpleWriteCommand( out StructChatCommand scc, const string CmdName, const string Desc, const string Hint, const delegate<ChatCommandParamsImpl> Impl )
 {
 	local array<string> n;
+	local array<string> hints;
 
 	n.Length = 1;
 	n[0] = CmdName;
 
+	hints.Length = 1;
+	hints[0] = Hint;
+
 	scc.Names = n;
-	scc.ParamCount = 1;
+	scc.ParamHints = hints;
 	scc.NullaryImpl = None;
 	scc.ParamsImpl = Impl;
 	scc.Description = Desc;
@@ -463,16 +469,18 @@ private function SetupSimpleWriteCommand( out StructChatCommand scc, const strin
 private function SetupChatCommands()
 {
 	local array<string> n;
+	local array<string> h;
 	local StructChatCommand scc;
 
 	ChatCommands.Length = 0;
 
 	// Setup pause commands
 	n.Length = 2;
+	h.Length = 0;
 	n[0] = "!cdpausetrader";
 	n[1] = "!cdpt";
 	scc.Names = n;
-	scc.ParamCount = 0;
+	scc.ParamHints = h;
 	scc.NullaryImpl = PauseTraderTime;
 	scc.ParamsImpl = None;
 	scc.Description = "Pause TraderTime countdown";
@@ -481,10 +489,11 @@ private function SetupChatCommands()
 	ChatCommands.AddItem( scc );
 
 	n.Length = 2;
+	h.Length = 0;
 	n[0] = "!cdunpausetrader";
 	n[1] = "!cdupt";
 	scc.Names = n;
-	scc.ParamCount = 0;
+	scc.ParamHints = h;
 	scc.NullaryImpl = UnpauseTraderTime;
 	scc.ParamsImpl = None;
 	scc.Description = "Unpause TraderTime countdown";
@@ -494,9 +503,10 @@ private function SetupChatCommands()
 
 	// Setup info commands
 	n.Length = 1;
+	h.Length = 0;
 	n[0] = "!cdinfo";
 	scc.Names = n;
-	scc.ParamCount = 0;
+	scc.ParamHints = h;
 	scc.NullaryImpl = GetCDInfoChatStringDefault;
 	scc.ParamsImpl = None;
 	scc.Description = "Display CD config summary";
@@ -505,9 +515,11 @@ private function SetupChatCommands()
 	ChatCommands.AddItem( scc );
 
 	n.Length = 1;
+	h.Length = 1;
 	n[0] = "!cdinfo";
+	h[0] = "full|abbrev";
 	scc.Names = n;
-	scc.ParamCount = 1;
+	scc.ParamHints = h;
 	scc.NullaryImpl = None;
 	scc.ParamsImpl = GetCDInfoChatStringCommand;
 	scc.Description = "Display full CD config";
@@ -519,7 +531,7 @@ private function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
-//	SetupSimpleReadCommand( scc, "!cdhelp", "Display list of CD's chat commands", GetCDHelpChatString );
+	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
 	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", GetFakePlayersChatString );
 //	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
 	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", GetMaxMonstersChatString );
@@ -529,55 +541,19 @@ private function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
 
-	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", SetAlbinoAlphasChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", SetAlbinoCrawlersChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", SetAlbinoGorefastsChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", SetBossChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", SetFakePlayersChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", SetMaxMonstersChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", SetSpawnCycleChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", SetSpawnModChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", SetWeaponTimeoutChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", "true|false", SetAlbinoAlphasChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int", SetFakePlayersChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int", SetMaxMonstersChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SetSpawnModChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
 }
 
-private function string GetCDHelpChatString()
-{
-	local string HelpString;
-	local int CCIndex, NameIndex, ParamIndex;
-
-	HelpString = "";
-
-	for ( CCIndex = 0; CCIndex < ChatCommands.Length; CCIndex++ )
-	{
-		HelpString $= ChatCommands[CCIndex].Names[0];
-
-		for ( ParamIndex = 0; ParamIndex < ChatCommands[CCIndex].ParamCount; ParamIndex++ )
-		{
-			HelpString $= " <param" $ string(ParamIndex + 1) $ ">";
-		}
-		
-		HelpString $= ": " $ ChatCommands[CCIndex].Description;
-
-		if ( 1 < ChatCommands[CCIndex].Names.Length )
-		{
-			HelpString $= " (alternate names: ";
-			for ( NameIndex = 1; NameIndex < ChatCommands[CCIndex].Names.Length; NameIndex++ )
-			{
-				if ( 1 < NameIndex )
-				{
-					HelpString $= ", ";
-				}
-				HelpString $= ChatCommands[CCIndex].Names[NameIndex];
-			}
-			HelpString $= ")";
-		}
-
-		HelpString $= "\n";
-	}
-
-	`cdlog(HelpString); // this logs as expected on the server side... but it appears to be so long that the chat messaging system drops it (?)
-
-	return HelpString;
+private function string GetCDChatHelpReferralString() {
+	return "Type CDChatHelp in console for chat command info";
 }
 
 private function string SetAlbinoAlphasChatCommand( const out array<string> params )
@@ -1201,7 +1177,7 @@ private function RunCDChatCommandIfAuthorized( Actor Sender, string CommandStrin
 		`cdlog("Invoking chat command via table match");
 		CNDeleg = Cmd.NullaryImpl;
 		CPDeleg = Cmd.ParamsImpl;
-		if ( Cmd.ParamCount == 0 )
+		if ( Cmd.ParamHints.Length == 0 )
 		{
 			`cdlog("Invoking nullary chat command: "$ CommandString, bLogControlledDifficulty);
 			ResponseMessage = CNDeleg();
@@ -1252,7 +1228,7 @@ private function bool MatchChatCommand( const string CmdName, out StructChatComm
 			continue;
 		}
 
-		if ( ParamCount != ChatCommands[CCIndex].ParamCount )
+		if ( ParamCount != ChatCommands[CCIndex].ParamHints.Length )
 		{
 			continue;
 		}
@@ -1726,6 +1702,51 @@ exec function logControlledDifficulty( bool enabled )
 	`cdlog("Set bLogControlledDifficulty = "$bLogControlledDifficulty, true);
 	SaveConfig();
 }
+
+exec function CDChatHelp()
+{
+	local string HelpString;
+	local int CCIndex, NameIndex, ParamIndex;
+
+	GameInfo_CDCP.Print("Controlled Difficulty Chat Commands", false);
+	GameInfo_CDCP.Print("----------------------------------------------------", false);
+	GameInfo_CDCP.Print("CD knows the following chat commands.  Type any command in global chat.", false);
+	GameInfo_CDCP.Print("Commands typed in team chat are ignored.  Commands marked CDAUTH_READ ", false);
+	GameInfo_CDCP.Print("are usable by anyone.  Dedicated server admins may optionally restrict ", false);
+	GameInfo_CDCP.Print("access to commands marked CDAUTH_WRITE.", false);
+
+	for ( CCIndex = 0; CCIndex < ChatCommands.Length; CCIndex++ )
+	{
+		HelpString = "  " $ ChatCommands[CCIndex].Names[0];
+
+		for ( ParamIndex = 0; ParamIndex < ChatCommands[CCIndex].ParamHints.Length; ParamIndex++ )
+		{
+			HelpString $= " <" $ ChatCommands[CCIndex].ParamHints[ParamIndex] $ ">";
+		}
+
+		if ( 1 < ChatCommands[CCIndex].Names.Length )
+		{
+			HelpString $= " (alternate name(s): ";
+
+			for ( NameIndex = 1; NameIndex < ChatCommands[CCIndex].Names.Length; NameIndex++ )
+			{
+				if ( 1 < NameIndex )
+				{
+					HelpString $= ", ";
+				}
+				HelpString $= ChatCommands[CCIndex].Names[NameIndex];
+			}
+
+			HelpString $= ")";
+		}
+
+		HelpString $= " [" $ ChatCommands[CCIndex].AuthLevel $ "]";
+
+		GameInfo_CDCP.Print(HelpString, false);
+		GameInfo_CDCP.Print("    " $ ChatCommands[CCIndex].Description, false);
+	}
+}
+
 
 exec function CDSpawnSummaries( optional string CycleName, optional int AssumedPlayerCount = -255 )
 {
