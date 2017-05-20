@@ -59,7 +59,7 @@ function Update()
 		SpawnSquadResult = SpawnSquad( SpawnList );
 		NumAISpawnsQueued += SpawnSquadResult;
 		CohortZedsSpawned += SpawnSquadResult;
-		if ( 0 == SpawnSquadResult )
+		if ( 0 == SpawnSquadResult || 0 == Outer.CohortSize )
 		{
 			CohortSaturated = true;
 			break;
@@ -67,17 +67,24 @@ function Update()
 		CohortSquadsSpawned += 1;
     }
 
-	if ( 0 < CohortZedsSpawned )
+	if ( 0 < Outer.CohortSize )
 	{
-		`log("Cohort: " $ CohortSquadsSpawned $ " squads | " $ CohortZedsSpawned $ " zeds | saturated=" $ CohortSaturated);
-		TimeUntilNextSpawn = CalcNextGroupSpawnTime();
+		if ( 0 < CohortZedsSpawned )
+		{
+			`cdlog("Cohort: " $ CohortSquadsSpawned $ " squads | " $ CohortZedsSpawned $ " zeds | saturated=" $ CohortSaturated);
+			TimeUntilNextSpawn = CalcNextGroupSpawnTime();
+		}
+		else
+		{
+			`cdlog("Cohort empty: could not spawn any squads on this attempt");
+		}
 	}
 }
 
 function bool ShouldAddAI()
 {
 	// If it is time to spawn the next squad, or there are any leftovers from the last batch spawn them
-	if( (LeftoverSpawnSquad.Length > 0 || TimeUntilNextSpawn <= 0) && !IsFinishedSpawning() && CohortZedsSpawned <= Outer.CohortSize )
+	if( (LeftoverSpawnSquad.Length > 0 || TimeUntilNextSpawn <= 0) && !IsFinishedSpawning() && ( 0 == Outer.CohortSize || CohortZedsSpawned <= Outer.CohortSize ) )
 	{
         return GetNumAINeeded() > 0;
 	}

@@ -68,9 +68,25 @@ var config int FakePlayers;
 // totally ignored, and the difficulty's standard trader time is used instead.
 var config int TraderTime;
 
+// The timer interval, in seconds, for CD's SpawnManager's update function.
+// The update function first checks several state variables to determine
+// whether to attempt to spawn more zeds.  If it determines that it should
+// spawn zeds, the function then starts placing squads on spawner and/or 
+// spawnvolume entities.
+// In the unmodded game, this is hardcoded to one second.
 var config string MinSpawnInterval;
 var float MinSpawnIntervalFloat;
 
+// The maximum number of zeds that CD's SpawnManager may spawn
+// simultaneously (i.e. on one invocation of the SpawnManager's
+// update function).
+// If this is set to 0, then the cohort spawn logic is
+// inactive, and the game instead spawns one squad per invocation
+// of the update function.  That behavior (i.e. when set to 0)
+// is how unmodded KF2 works: the spawn manager creates one squad
+// per attempt, no matter how much headroom might exist under
+// the MaxMonsters limit, or how many eligible spawnvolumes
+// might be available to accomodate more squads.
 var config int CohortSize;
 
 // the forced spawn modifier, expressed as a float between 0 and 1.
@@ -204,7 +220,6 @@ event InitGame( string Options, out string ErrorMessage )
 	local float MinSpawnIntervalFromGameOptions;
 	local float MinSpawnIntervalBeforeClamping;
 
-
  	Super.InitGame( Options, ErrorMessage );
 
 	SpawnCycleCatalog = new class'CD_SpawnCycleCatalog';
@@ -315,8 +330,8 @@ event InitGame( string Options, out string ErrorMessage )
 
 	if ( HasOption(Options, "CohortSize") )
 	{
-		CohortSizeFromGameOptions = GetIntOption( Options, "CohortSize", -1 );
-		`cdlog("CohortSizeFromGameOptions = "$CohortSizeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		CohortSizeFromGameOptions = GetIntOption( Options, "CohortSize", 0 );
+		`cdlog("CohortSizeFromGameOptions = "$CohortSizeFromGameOptions, bLogControlledDifficulty);
 		CohortSize = CohortSizeFromGameOptions;
 	}
 
@@ -325,7 +340,7 @@ event InitGame( string Options, out string ErrorMessage )
 	if ( HasOption(Options, "MinSpawnInterval") )
 	{
 		MinSpawnIntervalFromGameOptions = GetFloatOption( Options, "MinSpawnInterval", 1.f );
-		`cdlog("MinSpawnIntervalFromGameOptions = "$MinSpawnIntervalFromGameOptions$" (1.0=missing)", bLogControlledDifficulty);
+		`cdlog("MinSpawnIntervalFromGameOptions = "$MinSpawnIntervalFromGameOptions, bLogControlledDifficulty);
 		MinSpawnIntervalFloat = MinSpawnIntervalFromGameOptions;
 	}
 
