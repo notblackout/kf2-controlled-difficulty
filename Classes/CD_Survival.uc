@@ -68,6 +68,11 @@ var config int FakePlayers;
 // totally ignored, and the difficulty's standard trader time is used instead.
 var config int TraderTime;
 
+var config string MinSpawnInterval;
+var float MinSpawnIntervalFloat;
+
+var config int CohortSize;
+
 // the forced spawn modifier, expressed as a float between 0 and 1.
 // 1.0 is KFGameConductor's player-friendliest state.
 // 0.75 is KFGameConductor's player-hostile state.
@@ -195,6 +200,10 @@ event InitGame( string Options, out string ErrorMessage )
 	local int FakePlayersBeforeClamping;
 	local int TraderTimeFromGameOptions;
 
+	local int CohortSizeFromGameOptions;
+	local float MinSpawnIntervalFromGameOptions;
+	local float MinSpawnIntervalBeforeClamping;
+
 
  	Super.InitGame( Options, ErrorMessage );
 
@@ -211,6 +220,15 @@ event InitGame( string Options, out string ErrorMessage )
 	else
 	{
 		SpawnModFloat = float(SpawnMod);
+	}
+
+	if (MinSpawnInterval == "")
+	{
+		MinSpawnIntervalFloat = 1.f;
+	}
+	else
+	{
+		MinSpawnIntervalFloat = float(MinSpawnInterval);
 	}
 
 	if ( HasOption(Options, "SpawnMod") )
@@ -295,6 +313,39 @@ event InitGame( string Options, out string ErrorMessage )
 		GameInfo_CDCP.Print("FakePlayers="$FakePlayers);
 	}
 
+	if ( HasOption(Options, "CohortSize") )
+	{
+		CohortSizeFromGameOptions = GetIntOption( Options, "CohortSize", -1 );
+		`cdlog("CohortSizeFromGameOptions = "$CohortSizeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
+		CohortSize = CohortSizeFromGameOptions;
+	}
+
+	GameInfo_CDCP.Print("CohortSize="$CohortSize);
+
+	if ( HasOption(Options, "MinSpawnInterval") )
+	{
+		MinSpawnIntervalFromGameOptions = GetFloatOption( Options, "MinSpawnInterval", 1.f );
+		`cdlog("MinSpawnIntervalFromGameOptions = "$MinSpawnIntervalFromGameOptions$" (1.0=missing)", bLogControlledDifficulty);
+		MinSpawnIntervalFloat = MinSpawnIntervalFromGameOptions;
+	}
+
+	// FClamp MinSpawnInterval
+	MinSpawnIntervalBeforeClamping = MinSpawnIntervalFloat;
+	MinSpawnIntervalFloat = ClampMinSpawnInterval( MinSpawnIntervalFloat );
+	`cdlog("FClamped MinSpawnInterval = "$MinSpawnIntervalFloat, bLogControlledDifficulty);
+
+	if ( MinSpawnIntervalFloat == MinSpawnIntervalBeforeClamping )
+	{
+		GameInfo_CDCP.Print("MinSpawnInterval="$MinSpawnIntervalFloat);
+	}
+	else
+	{
+		GameInfo_CDCP.Print("MinSpawnInterval="$MinSpawnIntervalFloat$" (clamped from "$MinSpawnIntervalBeforeClamping$")");
+	}
+
+	// Assign MinSpawnInterval before we save our config (MinSpawnIntervalFloat is not saved, only its MinSpawnInterval copy)
+	MinSpawnInterval = string(MinSpawnIntervalFloat);
+
 	// Process TraderTime command option, if present
 	if ( HasOption(Options, "TraderTime") )
 	{
@@ -375,7 +426,10 @@ event InitGame( string Options, out string ErrorMessage )
 function bool CheckRelevance(Actor Other)
 {
 	local KFDroppedPickup Weap;
+	local KFAIController KFAIC;
 	local bool SuperRelevant;
+	local bool CanTeleportCloser; // TODO extract into proper config var
+	CanTeleportCloser = false; // TODO same
 
 	SuperRelevant = super.CheckRelevance(Other);
 
@@ -390,6 +444,16 @@ function bool CheckRelevance(Actor Other)
 	if ( None != Weap )
 	{
 		OverrideWeaponLifespan(Weap);
+	}
+
+	if ( !CanTeleportCloser )
+	{
+		KFAIC = KFAIController(Other);
+		if ( None != KFAIC )
+		{
+			KFAIC.bCanTeleportCloser = false;
+			`log("Set bCanTeleportCloser=false on "$ KFAIC);
+		}
 	}
 
 	// Should always be true, due to the early return when false
@@ -421,6 +485,39 @@ private function int GetWeaponTimeoutSeconds()
 	else
 	{
 		return int( WeaponTimeout );
+	}
+}
+
+//
+// Set gameplay speed.
+//
+function SetGameSpeed( Float T )
+{
+	GameSpeed = FMax(T, 0.00001);
+	WorldInfo.TimeDilation = GameSpeed;
+	SetTimer(WorldInfo.TimeDilation, true);
+	SetTimer(WorldInfo.TimeDilation * MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
+}
+
+/** Default timer, called from native */
+event Timer()
+{
+	super(KFGameInfo).Timer();
+
+	// Dont't refresh SpawnManager
+	// That runs on a separate timer (SpawnManagerWakeup)
+
+	if( GameConductor != none )
+	{
+		GameConductor.TimerUpdate();
+	}
+}
+
+function SpawnManagerWakeup()
+{
+	if( SpawnManager != none )
+	{
+		SpawnManager.Update();
 	}
 }
 
@@ -783,6 +880,12 @@ private function float ClampSpawnMod( const float sm )
 {
 	return FClamp(sm, 0.f, 1.f);
 }
+
+private function float ClampMinSpawnInterval( const float msi )
+{
+	return FClamp(msi, 0.05 /* 50 ms */, 10.f /* 10 s */);
+}
+
 
 private function bool isValidBossString( const string bs )
 {

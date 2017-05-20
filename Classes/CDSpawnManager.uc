@@ -18,10 +18,74 @@ class CDSpawnManager extends KFAISpawnManager
 
 var array<CD_AIWaveInfo> CustomWaves;
 
+var int CohortZedsSpawned;
+var int CohortSquadsSpawned;
+var int CohortVolumeIndex;
+
 function SetCustomWaves( array<CD_AIWaveInfo> inWaves )
 {
 	CustomWaves = inWaves;
 }
+
+/** We override this because of TimeUntilNextSpawn.
+    The standard implementation assumes that this
+    method is invoked on a 1-second timer.  It always
+    decrements TimeUntilNextSpawn by 1.  But CD makes
+    this timer a user-configurable setting. */
+function Update()
+{
+	local array<class<KFPawn_Monster> > SpawnList;
+	local int SpawnSquadResult;
+	local bool CohortSaturated;
+
+	if ( IsFinishedSpawning() || !IsWaveActive() )
+	{
+		return;
+	}
+
+	TotalWavesActiveTime += MinSpawnIntervalFloat;
+	TimeUntilNextSpawn -= MinSpawnIntervalFloat;
+
+	CohortZedsSpawned = 0;
+	CohortSquadsSpawned = 0;
+	CohortVolumeIndex = 0;
+	CohortSaturated = false;
+
+	// As soon as SpawnSquadResult reaches zero on an attempt, we assume that 
+	// the eligible spawners/spawnvolumes are saturated
+	while ( ShouldAddAI() )
+	{
+    	SpawnList = GetNextSpawnList();
+		SpawnSquadResult = SpawnSquad( SpawnList );
+		NumAISpawnsQueued += SpawnSquadResult;
+		CohortZedsSpawned += SpawnSquadResult;
+		if ( 0 == SpawnSquadResult )
+		{
+			CohortSaturated = true;
+			break;
+		}
+		CohortSquadsSpawned += 1;
+    }
+
+	if ( 0 < CohortZedsSpawned )
+	{
+		`log("Cohort: " $ CohortSquadsSpawned $ " squads | " $ CohortZedsSpawned $ " zeds | saturated=" $ CohortSaturated);
+		TimeUntilNextSpawn = CalcNextGroupSpawnTime();
+	}
+}
+
+function bool ShouldAddAI()
+{
+	// If it is time to spawn the next squad, or there are any leftovers from the last batch spawn them
+	if( (LeftoverSpawnSquad.Length > 0 || TimeUntilNextSpawn <= 0) && !IsFinishedSpawning() && CohortZedsSpawned <= Outer.CohortSize )
+	{
+        return GetNumAINeeded() > 0;
+	}
+
+	return false;
+}
+
+
 
 // This function is invoked by the spawning system in the base game.
 // Its return value is the maximum number of simultaneously live zeds
@@ -128,6 +192,7 @@ function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional 
 	local KFSpawnVolume KFSV;
 	local int SpawnerAmount, VolumeAmount, FinalAmount, i;
 	local bool bCanSpawnPlayerBoss;
+	local int BestVolumeIndex;
 
 `if(`notdefined(ShippingPC))
 	local KFGameReplicationInfo KFGRI;
@@ -150,10 +215,12 @@ function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional 
 	// otherwise use default spawn volume selection
 	if( AIToSpawn.Length > 0 )
 	{
-		KFSV = GetBestSpawnVolume(AIToSpawn);
+		BestVolumeIndex = GetBestSpawnVolumeIndex(AIToSpawn);
 
-		if( KFSV != None )
+		if ( BestVolumeIndex != SpawnVolumes.Length ) // if == length, there were no usable volumes left
 		{
+			KFSV = SpawnVolumes[BestVolumeIndex];
+
 `if(`notdefined(ShippingPC))
 			VolumeLocation=KFSV.Location;
 `endif
@@ -208,6 +275,7 @@ function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional 
 	if( AIToSpawn.Length > 0 )
 	{
 		//`warn(self@GetFuncName()$" Didn't spawn the whole list of AI!!!");
+		`log("Partial squad spawn: unable to spawn " $ string(AIToSpawn.Length) $ "/" $ string(FinalAmount));
 
 `if(`notdefined(ShippingPC))
 		// Let the GRI know that a spawn volume failed to spawn some AI
@@ -255,6 +323,67 @@ function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional 
 
 	return FinalAmount;
 }
+
+function int GetBestSpawnVolumeIndex( optional array< class<KFPawn_Monster> > AIToSpawn, optional Controller OverrideController, optional Controller OtherController, optional bool bTeleporting, optional float MinDistSquared )
+{
+	local int ControllerIndex;
+	local Controller RateController;
+
+    if( OverrideController != none )
+    {
+        RateController = OverrideController;
+    }
+    else
+    {
+        // Get the Controller list ready for spawn selection
+        InitControllerList();
+
+        if( RecentSpawnSelectedHumanControllerList.Length > 0 )
+        {
+            // Randomly grab a Human PRI from the list to use for rating zed spawning
+            ControllerIndex = Rand(RecentSpawnSelectedHumanControllerList.Length);
+            RateController = RecentSpawnSelectedHumanControllerList[ControllerIndex];
+            RecentSpawnSelectedHumanControllerList.Remove( ControllerIndex, 1 );
+            `Log( GetFuncName()$" Rating with Controller "$RateController.PlayerReplicationInfo.PlayerName$" From RecentSpawnSelectedHumanControllerList", bLogAISpawning );
+        }
+    }
+
+    // If there were no controllers to rate against, return none
+    if( RateController == none )
+    {
+        `warn( GetFuncName()$" no controllers to rate spawning with!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", bLogAISpawning);
+        return SpawnVolumes.Length;
+    }
+
+    if( (OtherController == none || !OtherController.bIsPlayer) && NeedPlayerSpawnVolume() )
+    {
+    	// Grab the first player controller
+    	foreach WorldInfo.AllControllers( class'Controller', OtherController )
+    	{
+    		if( OtherController.bIsPlayer )
+    		{
+		    	break;
+		    }
+	    }
+    }
+
+    // pre-sort the list to reduce the number of line checks performed by IsValidForSpawn
+	SortSpawnVolumes(RateController, bTeleporting, MinDistSquared);
+
+	while ( CohortVolumeIndex < SpawnVolumes.Length )
+	{
+		if ( SpawnVolumes[CohortVolumeIndex].IsValidForSpawn(DesiredSquadType, OtherController) 
+			&& SpawnVolumes[CohortVolumeIndex].CurrentRating > 0 )
+		{
+			`log(GetFuncName()@"returning chosen spawn volume"@SpawnVolumes[CohortVolumeIndex]@"with a rating of"@SpawnVolumes[CohortVolumeIndex].CurrentRating, bLogAISpawning);
+			break;
+		}
+		CohortVolumeIndex++;
+	}
+
+	return CohortVolumeIndex;
+}
+
 
 /* The sole reason for overriding this function is to suppress
    the Rand()-based spawnlist shuffling when using a CD SpawnCycle.
