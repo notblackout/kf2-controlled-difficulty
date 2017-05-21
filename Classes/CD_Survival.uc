@@ -43,6 +43,7 @@ struct StructStagedConfig
 	var float    SpawnModFloat;
 //	var int      TraderTime;
 	var string   WeaponTimeout;
+	var bool     ZedsTeleportCloser;
 	var float    ZTSpawnSlowdownFloat;
 	var string   ZTSpawnMode;
 };
@@ -138,6 +139,8 @@ var config bool AlbinoAlphas;
 
 // same value sense as for AlbinoCrawlers, but for double bladed gorefasts
 var config bool AlbinoGorefasts;
+
+var config bool ZedsTeleportCloser;
 
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
@@ -254,8 +257,6 @@ function bool CheckRelevance(Actor Other)
 	local KFDroppedPickup Weap;
 	local KFAIController KFAIC;
 	local bool SuperRelevant;
-	local bool CanTeleportCloser; // TODO extract into proper config var
-	CanTeleportCloser = false; // TODO same
 
 	SuperRelevant = super.CheckRelevance(Other);
 
@@ -272,17 +273,17 @@ function bool CheckRelevance(Actor Other)
 		OverrideWeaponLifespan(Weap);
 	}
 
-	if ( !CanTeleportCloser )
+	KFAIC = KFAIController(Other);
+
+	if ( None != KFAIC )
 	{
-		KFAIC = KFAIController(Other);
-		if ( None != KFAIC )
-		{
-			KFAIC.bCanTeleportCloser = false;
-			`log("Set bCanTeleportCloser=false on "$ KFAIC);
-		}
+		KFAIC.bCanTeleportCloser = ZedsTeleportCloser;
+		`cdlog("Set bCanTeleportCloser="$ ZedsTeleportCloser $" on "$ KFAIC, bLogControlledDifficulty);
 	}
 
 	// Should always be true, due to the early return when false
+	// (We don't actually determine relevance here, it's just the best touch-point
+	//  to modify actor properties during creation)
 	return SuperRelevant;
 }
 
@@ -431,9 +432,17 @@ private function ParseCDGameOptions( const out string Options )
 
 	if ( HasOption(Options, "AlbinoGorefasts") )
 	{
-		AlbinoGorefasts= GetBoolOption( Options, "AlbinoGorefasts", true );
+		AlbinoGorefasts = GetBoolOption( Options, "AlbinoGorefasts", true );
 		`cdlog("AlbinoGorefastsFromGameOptions = "$AlbinoGorefasts$" (true=default)", bLogControlledDifficulty);
 	}
+
+	if ( HasOption(Options, "ZedsTeleportCloser") )
+	{
+		ZedsTeleportCloser = GetBoolOption( Options, "ZedsTeleportCloser", true );
+		`cdlog("ZedsTeleportCloserFromGameOptions = "$ZedsTeleportCloser$" (true=default)", bLogControlledDifficulty);
+	}
+
+	GameInfo_CDCP.Print( "ZedsTeleportCloser="$ZedsTeleportCloser );
 
 	if ( HasOption(Options, "SpawnCycle") )
 	{
@@ -600,6 +609,7 @@ private function InitStructStagedConfig()
 	StagedConfig.SpawnModFloat = SpawnModFloat;
 //	StagedConfig.TraderTime = TraderTime;
 	StagedConfig.WeaponTimeout = WeaponTimeout;
+	StagedConfig.ZedsTeleportCloser = ZedsTeleportCloser;
 	StagedConfig.ZTSpawnSlowdownFloat = ZTSpawnSlowdownFloat;
 	StagedConfig.ZTSpawnMode = ZTSpawnMode;
 }
@@ -723,6 +733,7 @@ private function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
+	SetupSimpleReadCommand( scc, "!cdzedsteleportcloser", "Display ZedsTeleportCloser setting", GetZedsTeleportCloserChatString );
 	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", GetZTSpawnSlowdownChatString );
 	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
 
@@ -737,12 +748,28 @@ private function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SetSpawnModChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdzedsteleportcloser", "Set ZedsTeleportCloser", "true|false", SetZedsTeleportCloserChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", SetZTSpawnSlowdownChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
 private function string GetCDChatHelpReferralString() {
 	return "Type CDChatHelp in console for chat command info";
+}
+
+private function string SetZedsTeleportCloserChatCommand( const out array<string> params )
+{
+	StagedConfig.ZedsTeleportCloser = bool( params[0] );
+
+	if ( ZedsTeleportCloser != StagedConfig.ZedsTeleportCloser )
+	{
+		return "Staged: ZedsTeleportCloser=" $ StagedConfig.ZedsTeleportCloser $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "ZedsTeleportCloser is already " $ ZedsTeleportCloser;
+	}
 }
 
 private function string SetAlbinoAlphasChatCommand( const out array<string> params )
@@ -998,6 +1025,16 @@ State TraderOpen
 	{
 		super.BeginState( PreviousStateName );
 
+		SetTimer(1.f, false, 'DisplayBriefWaveStatsInChat');
+	}
+}
+
+function EndOfMatch(bool bVictory)
+{
+	super.EndOfMatch(bVictory);
+
+	if ( !bVictory && WaveNum < WaveMax )
+	{
 		SetTimer(1.f, false, 'DisplayBriefWaveStatsInChat');
 	}
 }
@@ -1710,6 +1747,12 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 //		TraderTime = StagedConfig.TraderTime;
 //	}
 
+	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
+	{
+		SettingChangeNotifications.AddItem("ZedsTeleportCloser="$ StagedConfig.ZedsTeleportCloser $" (old: "$ZedsTeleportCloser$")");
+		ZedsTeleportCloser = StagedConfig.ZedsTeleportCloser;
+	}
+
 	if ( 0 < SettingChangeNotifications.Length )
 	{
 		if ( "" != BannerLine )
@@ -1881,6 +1924,18 @@ private function string GetCDInfoChatString( const string Verbosity )
 		       GetCohortSizeChatString() $ "\n" $
 		       GetSpawnCycleChatString();
 	}
+}
+
+private function string GetZedsTeleportCloserChatString()
+{
+	local string ZedsTeleportCloserLatchedString;
+
+	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
+	{
+		ZedsTeleportCloserLatchedString = " (staged: " $ StagedConfig.ZedsTeleportCloser $ ")";
+	}
+
+	return "ZedsTeleportCloser=" $ ZedsTeleportCloser $ ZedsTeleportCloserLatchedString;
 }
 
 private function string GetAlbinoAlphasChatString()

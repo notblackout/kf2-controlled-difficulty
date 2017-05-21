@@ -77,18 +77,18 @@ function Update()
 	{
 		if ( 0 < CohortZedsSpawned )
 		{
-			`cdlog("Cohort: " $ CohortSquadsSpawned $ " squads | " $ CohortZedsSpawned $ " zeds | saturated=" $ CohortSaturated);
+			`cdlog("Cohort: " $ CohortSquadsSpawned $ " squads | " $ CohortZedsSpawned $ " zeds | saturated=" $ CohortSaturated, bLogControlledDifficulty);
 		}
 		else
 		{
-			`cdlog("Cohort empty: could not spawn any squads on this attempt");
+			`cdlog("Cohort empty: could not spawn any squads on this attempt", bLogControlledDifficulty);
 		}
 	}
 
 	// if we spawned at least one thing, then:
 	// 1. invoke CalcNextGroupSpawnTime()
 	// 2. update the various bits of state related to spawnrate tracking
-	if ( 0 < SpawnSquadResult )
+	if ( 0 < CohortZedsSpawned )
 	{
 		TimeUntilNextSpawn = CalcNextGroupSpawnTime();
 
@@ -118,6 +118,8 @@ function string GetWaveAverageSpawnrate()
 {
 	local string SpawnrateString;
 	local string DelayString;
+	local string ZedCountString;
+
 	// There are a bunch of edge cases in here
 
 	// (a) if the team wipes before everything spawns,
@@ -134,12 +136,13 @@ function string GetWaveAverageSpawnrate()
 
 	if ( 0 > FinalSpawnTimestamp )
 	{
+		`cdlog("Overridding FinalSpawnTimestamp " $ FinalSpawnTimestamp $ " -> " $ LatestSpawnTimestamp, bLogControlledDifficulty);
 		FinalSpawnTimestamp = LatestSpawnTimestamp;
 	}
 
 	if ( 0 > FirstSpawnTimestamp || 0 > FinalSpawnTimestamp )
 	{
-		return "no zeds spawned";
+		return "0/" $ WaveTotalAI $ " zeds spawned";
 	}
 
 	if ( FinalSpawnTimestamp == FirstSpawnTimestamp )
@@ -153,8 +156,12 @@ function string GetWaveAverageSpawnrate()
 
 	DelayString = FormatFloatToTwoDecimalPlaces( FirstSpawnTimestamp - WaveSetupTimestamp );
 
+	ZedCountString = NumAISpawnsQueued < WaveTotalAI ?
+		(NumAISpawnsQueued $"/"$ WaveTotalAI) :
+		string(WaveTotalAI);
+
 	return
-	    WaveTotalAI $ " zeds, " $ DelayString $ " s delay\n" $
+	    ZedCountString $ " zeds, " $ DelayString $ " s delay\n" $
 		SpawnrateString $ "\n" $
 	    " (timed first spawn to last)";
 }
