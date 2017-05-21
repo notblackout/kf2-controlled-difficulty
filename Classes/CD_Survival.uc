@@ -398,49 +398,19 @@ private function SpawnManagerWakeup()
 
 private function ParseCDGameOptions( const out string Options )
 {
-	local bool AlbinoCrawlersFromGameOptions;
-
-	local bool AlbinoAlphasFromGameOptions;
-
-	local bool AlbinoGorefastsFromGameOptions;
-
-	local string BossFromGameOptions;
-
-	local int CohortSizeFromGameOptions;
-	local int CohortSizeBeforeClamping;
-
-	local int FakePlayersFromGameOptions;
-	local int FakePlayersBeforeClamping;
-
-	local int MaxMonstersFromGameOptions;
-
-	local float MinSpawnIntervalFromGameOptions;
-	local float MinSpawnIntervalBeforeClamping;
-
-	local string SpawnCycleFromGameOptions;
-
-	local float SpawnModFromGameOptions;
-	local float SpawnModBeforeClamping;
-
-	local int TraderTimeFromGameOptions;
-
-	local string WeaponTimeoutFromGameOptions;
-
 
 	ParseAndClampFloatOpt( Options, SpawnMod, SpawnModFloat, "SpawnMod", 1.f, ClampSpawnMod );
 
 	if ( HasOption(Options, "MaxMonsters") )
 	{
-		MaxMonstersFromGameOptions = GetIntOption( Options, "MaxMonsters", -1 );
-		`cdlog("MaxMonstersFromGameOptions = "$MaxMonstersFromGameOptions$" (-1=default)", bLogControlledDifficulty);
-		MaxMonsters = MaxMonstersFromGameOptions;
+		MaxMonsters = GetIntOption( Options, "MaxMonsters", -1 );
+		`cdlog("MaxMonstersFromGameOptions = "$MaxMonsters$" (-1=default)", bLogControlledDifficulty);
 	}
 
 	if ( HasOption(Options, "WeaponTimeout") )
 	{
-		WeaponTimeoutFromGameOptions = ParseOption(Options, "WeaponTimeout" );
-		`cdlog("WeaponTimeoutFromGameOptions = "$WeaponTimeoutFromGameOptions, bLogControlledDifficulty);
-		WeaponTimeout = WeaponTimeoutFromGameOptions;
+		WeaponTimeout = ParseOption(Options, "WeaponTimeout" );
+		`cdlog("WeaponTimeoutFromGameOptions = "$WeaponTimeout, bLogControlledDifficulty);
 	}
 
 	WeaponTimeout = ClampWeaponTimeout( WeaponTimeout );
@@ -449,30 +419,26 @@ private function ParseCDGameOptions( const out string Options )
 
 	if ( HasOption(Options, "AlbinoCrawlers") )
 	{
-		AlbinoCrawlersFromGameOptions = GetBoolOption( Options, "AlbinoCrawlers", true );
-		`cdlog("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlersFromGameOptions$" (true=default)", bLogControlledDifficulty);
-		AlbinoCrawlers = AlbinoCrawlersFromGameOptions;
+		AlbinoCrawlers = GetBoolOption( Options, "AlbinoCrawlers", true );
+		`cdlog("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlers$" (true=default)", bLogControlledDifficulty);
 	}
 
 	if ( HasOption(Options, "AlbinoAlphas") )
 	{
-		AlbinoAlphasFromGameOptions = GetBoolOption( Options, "AlbinoAlphas", true );
-		`cdlog("AlbinoAlphasFromGameOptions = "$AlbinoAlphasFromGameOptions$" (true=default)", bLogControlledDifficulty);
-		AlbinoAlphas = AlbinoAlphasFromGameOptions;
+		AlbinoAlphas = GetBoolOption( Options, "AlbinoAlphas", true );
+		`cdlog("AlbinoAlphasFromGameOptions = "$AlbinoAlphas$" (true=default)", bLogControlledDifficulty);
 	}
 
 	if ( HasOption(Options, "AlbinoGorefasts") )
 	{
-		AlbinoGorefastsFromGameOptions = GetBoolOption( Options, "AlbinoGorefasts", true );
-		`cdlog("AlbinoGorefastsFromGameOptions = "$AlbinoGorefastsFromGameOptions$" (true=default)", bLogControlledDifficulty);
-		AlbinoGorefasts = AlbinoGorefastsFromGameOptions;
+		AlbinoGorefasts= GetBoolOption( Options, "AlbinoGorefasts", true );
+		`cdlog("AlbinoGorefastsFromGameOptions = "$AlbinoGorefasts$" (true=default)", bLogControlledDifficulty);
 	}
 
 	if ( HasOption(Options, "SpawnCycle") )
 	{
-		SpawnCycleFromGameOptions = ParseOption(Options, "SpawnCycle" );
-		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycleFromGameOptions, bLogControlledDifficulty);
-		SpawnCycle = SpawnCycleFromGameOptions;
+		SpawnCycle= ParseOption(Options, "SpawnCycle" );
+		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycle, bLogControlledDifficulty);
 	}
 
 	ParseAndClampIntOpt( Options, CohortSize, "CohortSize", 0, ClampCohortSize );
@@ -486,9 +452,8 @@ private function ParseCDGameOptions( const out string Options )
 	// Process TraderTime command option, if present
 	if ( HasOption(Options, "TraderTime") )
 	{
-		TraderTimeFromGameOptions = GetIntOption( Options, "TraderTime", -1 );
-		`cdlog("TraderTimeFromGameOptions = "$TraderTimeFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
-		TraderTime = TraderTimeFromGameOptions;
+		TraderTime= GetIntOption( Options, "TraderTime", -1 );
+		`cdlog("TraderTimeFromGameOptions = "$TraderTime$" (-1=missing)", bLogControlledDifficulty);
 	}
 
 	// TraderTime is not clamped
