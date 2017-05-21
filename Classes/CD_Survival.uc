@@ -22,6 +22,13 @@ enum CDAuthLevel
 	CDAUTH_WRITE
 };
 
+enum EZTSpawnMode
+{
+	ZTSM_UNMODDED,
+	ZTSM_CLOCKWORK
+};
+
+
 struct StructStagedConfig
 {
 	var bool     AlbinoAlphas;
@@ -36,6 +43,8 @@ struct StructStagedConfig
 	var float    SpawnModFloat;
 //	var int      TraderTime;
 	var string   WeaponTimeout;
+	var float    ZTSpawnSlowdownFloat;
+	var string   ZTSpawnMode;
 };
 
 struct StructAuthorizedUsers
@@ -105,6 +114,14 @@ var config int CohortSize;
 var config string SpawnMod;
 var float SpawnModFloat;
 
+var config string ZTSpawnSlowdown;
+var float ZTSpawnSlowdownFloat;
+
+var config string ZTSpawnMode;
+var EZTSpawnMode ZTSpawnModeEnum;
+var const string ZTSpawnModeHelpString;
+var const string ZTSpawnModeDefaultValue;
+
 // the maximum monsters allowed on the map at one time.  in the vanilla game,
 // this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1; 32 in
 // any other case (such as when playing alone on a dedicated server).  if this
@@ -135,6 +152,8 @@ var config array<string> SpawnCycleDefs;
 // "pat", "patty", "patriarch": forces the patriarch boss wave
 // else: choose a random boss wave (unmodded game behavior)
 var config string Boss;
+var const string BossOptionHelpString;
+var const string BossOptionDefaultValue;
 
 // Time, in seconds, that dropped weapons remain on the ground before
 // disappearing.  This must be either a valid integer in string form,
@@ -197,14 +216,17 @@ var const float SpawnModEpsilon;
 
 var const float MinSpawnIntervalEpsilon;
 
+var const float ZTSpawnSlowdownEpsilon;
 
 // Holds KFGRI state when the countdown to close the
 // trader has been temporarily suspended by the user.
 var int PausedRemainingTime;
 var int PausedRemainingMinute;
 
-delegate int ClampIntCDOption( const int raw );
+delegate int ClampIntCDOption( const out int raw );
+delegate float ClampFloatCDOption( const out float raw );
 
+delegate bool StringReferencePredicate( const out string value );
 delegate string ChatCommandNullaryImpl();
 delegate string ChatCommandParamsImpl( const out array<string> params );
 
@@ -300,12 +322,53 @@ function SetGameSpeed( Float T )
 	GameSpeed = FMax(T, 0.00001);
 	WorldInfo.TimeDilation = GameSpeed;
 	SetTimer(WorldInfo.TimeDilation, true);
-	SetSpawnManagerWakeup();
+	if ( ZTSpawnModeEnum == ZTSM_CLOCKWORK )
+	{
+		SetSpawnManagerWakeup();
+	}
 }
 
 function SetSpawnManagerWakeup()
 {
-	SetTimer(WorldInfo.TimeDilation * MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
+	local float ZTTrans;
+	local float LocalDilation;
+
+	if ( !IsTimerActive('SpawnManagerWakeup') )
+	{
+		// Timer does not exist, set it
+		`cdlog("Setting independent SpawnManagerWakeup timer (" $ MinSpawnIntervalFloat $")");
+		SetTimer(MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
+	}
+
+	// Timer running by the time we reach this line; just modify the time dilation
+	if ( ZTSpawnSlowdownFloat > 1.f && ZedTimeRemaining > 0.f && WorldInfo.TimeDilation <= 1.f )
+	{
+		// In standard KF2, time runs at ZedTimeSlomoScale during ZT
+		// At the time this comment was written, ZedTimeSlomoScale=.2,
+		// meaning 5 seconds of gametime pass for every 1 second of realtime.
+		// If we applied this dilation directly to the spawnmanager, then
+		// every kill in zedtime could add up to 4 "free" seconds without
+		// spawn activity (circumstances for this to happen are pretty
+		// special, but it is possible).
+		// (1 - (1/ZTSS)) / stick = istick - istick/ZTSS
+		// .8x = .7     x = .7 /.8
+		// .4x = .35    x = .35/.4
+
+		// .8x = .5     x = .5/.8
+		// .4x = .25    x = .25/.4
+		// 1x = 1
+		ZTTrans = 1.25f - (1.25f / ZTSpawnSlowdownFloat);  // .8 = 1 - ZedTimeSlomoScale; 1.25 = 1/.8
+		LocalDilation = 1.f - ((1.f - WorldInfo.TimeDilation) * ZTTrans);
+		LocalDilation = FClamp(LocalDilation, 0.2f, 1.0f);
+		`cdlog("SpawnManagerWakeup's scaled timedilation: " $ LocalDilation);
+	}
+	else
+	{
+		LocalDilation = 1.f / WorldInfo.TimeDilation;
+		`cdlog("SpawnManagerWakeup's clockwork timedilation: " $ LocalDilation);
+	}
+
+	ModifyTimerTimeDilation('SpawnManagerWakeup', LocalDilation);
 }
 
 /** Default timer, called from native */
@@ -313,10 +376,13 @@ event Timer()
 {
 	super(KFGameInfo).Timer();
 
-	// Dont't refresh SpawnManager
-	// That runs on a separate timer (SpawnManagerWakeup)
+	if ( ZTSpawnModeEnum == ZTSM_UNMODDED )
+	{
+		`cdlog("Invoking MinSpawnIntervalFloat from Timer");
+		SpawnManagerWakeup();
+	}
 
-	if( GameConductor != none )
+	if ( GameConductor != none )
 	{
 		GameConductor.TimerUpdate();
 	}
@@ -361,21 +427,7 @@ private function ParseCDGameOptions( const out string Options )
 	local string WeaponTimeoutFromGameOptions;
 
 
-	if (SpawnMod == "")
-	{
-		SpawnModFloat = 1.f;
-	}
-	else
-	{
-		SpawnModFloat = float(SpawnMod);
-	}
-
-	if ( HasOption(Options, "SpawnMod") )
-	{
-		SpawnModFromGameOptions = GetFloatOption( Options, "SpawnMod", 1.f );
-		`cdlog("SpawnModFromGameOptions = "$SpawnModFromGameOptions$" (1.0=missing)", bLogControlledDifficulty);
-		SpawnModFloat = SpawnModFromGameOptions;
-	}
+	ParseAndClampFloatOpt( Options, SpawnMod, SpawnModFloat, "SpawnMod", 1.f, ClampSpawnMod );
 
 	if ( HasOption(Options, "MaxMonsters") )
 	{
@@ -423,49 +475,13 @@ private function ParseCDGameOptions( const out string Options )
 		SpawnCycle = SpawnCycleFromGameOptions;
 	}
 
-	if ( HasOption(Options, "Boss") )
-	{
-		BossFromGameOptions = ParseOption(Options, "Boss" );
-		`cdlog("BossFromGameOptions = "$BossFromGameOptions, bLogControlledDifficulty);
-		Boss = BossFromGameOptions;
-	}
-
 	ParseAndClampIntOpt( Options, CohortSize, "CohortSize", 0, ClampCohortSize );
 
 	ParseAndClampIntOpt( Options, FakePlayers, "FakePlayers", -1, ClampFakePlayers );
 
-	if (MinSpawnInterval == "")
-	{
-		MinSpawnIntervalFloat = 1.f;
-	}
-	else
-	{
-		MinSpawnIntervalFloat = float(MinSpawnInterval);
-	}
+	ParseAndClampFloatOpt( Options, MinSpawnInterval, MinSpawnIntervalFloat, "MinSpawnInterval", 1.f, ClampMinSpawnInterval );
 
-	if ( HasOption(Options, "MinSpawnInterval") )
-	{
-		MinSpawnIntervalFromGameOptions = GetFloatOption( Options, "MinSpawnInterval", 1.f );
-		`cdlog("MinSpawnIntervalFromGameOptions = "$MinSpawnIntervalFromGameOptions, bLogControlledDifficulty);
-		MinSpawnIntervalFloat = MinSpawnIntervalFromGameOptions;
-	}
-
-	// FClamp MinSpawnInterval
-	MinSpawnIntervalBeforeClamping = MinSpawnIntervalFloat;
-	MinSpawnIntervalFloat = ClampMinSpawnInterval( MinSpawnIntervalFloat );
-	`cdlog("FClamped MinSpawnInterval = "$MinSpawnIntervalFloat, bLogControlledDifficulty);
-
-	if ( MinSpawnIntervalFloat == MinSpawnIntervalBeforeClamping )
-	{
-		GameInfo_CDCP.Print("MinSpawnInterval="$MinSpawnIntervalFloat);
-	}
-	else
-	{
-		GameInfo_CDCP.Print("MinSpawnInterval="$MinSpawnIntervalFloat$" (clamped from "$MinSpawnIntervalBeforeClamping$")");
-	}
-
-	// Assign MinSpawnInterval before we save our config (MinSpawnIntervalFloat is not saved, only its MinSpawnInterval copy)
-	MinSpawnInterval = string(MinSpawnIntervalFloat);
+	ParseAndClampFloatOpt( Options, ZTSpawnSlowdown, ZTSpawnSlowdownFloat, "ZTSpawnSlowdown", 1.f, ClampZTSpawnSlowdown );
 
 	// Process TraderTime command option, if present
 	if ( HasOption(Options, "TraderTime") )
@@ -487,45 +503,94 @@ private function ParseCDGameOptions( const out string Options )
 		GameInfo_CDCP.Print("TraderTime=<unmodded default>");
 	}
 
-	// FClamp SpawnModFloat
-	SpawnModBeforeClamping = SpawnModFloat;
-	SpawnModFloat = ClampSpawnMod( SpawnModFloat );
-	`cdlog("FClamped SpawnMod = "$SpawnModFloat, bLogControlledDifficulty);
-
-	if ( SpawnModFloat == SpawnModBeforeClamping )
-	{
-		GameInfo_CDCP.Print("SpawnMod="$SpawnModFloat);
-	}
-	else
-	{
-		GameInfo_CDCP.Print("SpawnMod="$SpawnModFloat$" (clamped from "$SpawnModBeforeClamping$")");
-	}
-
-	// Assign SpawnMod before we save our config (SpawnModFloat is not saved, only its SpawnMod copy)
-	SpawnMod = string(SpawnModFloat);
-
-	// Initialize the Boss option if empty
-	if ( "" == Boss )
-	{
-		Boss = "unmodded";
-	}
-
 	// Initialize the SpawnCycle option if empty
 	if ( "" == SpawnCycle )
 	{
 		SpawnCycle = "unmodded";
 	}
 
-	if ( !isValidBossString(Boss) )
+	ParseAndSanitizeStringOpt( Options, Boss, "Boss", BossOptionDefaultValue, BossOptionHelpString, isValidBossString );
+
+	ParseAndSanitizeStringOpt( Options, ZTSpawnMode, "ZTSpawnMode", ZTSpawnModeDefaultValue, ZTSpawnModeHelpString, isValidZTSpawnModeString );
+	SetZTSpawnModeEnum();
+}
+
+private function SetZTSpawnModeEnum()
+{
+	if ( ZTSpawnMode == "unmodded" )
 	{
-		GameInfo_CDCP.Print("WARNING invalid Boss setting \""$Boss$"\"; Valid alternatives: patriarch, hans, or unmodded");
-		GameInfo_CDCP.Print("Boss=unmodded (forced because \""$ Boss $"\" is invalid)");
-		Boss = "unmodded";
+		ZTSpawnModeEnum = ZTSM_UNMODDED;
 	}
 	else
 	{
-		GameInfo_CDCP.Print("Boss="$ Boss);
+		ZTSpawnModeEnum = ZTSM_CLOCKWORK;
 	}
+}
+
+private function ParseAndSanitizeStringOpt( const out string Options, out string Value, const string OptName,
+		const out string DefaultValue, const out string HelpString, const delegate<StringReferencePredicate> Validator )
+{
+	if ( HasOption(Options, OptName) )
+	{
+		 Value = ParseOption(Options, OptName );
+		`cdlog(OptName $"FromGameOptions = "$ Value, bLogControlledDifficulty);
+	}
+
+	// Initialize the option if currently the empty string
+	if ( "" == Value )
+	{
+		Value = DefaultValue;
+	}
+
+	if ( !Validator( Value ) )
+	{
+		// TODO
+		GameInfo_CDCP.Print( "WARNING Invalid: "$ OptName $"="$ Value $"; "$ HelpString );
+		GameInfo_CDCP.Print( OptName $"=unmodded (forced because \""$ Value $"\" is invalid)");
+		Value = DefaultValue;
+	}
+	else
+	{
+		GameInfo_CDCP.Print(OptName $"="$ Value);
+	}
+}
+
+private function ParseAndClampFloatOpt( const out string Options, out string StringHolder, out float FloatValue, const string OptName,
+		const float ParseErrorDefaultValue, const delegate<ClampFloatCDOption> Clamper )
+{
+	local float ValueBeforeClamping;
+
+	if ( StringHolder == "" )
+	{
+		FloatValue = ParseErrorDefaultValue;
+	}
+	else
+	{
+		FloatValue = float( StringHolder );
+	}
+
+	if ( HasOption(Options, OptName) )
+	{
+		FloatValue = GetFloatOption( Options, OptName, ParseErrorDefaultValue );
+		`cdlog(OptName $ "FromGameOptions = "$ FloatValue, bLogControlledDifficulty);
+	}
+
+	// FClamp the value
+	ValueBeforeClamping = FloatValue;
+	FloatValue = Clamper( FloatValue );
+	`cdlog("Clamped "$ OptName $" = "$ FloatValue, bLogControlledDifficulty);
+
+	if ( FloatValue == ValueBeforeClamping )
+	{
+		GameInfo_CDCP.Print(OptName $"="$ FloatValue);
+	}
+	else
+	{
+		GameInfo_CDCP.Print(OptName $"="$ FloatValue $" (clamped from "$ ValueBeforeClamping $")");
+	}
+
+	// Make a string copy (by CD convention, only string copies of config opts are saved, not the float copy)
+	StringHolder = string( FloatValue );
 }
 
 private function ParseAndClampIntOpt( const out string Options, out int Value, const string OptName,
@@ -570,6 +635,8 @@ private function InitStructStagedConfig()
 	StagedConfig.SpawnModFloat = SpawnModFloat;
 //	StagedConfig.TraderTime = TraderTime;
 	StagedConfig.WeaponTimeout = WeaponTimeout;
+	StagedConfig.ZTSpawnSlowdownFloat = ZTSpawnSlowdownFloat;
+	StagedConfig.ZTSpawnMode = ZTSpawnMode;
 }
 
 
@@ -691,6 +758,8 @@ private function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
+	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", GetZTSpawnSlowdownChatString );
+	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
 
 	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", "true|false", SetAlbinoAlphasChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
@@ -703,6 +772,8 @@ private function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SetSpawnModChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", SetZTSpawnSlowdownChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
 private function string GetCDChatHelpReferralString() {
@@ -771,6 +842,31 @@ private function string SetCohortSizeChatCommand( const out array<string> params
 		return "CohortSize is already " $ CohortSize;
 	}
 }
+
+private function string SetZTSpawnModeChatCommand( const out array<string> params )
+{
+	local string TempString;
+
+	TempString = Locs( params[0] );
+
+	if ( TempString == ZTSpawnMode )
+	{
+		return "ZTSpawnMode is already " $ ZTSpawnMode;
+	}
+
+	else if ( isValidZTSpawnModeString( TempString ) )
+	{
+		StagedConfig.ZTSpawnMode = TempString;
+		return "Staged: ZTSpawnMode=" $ StagedConfig.ZTSpawnMode $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "Not a valid ZTSpawnMode string\n" $
+			"Try unmodded or clockwork"; 
+	}
+}
+
 
 private function string SetBossChatCommand( const out array<string> params )
 {
@@ -904,6 +1000,24 @@ private function string SetSpawnModChatCommand( const out array<string> params )
 	}
 }
 
+private function string SetZTSpawnSlowdownChatCommand( const out array<string> params )
+{
+	local float TempFloat;
+
+	TempFloat = float( params[0] );
+	TempFloat = ClampZTSpawnSlowdown( TempFloat );
+	StagedConfig.ZTSpawnSlowdownFloat = TempFloat;
+	if ( !EpsilonClose( ZTSpawnSlowdownFloat, StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
+	{
+		return "Staged: ZTSpawnSlowdown=" $ StagedConfig.ZTSpawnSlowdownFloat $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "ZTSpawnSlowdown is already " $ ZTSpawnSlowdown;
+	}
+}
+
 private function string PauseTraderTime()
 {
 	local name GameStateName;
@@ -969,7 +1083,12 @@ private function string UnpauseTraderTime()
 	return "Unpaused Trader";
 }
 
-private function bool isValidBossString( const string bs )
+private function bool isValidZTSpawnModeString( const out string ztsm )
+{
+	return "unmodded" == ztsm || "clockwork" == ztsm;
+}
+
+private function bool isValidBossString( const out string bs )
 {
 	return isRandomBossString(bs) || isPatriarchBossString(bs) || isVolterBossString(bs);
 }
@@ -1122,24 +1241,29 @@ function CreateDifficultyInfo(string Options)
 	`cdlog("CD_DifficultyInfo ready: " $ CustomDifficultyInfo, bLogControlledDifficulty);
 }
 
-private function int ClampCohortSize( const int cs )
+private function int ClampCohortSize( const out int cs )
 {
 	return 0 > cs ? 0 : cs;
 }
 
-private function int ClampFakePlayers( const int fp )
+private function int ClampFakePlayers( const out int fp )
 {
 	return Clamp(fp, 0, 32);
 }
 
-private function float ClampSpawnMod( const float sm )
+private function float ClampSpawnMod( const out float sm )
 {
 	return FClamp(sm, 0.f, 1.f);
 }
 
-private function float ClampMinSpawnInterval( const float msi )
+private function float ClampMinSpawnInterval( const out float msi )
 {
 	return FClamp(msi, 0.05 /* 50 ms */, 60.f /* 1 min */);
+}
+
+private function float ClampZTSpawnSlowdown( const out float ztss )
+{
+	return FClamp(ztss, 1.f, 10.f);
 }
 
 private function string ClampWeaponTimeout( const out string wt )
@@ -1522,8 +1646,6 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 		FakePlayers = StagedConfig.FakePlayers;
 	}
 
-	`log("ApplyStagedConfig: StagedConfig.MinSpawnIntervalFloat="$ StagedConfig.MinSpawnIntervalFloat);
-
 	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
 	{
 		SettingChangeNotifications.AddItem("MinSpawnInterval="$ StagedConfig.MinSpawnIntervalFloat $" (old: "$MinSpawnIntervalFloat$")");
@@ -1582,6 +1704,20 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 		SettingChangeNotifications.AddItem("SpawnMod="$ StagedConfig.SpawnModFloat $" (old: "$SpawnModFloat$")");
 		SpawnModFloat = StagedConfig.SpawnModFloat;
 		SpawnMod = string(SpawnModFloat);
+	}
+
+	if ( !EpsilonClose( StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
+	{
+		SettingChangeNotifications.AddItem("ZTSpawnSlowdown="$ StagedConfig.ZTSpawnSlowdownFloat $" (old: "$ZTSpawnSlowdownFloat$")");
+		ZTSpawnSlowdownFloat = StagedConfig.ZTSpawnSlowdownFloat;
+		ZTSpawnSlowdown = string(ZTSpawnSlowdownFloat);
+	}
+
+	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
+	{
+		SettingChangeNotifications.AddItem("ZTSpawnMode="$ StagedConfig.ZTSpawnMode $" (old: "$ZTSpawnMode$")");
+		ZTSpawnMode = StagedConfig.ZTSpawnMode;
+		SetZTSpawnModeEnum();
 	}
 
 //	if ( StagedConfig.TraderTime != TraderTime )
@@ -1749,7 +1885,9 @@ private function string GetCDInfoChatString( const string Verbosity )
 		       GetSpawnCycleChatString() $ "\n" $
 		       GetSpawnModChatString() $ "\n" $
 		       GetTraderTimeChatString() $ "\n" $
-		       GetWeaponTimeoutChatString();
+		       GetWeaponTimeoutChatString() $ "\n" $
+		       GetZTSpawnSlowdownChatString() $ "\n" $
+		       GetZTSpawnModeChatString();
 	}
 	else
 	{
@@ -1795,6 +1933,18 @@ private function string GetAlbinoGorefastsChatString()
 	}
 
 	return "AlbinoGorefasts=" $ AlbinoGorefasts $ AlbinoGorefastsLatchedString;
+}
+
+private function string GetZTSpawnModeChatString()
+{
+	local string ZTSpawnModeLatchedString;
+
+	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
+	{
+		ZTSpawnModeLatchedString = " (staged: " $ StagedConfig.ZTSpawnMode $ ")";
+	}
+
+	return "ZTSpawnMode=" $ ZTSpawnMode $ ZTSpawnModeLatchedString;
 }
 
 private function string GetBossChatString()
@@ -1892,6 +2042,19 @@ private function string GetSpawnModChatString()
 
 	return "SpawnMod="$ SpawnModFloat $ SpawnModLatchedString;
 }
+
+private function string GetZTSpawnSlowdownChatString()
+{
+	local string ZTSpawnSlowdownLatchedString;
+
+	if ( !EpsilonClose( StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
+	{
+		ZTSpawnSlowdownLatchedString = " (staged: " $ StagedConfig.ZTSpawnSlowdownFloat $ ")";
+	}
+
+	return "ZTSpawnSlowdown="$ ZTSpawnSlowdownFloat $ ZTSpawnSlowdownLatchedString;
+}
+
 
 private function string GetTraderTimeChatString()
 {
@@ -2245,4 +2408,11 @@ defaultproperties
 
 	SpawnModEpsilon=0.0001
 	MinSpawnIntervalEpsilon=0.0001
+	ZTSpawnSlowdownEpsilon=0.0001
+
+	BossOptionHelpString="Valid alternatives: patriarch, hans, or unmodded"
+	BossOptionDefaultValue="unmodded"
+
+	ZTSpawnModeHelpString="Valid alternatives: unmodded or clockwork"
+	ZTSpawnModeDefaultValue="unmodded"
 }
