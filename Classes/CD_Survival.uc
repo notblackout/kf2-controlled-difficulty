@@ -28,8 +28,10 @@ struct StructStagedConfig
 	var bool     AlbinoCrawlers;
 	var bool     AlbinoGorefasts;
 	var string   Boss;
+	var int      CohortSize;
 	var int      FakePlayers;
 	var int      MaxMonsters;
+	var float    MinSpawnIntervalFloat;
 	var string   SpawnCycle;
 	var float    SpawnModFloat;
 //	var int      TraderTime;
@@ -193,40 +195,171 @@ var StructStagedConfig StagedConfig;
 // This is effectively the maximum precision of SpawnMod
 var const float SpawnModEpsilon;
 
+var const float MinSpawnIntervalEpsilon;
+
+
 // Holds KFGRI state when the countdown to close the
 // trader has been temporarily suspended by the user.
 var int PausedRemainingTime;
 var int PausedRemainingMinute;
+
+delegate int ClampIntCDOption( const int raw );
 
 delegate string ChatCommandNullaryImpl();
 delegate string ChatCommandParamsImpl( const out array<string> params );
 
 event InitGame( string Options, out string ErrorMessage )
 {
-	local float SpawnModFromGameOptions;
-	local float SpawnModBeforeClamping;
-	local int MaxMonstersFromGameOptions;
-	local string WeaponTimeoutFromGameOptions;
-	local bool AlbinoCrawlersFromGameOptions;
-	local bool AlbinoAlphasFromGameOptions;
-	local bool AlbinoGorefastsFromGameOptions;
-	local string SpawnCycleFromGameOptions;
-	local string BossFromGameOptions;
-	local int FakePlayersFromGameOptions;
-	local int FakePlayersBeforeClamping;
-	local int TraderTimeFromGameOptions;
-
-	local int CohortSizeFromGameOptions;
-	local float MinSpawnIntervalFromGameOptions;
-	local float MinSpawnIntervalBeforeClamping;
-
  	Super.InitGame( Options, ErrorMessage );
 
 	SpawnCycleCatalog = new class'CD_SpawnCycleCatalog';
 	SpawnCycleCatalog.Initialize( AIClassList, GameInfo_CDCP, bLogControlledDifficulty );
 
 	// Print CD's commit hash (version)
-	GameInfo_CDCP.Print("Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded");
+	GameInfo_CDCP.Print( "Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded" );
+
+	ParseCDGameOptions( Options );
+
+	SetupChatCommands();
+
+	SaveConfig();
+
+	InitStructStagedConfig();
+}
+
+function bool CheckRelevance(Actor Other)
+{
+	local KFDroppedPickup Weap;
+	local KFAIController KFAIC;
+	local bool SuperRelevant;
+	local bool CanTeleportCloser; // TODO extract into proper config var
+	CanTeleportCloser = false; // TODO same
+
+	SuperRelevant = super.CheckRelevance(Other);
+
+	if ( !SuperRelevant )
+	{
+		// Early return if this is going to be destroyed anyway
+		return SuperRelevant;
+	}
+
+	Weap = KFDroppedPickup(Other);
+
+	if ( None != Weap )
+	{
+		OverrideWeaponLifespan(Weap);
+	}
+
+	if ( !CanTeleportCloser )
+	{
+		KFAIC = KFAIController(Other);
+		if ( None != KFAIC )
+		{
+			KFAIC.bCanTeleportCloser = false;
+			`log("Set bCanTeleportCloser=false on "$ KFAIC);
+		}
+	}
+
+	// Should always be true, due to the early return when false
+	return SuperRelevant;
+}
+
+private function OverrideWeaponLifespan(KFDroppedPickup Weap)
+{
+	local int seconds;
+
+	seconds = GetWeaponTimeoutSeconds();
+
+	if ( 0 < seconds )
+	{
+		Weap.Lifespan = seconds;
+	}
+	else if ( 0 == seconds )
+	{
+		Weap.Lifespan = 1;
+	}
+}
+
+private function int GetWeaponTimeoutSeconds()
+{
+	if ( "max" == WeaponTimeout )
+	{
+		return 2147483647;
+	}
+	else
+	{
+		return int( WeaponTimeout );
+	}
+}
+
+//
+// Set gameplay speed.
+//
+function SetGameSpeed( Float T )
+{
+	GameSpeed = FMax(T, 0.00001);
+	WorldInfo.TimeDilation = GameSpeed;
+	SetTimer(WorldInfo.TimeDilation, true);
+	SetSpawnManagerWakeup();
+}
+
+function SetSpawnManagerWakeup()
+{
+	SetTimer(WorldInfo.TimeDilation * MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
+}
+
+/** Default timer, called from native */
+event Timer()
+{
+	super(KFGameInfo).Timer();
+
+	// Dont't refresh SpawnManager
+	// That runs on a separate timer (SpawnManagerWakeup)
+
+	if( GameConductor != none )
+	{
+		GameConductor.TimerUpdate();
+	}
+}
+
+private function SpawnManagerWakeup()
+{
+	if( SpawnManager != none )
+	{
+		SpawnManager.Update();
+	}
+}
+
+private function ParseCDGameOptions( const out string Options )
+{
+	local bool AlbinoCrawlersFromGameOptions;
+
+	local bool AlbinoAlphasFromGameOptions;
+
+	local bool AlbinoGorefastsFromGameOptions;
+
+	local string BossFromGameOptions;
+
+	local int CohortSizeFromGameOptions;
+	local int CohortSizeBeforeClamping;
+
+	local int FakePlayersFromGameOptions;
+	local int FakePlayersBeforeClamping;
+
+	local int MaxMonstersFromGameOptions;
+
+	local float MinSpawnIntervalFromGameOptions;
+	local float MinSpawnIntervalBeforeClamping;
+
+	local string SpawnCycleFromGameOptions;
+
+	local float SpawnModFromGameOptions;
+	local float SpawnModBeforeClamping;
+
+	local int TraderTimeFromGameOptions;
+
+	local string WeaponTimeoutFromGameOptions;
+
 
 	if (SpawnMod == "")
 	{
@@ -235,15 +368,6 @@ event InitGame( string Options, out string ErrorMessage )
 	else
 	{
 		SpawnModFloat = float(SpawnMod);
-	}
-
-	if (MinSpawnInterval == "")
-	{
-		MinSpawnIntervalFloat = 1.f;
-	}
-	else
-	{
-		MinSpawnIntervalFloat = float(MinSpawnInterval);
 	}
 
 	if ( HasOption(Options, "SpawnMod") )
@@ -306,36 +430,18 @@ event InitGame( string Options, out string ErrorMessage )
 		Boss = BossFromGameOptions;
 	}
 
-	// Process FakePlayers command option, if present
-	if ( HasOption(Options, "FakePlayers") )
-	{
-		FakePlayersFromGameOptions = GetIntOption( Options, "FakePlayers", -1 );
-		`cdlog("FakePlayersFromGameOptions = "$FakePlayersFromGameOptions$" (-1=missing)", bLogControlledDifficulty);
-		FakePlayers = FakePlayersFromGameOptions;
-	}
+	ParseAndClampIntOpt( Options, CohortSize, "CohortSize", 0, ClampCohortSize );
 
-	FakePlayersBeforeClamping = FakePlayers;
-	FakePlayers = ClampFakePlayers( FakePlayers );
-	`cdlog("Clamped FakePlayers = "$FakePlayers, bLogControlledDifficulty);
+	ParseAndClampIntOpt( Options, FakePlayers, "FakePlayers", -1, ClampFakePlayers );
 
-	// Print FakePlayers to console
-	if ( FakePlayers != FakePlayersBeforeClamping )
+	if (MinSpawnInterval == "")
 	{
-		GameInfo_CDCP.Print("FakePlayers="$FakePlayers$" (clamped from "$FakePlayersBeforeClamping$")");
+		MinSpawnIntervalFloat = 1.f;
 	}
 	else
 	{
-		GameInfo_CDCP.Print("FakePlayers="$FakePlayers);
+		MinSpawnIntervalFloat = float(MinSpawnInterval);
 	}
-
-	if ( HasOption(Options, "CohortSize") )
-	{
-		CohortSizeFromGameOptions = GetIntOption( Options, "CohortSize", 0 );
-		`cdlog("CohortSizeFromGameOptions = "$CohortSizeFromGameOptions, bLogControlledDifficulty);
-		CohortSize = CohortSizeFromGameOptions;
-	}
-
-	GameInfo_CDCP.Print("CohortSize="$CohortSize);
 
 	if ( HasOption(Options, "MinSpawnInterval") )
 	{
@@ -420,121 +526,52 @@ event InitGame( string Options, out string ErrorMessage )
 	{
 		GameInfo_CDCP.Print("Boss="$ Boss);
 	}
+}
 
-	SetupChatCommands();
+private function ParseAndClampIntOpt( const out string Options, out int Value, const string OptName,
+		const int ParseErrorDefaultValue, const delegate<ClampIntCDOption> Clamper )
+{
+	local int ValueBeforeClamping, ValueFromGameOptions;
 
-	SaveConfig();
+	// Process command-line option, if present
+	if ( HasOption( Options, OptName ) )
+	{
+		ValueFromGameOptions = GetIntOption( Options, OptName, ParseErrorDefaultValue );
+		`cdlog(OptName $ "FromGameOptions = "$ValueFromGameOptions, bLogControlledDifficulty);
+		Value = ValueFromGameOptions;
+	}
 
-	// Setup the StagedConfig struct
+	ValueBeforeClamping = Value;
+	Value = Clamper( Value ); // TODO delegate
+	`cdlog("Clamped "$ OptName $" = "$ Value, bLogControlledDifficulty);
+
+	// Print clamped value to console
+	if ( Value != ValueBeforeClamping )
+	{
+		GameInfo_CDCP.Print(OptName$"="$Value$" (clamped from "$ValueBeforeClamping$")");
+	}
+	else
+	{
+		GameInfo_CDCP.Print(OptName$"="$Value);
+	}
+}
+
+private function InitStructStagedConfig()
+{
 	StagedConfig.AlbinoAlphas = AlbinoAlphas;
 	StagedConfig.AlbinoCrawlers = AlbinoCrawlers;
 	StagedConfig.AlbinoGorefasts = AlbinoGorefasts;
 	StagedConfig.Boss = Boss;
+	StagedConfig.CohortSize = CohortSize;
 	StagedConfig.FakePlayers = FakePlayers;
 	StagedConfig.MaxMonsters = MaxMonsters;
+	StagedConfig.MinSpawnIntervalFloat = MinSpawnIntervalFloat;
 	StagedConfig.SpawnCycle = SpawnCycle;
 	StagedConfig.SpawnModFloat = SpawnModFloat;
 //	StagedConfig.TraderTime = TraderTime;
 	StagedConfig.WeaponTimeout = WeaponTimeout;
 }
 
-function bool CheckRelevance(Actor Other)
-{
-	local KFDroppedPickup Weap;
-	local KFAIController KFAIC;
-	local bool SuperRelevant;
-	local bool CanTeleportCloser; // TODO extract into proper config var
-	CanTeleportCloser = false; // TODO same
-
-	SuperRelevant = super.CheckRelevance(Other);
-
-	if ( !SuperRelevant )
-	{
-		// Early return if this is going to be destroyed anyway
-		return SuperRelevant;
-	}
-
-	Weap = KFDroppedPickup(Other);
-
-	if ( None != Weap )
-	{
-		OverrideWeaponLifespan(Weap);
-	}
-
-	if ( !CanTeleportCloser )
-	{
-		KFAIC = KFAIController(Other);
-		if ( None != KFAIC )
-		{
-			KFAIC.bCanTeleportCloser = false;
-			`log("Set bCanTeleportCloser=false on "$ KFAIC);
-		}
-	}
-
-	// Should always be true, due to the early return when false
-	return SuperRelevant;
-}
-
-private function OverrideWeaponLifespan(KFDroppedPickup Weap)
-{
-	local int seconds;
-
-	seconds = GetWeaponTimeoutSeconds();
-
-	if ( 0 < seconds )
-	{
-		Weap.Lifespan = seconds;
-	}
-	else if ( 0 == seconds )
-	{
-		Weap.Lifespan = 1;
-	}
-}
-
-private function int GetWeaponTimeoutSeconds()
-{
-	if ( "max" == WeaponTimeout )
-	{
-		return 2147483647;
-	}
-	else
-	{
-		return int( WeaponTimeout );
-	}
-}
-
-//
-// Set gameplay speed.
-//
-function SetGameSpeed( Float T )
-{
-	GameSpeed = FMax(T, 0.00001);
-	WorldInfo.TimeDilation = GameSpeed;
-	SetTimer(WorldInfo.TimeDilation, true);
-	SetTimer(WorldInfo.TimeDilation * MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
-}
-
-/** Default timer, called from native */
-event Timer()
-{
-	super(KFGameInfo).Timer();
-
-	// Dont't refresh SpawnManager
-	// That runs on a separate timer (SpawnManagerWakeup)
-
-	if( GameConductor != none )
-	{
-		GameConductor.TimerUpdate();
-	}
-}
-
-function SpawnManagerWakeup()
-{
-	if( SpawnManager != none )
-	{
-		SpawnManager.Update();
-	}
-}
 
 private function SetupSimpleReadCommand( out StructChatCommand scc, const string CmdName, const string Desc, const delegate<ChatCommandNullaryImpl> Impl )
 {
@@ -643,10 +680,12 @@ private function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
+	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", GetCohortSizeChatString );
 	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
 	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", GetFakePlayersChatString );
 //	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
 	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", GetMaxMonstersChatString );
+	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", GetMinSpawnIntervalChatString );
 	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
 	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", GetSpawnModChatString );
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
@@ -657,8 +696,10 @@ private function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", SetCohortSizeChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int", SetFakePlayersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int", SetMaxMonstersChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", SetMinSpawnIntervalChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SetSpawnModChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
@@ -710,6 +751,24 @@ private function string SetAlbinoGorefastsChatCommand( const out array<string> p
 	else
 	{
 		return "AlbinoGorefasts is already " $ AlbinoGorefasts;
+	}
+}
+
+private function string SetCohortSizeChatCommand( const out array<string> params )
+{
+	local int TempInt;
+
+	TempInt = int( params[0] );
+	TempInt = ClampCohortSize( TempInt );
+	StagedConfig.CohortSize = TempInt;
+	if ( CohortSize != StagedConfig.CohortSize )
+	{
+		return "Staged: CohortSize=" $ StagedConfig.CohortSize $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "CohortSize is already " $ CohortSize;
 	}
 }
 
@@ -793,6 +852,25 @@ private function string SetMaxMonstersChatCommand( const out array<string> param
 		return "MaxMonsters is already " $ MaxMonsters;
 	}
 }
+
+private function string SetMinSpawnIntervalChatCommand( const out array<string> params )
+{
+	local float TempFloat;
+
+	TempFloat = float( params[0] );
+	TempFloat = ClampMinSpawnInterval( TempFloat );
+	StagedConfig.MinSpawnIntervalFloat = TempFloat;
+	if ( !EpsilonClose( MinSpawnIntervalFloat, StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
+	{
+		return "Staged: MinSpawnInterval=" $ StagedConfig.MinSpawnIntervalFloat $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "MinSpawnInterval is already " $ MinSpawnInterval;
+	}
+}
+
 
 private function string SetSpawnCycleChatCommand( const out array<string> params )
 {
@@ -890,17 +968,6 @@ private function string UnpauseTraderTime()
 
 	return "Unpaused Trader";
 }
-
-private function float ClampSpawnMod( const float sm )
-{
-	return FClamp(sm, 0.f, 1.f);
-}
-
-private function float ClampMinSpawnInterval( const float msi )
-{
-	return FClamp(msi, 0.05 /* 50 ms */, 10.f /* 10 s */);
-}
-
 
 private function bool isValidBossString( const string bs )
 {
@@ -1057,10 +1124,24 @@ function CreateDifficultyInfo(string Options)
 	`cdlog("CD_DifficultyInfo ready: " $ CustomDifficultyInfo, bLogControlledDifficulty);
 }
 
+private function int ClampCohortSize( const int cs )
+{
+	return 0 > cs ? 0 : cs;
+}
+
 private function int ClampFakePlayers( const int fp )
 {
-	// Force FakePlayers onto the interval [0, 32]
 	return Clamp(fp, 0, 32);
+}
+
+private function float ClampSpawnMod( const float sm )
+{
+	return FClamp(sm, 0.f, 1.f);
+}
+
+private function float ClampMinSpawnInterval( const float msi )
+{
+	return FClamp(msi, 0.05 /* 50 ms */, 10.f /* 10 s */);
 }
 
 private function string ClampWeaponTimeout( const out string wt )
@@ -1431,10 +1512,26 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 		Boss = StagedConfig.Boss;
 	}
 
+	if ( StagedConfig.CohortSize != CohortSize )
+	{
+		SettingChangeNotifications.AddItem("CohortSize="$ StagedConfig.CohortSize $" (old: "$CohortSize$")");
+		CohortSize = StagedConfig.CohortSize;
+	}
+
 	if ( StagedConfig.FakePlayers != FakePlayers )
 	{
 		SettingChangeNotifications.AddItem("FakePlayers="$ StagedConfig.FakePlayers $" (old: "$FakePlayers$")");
 		FakePlayers = StagedConfig.FakePlayers;
+	}
+
+	`log("ApplyStagedConfig: StagedConfig.MinSpawnIntervalFloat="$ StagedConfig.MinSpawnIntervalFloat);
+
+	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
+	{
+		SettingChangeNotifications.AddItem("MinSpawnInterval="$ StagedConfig.MinSpawnIntervalFloat $" (old: "$MinSpawnIntervalFloat$")");
+		MinSpawnIntervalFloat = StagedConfig.MinSpawnIntervalFloat;
+		MinSpawnInterval = string(MinSpawnIntervalFloat);
+		SetSpawnManagerWakeup();
 	}
 
 	if ( StagedConfig.MaxMonsters != MaxMonsters )
@@ -1647,8 +1744,10 @@ private function string GetCDInfoChatString( const string Verbosity )
 		       GetAlbinoCrawlersChatString() $ "\n" $
 		       GetAlbinoGorefastsChatString() $ "\n" $
 		       GetBossChatString() $ "\n" $
+		       GetCohortSizeChatString() $ "\n" $
 		       GetFakePlayersChatString() $ "\n" $
 		       GetMaxMonstersChatString() $ "\n" $
+		       GetMinSpawnIntervalChatString() $ "\n" $
 		       GetSpawnCycleChatString() $ "\n" $
 		       GetSpawnModChatString() $ "\n" $
 		       GetTraderTimeChatString() $ "\n" $
@@ -1659,6 +1758,7 @@ private function string GetCDInfoChatString( const string Verbosity )
 		return GetFakePlayersChatString() $ "\n" $
 		       GetMaxMonstersChatString() $ "\n" $
 		       GetSpawnModChatString() $ "\n" $
+		       GetCohortSizeChatString() $ "\n" $
 		       GetSpawnCycleChatString();
 	}
 }
@@ -1711,6 +1811,18 @@ private function string GetBossChatString()
 	return "Boss=" $ Boss $ BossLatchedString;
 }
 
+private function string GetCohortSizeChatString()
+{
+	local string CohortSizeLatchedString;
+
+	if ( StagedConfig.CohortSize != CohortSize )
+	{
+		CohortSizeLatchedString = " (staged: " $ StagedConfig.CohortSize $ ")";
+	}
+
+	return "CohortSize=" $ CohortSize $ CohortSizeLatchedString;
+}
+
 private function string GetFakePlayersChatString()
 {
 	local string FakePlayersLatchedString;
@@ -1733,6 +1845,18 @@ private function string GetMaxMonstersChatString()
 	}
 
 	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
+}
+
+private function string GetMinSpawnIntervalChatString()
+{
+	local string MinSpawnIntervalLatchedString;
+
+	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
+	{
+		MinSpawnIntervalLatchedString = " (staged: " $ StagedConfig.MinSpawnIntervalFloat $ ")";
+	}
+
+	return "MinSpawnInterval="$ MinSpawnIntervalFloat $ MinSpawnIntervalLatchedString;
 }
 
 private function string GetWeaponTimeoutChatString()
@@ -2122,4 +2246,5 @@ defaultproperties
 	GameInfo_CDCP=Default_CDCP
 
 	SpawnModEpsilon=0.0001
+	MinSpawnIntervalEpsilon=0.0001
 }
