@@ -509,9 +509,9 @@ private function ParseCDGameOptions( const out string Options )
 		SpawnCycle = "unmodded";
 	}
 
-	ParseAndSanitizeStringOpt( Options, Boss, "Boss", BossOptionDefaultValue, BossOptionHelpString, isValidBossString );
+	ParseAndSanitizeStringOpt( Options, Boss, "Boss", BossOptionDefaultValue, BossOptionHelpString, IsValidBossString );
 
-	ParseAndSanitizeStringOpt( Options, ZTSpawnMode, "ZTSpawnMode", ZTSpawnModeDefaultValue, ZTSpawnModeHelpString, isValidZTSpawnModeString );
+	ParseAndSanitizeStringOpt( Options, ZTSpawnMode, "ZTSpawnMode", ZTSpawnModeDefaultValue, ZTSpawnModeHelpString, IsValidZTSpawnModeString );
 	SetZTSpawnModeEnum();
 }
 
@@ -854,7 +854,7 @@ private function string SetZTSpawnModeChatCommand( const out array<string> param
 		return "ZTSpawnMode is already " $ ZTSpawnMode;
 	}
 
-	else if ( isValidZTSpawnModeString( TempString ) )
+	else if ( IsValidZTSpawnModeString( TempString ) )
 	{
 		StagedConfig.ZTSpawnMode = TempString;
 		return "Staged: ZTSpawnMode=" $ StagedConfig.ZTSpawnMode $
@@ -881,7 +881,7 @@ private function string SetBossChatCommand( const out array<string> params )
 	// I could check for pointless changes here
 	// (e.g. "unmodded" -> "random", equivalent but different strings)
 	// but it is hard to describe the associated subtlety in a chat response
-	else if ( isValidBossString( TempString ) )
+	else if ( IsValidBossString( TempString ) )
 	{
 		StagedConfig.Boss = TempString;
 		return "Staged: Boss=" $ StagedConfig.Boss $
@@ -1083,12 +1083,12 @@ private function string UnpauseTraderTime()
 	return "Unpaused Trader";
 }
 
-private function bool isValidZTSpawnModeString( const out string ztsm )
+private function bool IsValidZTSpawnModeString( const out string ztsm )
 {
 	return "unmodded" == ztsm || "clockwork" == ztsm;
 }
 
-private function bool isValidBossString( const out string bs )
+private function bool IsValidBossString( const out string bs )
 {
 	return isRandomBossString(bs) || isPatriarchBossString(bs) || isVolterBossString(bs);
 }
