@@ -983,6 +983,25 @@ private function string SetZTSpawnSlowdownChatCommand( const out array<string> p
 	}
 }
 
+private function DisplayBriefWaveStatsInChat()
+{
+	local string s;
+
+	s = CDSpawnManager( SpawnManager ).GetWaveAverageSpawnrate();
+
+	super.Broadcast(None, "[CD] Wave Recap:\n"$ s, 'CDEcho');
+}
+
+State TraderOpen
+{
+	function BeginState( Name PreviousStateName )
+	{
+		super.BeginState( PreviousStateName );
+
+		SetTimer(1.f, false, 'DisplayBriefWaveStatsInChat');
+	}
+}
+
 private function string PauseTraderTime()
 {
 	local name GameStateName;

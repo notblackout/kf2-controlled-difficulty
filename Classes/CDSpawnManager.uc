@@ -22,6 +22,11 @@ var int CohortZedsSpawned;
 var int CohortSquadsSpawned;
 var int CohortVolumeIndex;
 
+var float WaveSetupTimestamp;
+var float FirstSpawnTimestamp;
+var float FinalSpawnTimestamp;
+var float LatestSpawnTimestamp;
+
 function SetCustomWaves( array<CD_AIWaveInfo> inWaves )
 {
 	CustomWaves = inWaves;
@@ -67,12 +72,12 @@ function Update()
 		CohortSquadsSpawned += 1;
     }
 
+	// Log cohort composition (if cohorting is enabled)
 	if ( 0 < Outer.CohortSize )
 	{
 		if ( 0 < CohortZedsSpawned )
 		{
 			`cdlog("Cohort: " $ CohortSquadsSpawned $ " squads | " $ CohortZedsSpawned $ " zeds | saturated=" $ CohortSaturated);
-			TimeUntilNextSpawn = CalcNextGroupSpawnTime();
 		}
 		else
 		{
@@ -80,12 +85,105 @@ function Update()
 		}
 	}
 
+	// if we spawned at least one thing, then:
+	// 1. invoke CalcNextGroupSpawnTime()
+	// 2. update the various bits of state related to spawnrate tracking
+	if ( 0 < SpawnSquadResult )
+	{
+		TimeUntilNextSpawn = CalcNextGroupSpawnTime();
+
+		LatestSpawnTimestamp = Outer.Worldinfo.TimeSeconds;
+
+		if ( 0 > FirstSpawnTimestamp )
+		{
+			FirstSpawnTimestamp = LatestSpawnTimestamp;
+		}
+
+		if ( NumAISpawnsQueued >= WaveTotalAI && 0 > FinalSpawnTimestamp )
+		{
+			FinalSpawnTimestamp = LatestSpawnTimestamp;
+		}
+	}
+
+
 	// This is redundant but it's cheap and it makes me feel better
 	CohortZedsSpawned = 0;
 	CohortSquadsSpawned = 0;
 	CohortVolumeIndex = 0;
 	CohortSaturated = false;
 }
+
+
+function string GetWaveAverageSpawnrate()
+{
+	local string SpawnrateString;
+	local string DelayString;
+	// There are a bunch of edge cases in here
+
+	// (a) if the team wipes before everything spawns,
+	// FinalSpawnTimestamp will be -1
+
+	// (b) if the team somehow wipes before anything spawns,
+	// FirstSpawnTimestamp will be -1
+
+	// (c) if the cohort size is gigantic, or the wave size
+	// is absurdly tiny, then it is theoretically possible for
+	// the whole wave to spawn in a single cohort.  In this
+	// case, FinalSpawnTimestamp and FirstSpawnTimestamp both
+	// have the same positive value.  Avoid div by zero.
+
+	if ( 0 > FinalSpawnTimestamp )
+	{
+		FinalSpawnTimestamp = LatestSpawnTimestamp;
+	}
+
+	if ( 0 > FirstSpawnTimestamp || 0 > FinalSpawnTimestamp )
+	{
+		return "no zeds spawned";
+	}
+
+	if ( FinalSpawnTimestamp == FirstSpawnTimestamp )
+	{
+		SpawnrateString = "infinite (single-cohort wave)";
+	}
+	else
+	{
+		SpawnrateString = FormatFloatToTwoDecimalPlaces( WaveTotalAI / ( FinalSpawnTimestamp - FirstSpawnTimestamp) ) $ " avg zed/s spawnrate";
+	}
+
+	DelayString = FormatFloatToTwoDecimalPlaces( FirstSpawnTimestamp - WaveSetupTimestamp );
+
+	return
+	    WaveTotalAI $ " zeds, " $ DelayString $ " s delay\n" $
+		SpawnrateString $ "\n" $
+	    " (timed first spawn to last)";
+}
+
+private function string FormatFloatToTwoDecimalPlaces( const float f )
+{
+	local int l;
+	local string s;	
+
+	s = string( f );
+
+	l = Len( s );
+	if ( 5 <= l )
+	{
+		s = Left( s, l - 2 );
+	}
+
+	return s;
+}
+
+function SetupNextWave(byte NextWaveIndex)
+{
+	super.SetupNextWave(NextWaveIndex);
+	WaveSetupTimestamp = Outer.WorldInfo.TimeSeconds;
+	FirstSpawnTimestamp = -1.f;
+	FinalSpawnTimestamp = -1.f;
+	LatestSpawnTimestamp = -1.f;
+}
+
 
 // This function is invoked by the spawning system in the base game.
 // Its return value is the maximum number of simultaneously live zeds
