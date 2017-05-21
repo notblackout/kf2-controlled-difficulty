@@ -1041,8 +1041,6 @@ event PreLogin(string Options, string Address, const UniqueNetId UniqueId, bool 
 	}
 }
 
-
-
 /*
  * We override this function for the sole purpose of hiding
  * our custom CD_ZedPawn classnames from the kill ticker.
@@ -1141,7 +1139,7 @@ private function float ClampSpawnMod( const float sm )
 
 private function float ClampMinSpawnInterval( const float msi )
 {
-	return FClamp(msi, 0.05 /* 50 ms */, 10.f /* 10 s */);
+	return FClamp(msi, 0.05 /* 50 ms */, 60.f /* 1 min */);
 }
 
 private function string ClampWeaponTimeout( const out string wt )

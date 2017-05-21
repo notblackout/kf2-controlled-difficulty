@@ -59,7 +59,7 @@ function Update()
 		SpawnSquadResult = SpawnSquad( SpawnList );
 		NumAISpawnsQueued += SpawnSquadResult;
 		CohortZedsSpawned += SpawnSquadResult;
-		if ( 0 == SpawnSquadResult || 0 == Outer.CohortSize )
+		if ( 0 == SpawnSquadResult || 0 >= Outer.CohortSize )
 		{
 			CohortSaturated = true;
 			break;
@@ -79,20 +79,13 @@ function Update()
 			`cdlog("Cohort empty: could not spawn any squads on this attempt");
 		}
 	}
+
+	// This is redundant but it's cheap and it makes me feel better
+	CohortZedsSpawned = 0;
+	CohortSquadsSpawned = 0;
+	CohortVolumeIndex = 0;
+	CohortSaturated = false;
 }
-
-function bool ShouldAddAI()
-{
-	// If it is time to spawn the next squad, or there are any leftovers from the last batch spawn them
-	if( (LeftoverSpawnSquad.Length > 0 || TimeUntilNextSpawn <= 0) && !IsFinishedSpawning() && ( 0 == Outer.CohortSize || CohortZedsSpawned <= Outer.CohortSize ) )
-	{
-        return GetNumAINeeded() > 0;
-	}
-
-	return false;
-}
-
-
 
 // This function is invoked by the spawning system in the base game.
 // Its return value is the maximum number of simultaneously live zeds
@@ -528,6 +521,20 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
     }
 
 	return NewSquad;
+}
+
+function int GetNumAINeeded()
+{
+	local int n;
+
+	n = super.GetNumAINeeded();
+
+	if ( 0 < Outer.CohortSize )
+	{
+		n = Min( n, Outer.CohortSize - CohortZedsSpawned );
+	}
+
+	return n;
 }
 
 /* This function is overridden for a couple reasons:
