@@ -36,7 +36,7 @@ struct StructStagedConfig
 	var bool     AlbinoGorefasts;
 	var string   Boss;
 	var int      CohortSize;
-	var int      FakePlayers;
+	var string   FakePlayers;
 	var int      MaxMonsters;
 	var float    MinSpawnIntervalFloat;
 	var string   SpawnCycle;
@@ -65,6 +65,9 @@ struct StructChatCommand
 	var bool ModifiesConfig;
 };
 
+
+var CD_ConfigTender ConfigTender;
+
 ////////////////////
 // Config options //
 ////////////////////
@@ -74,7 +77,9 @@ struct StructChatCommand
 // numplayers >= 3, and faking players this way does the same; you can always
 // refrain from buying if you want an extra challenge, but if the mod denied
 // you that bonus dosh, it could end up being gamebreaking for some runs
-var config int FakePlayers; 
+var config string FakePlayers; 
+var config array<string> FakePlayersDefs; 
+var int FakePlayersInt;
 
 // the trader time, in seconds.  if this is zero or negative, its value is
 // totally ignored, and the difficulty's standard trader time is used instead.
@@ -242,6 +247,9 @@ event InitGame( string Options, out string ErrorMessage )
 
 	// Print CD's commit hash (version)
 	GameInfo_CDCP.Print( "Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded" );
+
+	ConfigTender = new(Self) class'CD_ConfigTender';
+	ConfigTender.SetConsolePrinter( GameInfo_CDCP );
 
 	ParseCDGameOptions( Options );
 
@@ -452,7 +460,7 @@ private function ParseCDGameOptions( const out string Options )
 
 	ParseAndClampIntOpt( Options, CohortSize, "CohortSize", 0, ClampCohortSize );
 
-	ParseAndClampIntOpt( Options, FakePlayers, "FakePlayers", -1, ClampFakePlayers );
+	InitFakePlayers( Options );
 
 	ParseAndClampFloatOpt( Options, MinSpawnInterval, MinSpawnIntervalFloat, "MinSpawnInterval", 1.f, ClampMinSpawnInterval );
 
@@ -489,6 +497,19 @@ private function ParseCDGameOptions( const out string Options )
 	SetZTSpawnModeEnum();
 }
 
+private function InitFakePlayers( const out string Options )
+{
+	if ( HasOption( Options, "FakePlayers" ) )
+	{
+		FakePlayers = ParseOption( Options, "FakePlayers" );
+	}
+
+	SetFakePlayers( FakePlayers );
+
+	GameInfo_CDCP.Print("FakePlayers="$FakePlayers);
+	GameInfo_CDCP.Print("FakePlayersInt="$FakePlayersInt);
+}
+
 private function SetZTSpawnModeEnum()
 {
 	if ( ZTSpawnMode == "unmodded" )
@@ -506,7 +527,7 @@ private function ParseAndSanitizeStringOpt( const out string Options, out string
 {
 	if ( HasOption(Options, OptName) )
 	{
-		 Value = ParseOption(Options, OptName );
+		Value = ParseOption(Options, OptName );
 		`cdlog(OptName $"FromGameOptions = "$ Value, bLogControlledDifficulty);
 	}
 
@@ -607,7 +628,6 @@ private function InitStructStagedConfig()
 	StagedConfig.MinSpawnIntervalFloat = MinSpawnIntervalFloat;
 	StagedConfig.SpawnCycle = SpawnCycle;
 	StagedConfig.SpawnModFloat = SpawnModFloat;
-//	StagedConfig.TraderTime = TraderTime;
 	StagedConfig.WeaponTimeout = WeaponTimeout;
 	StagedConfig.ZedsTeleportCloser = ZedsTeleportCloser;
 	StagedConfig.ZTSpawnSlowdownFloat = ZTSpawnSlowdownFloat;
@@ -742,7 +762,7 @@ private function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", SetCohortSizeChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int", SetFakePlayersChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", SetFakePlayersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int", SetMaxMonstersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", SetMinSpawnIntervalChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
@@ -886,13 +906,44 @@ private function string SetBossChatCommand( const out array<string> params )
 	}
 }
 
+private function SetFakePlayers( const out string raw )
+{
+	// takes unsanitized string "raw", attempts to interpret it as
+	// a fakeplayers directive, and assigns to both FakePlayers and
+	// its associated option regulator
+
+	local CD_SettingRegulator_IniDefs IniDefsRegulator;
+	local int Tmp;
+
+	if ( raw == "ini" )
+	{
+		IniDefsRegulator = new class'CD_SettingRegulator_IniDefs';
+		IniDefsRegulator.SetConsolePrinter( GameInfo_CDCP );
+		if ( IniDefsRegulator.ParseDefs( FakePlayersDefs, "FakePlayersDefs" ) )
+		{
+			ConfigTender.FakePlayersRegulator = IniDefsRegulator;
+			FakePlayers = raw;
+		}
+		else
+		{
+			// TODO
+			// unable to parse FakePlayers defs from the ini file
+			// echo an short error message (and log a long one?)
+		}
+	}
+	else
+	{
+		Tmp = int(raw);
+		FakePlayersInt = ClampFakePlayers( Tmp );
+		FakePlayers = string( Tmp );
+		ConfigTender.FakePlayersRegulator = None;
+	}
+}
+
 private function string SetFakePlayersChatCommand( const out array<string> params )
 {
-	local int TempInt;
+	StagedConfig.FakePlayers = params[0];
 
-	TempInt = int( params[0] );
-	TempInt = ClampFakePlayers( TempInt );
-	StagedConfig.FakePlayers = TempInt;
 	if ( FakePlayers != StagedConfig.FakePlayers )
 	{
 		return "Staged: FakePlayers=" $ StagedConfig.FakePlayers $
@@ -1610,6 +1661,10 @@ function StartWave()
 	{
 		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
 	}
+
+	// Call the config tender 
+	// WaveNum has *not* yet been incremented (that happens in super.StartWave() below)
+	ConfigTender.Activate( WaveNum + 1 );
 	
 	super.StartWave();
 
@@ -1664,7 +1719,7 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 	if ( StagedConfig.FakePlayers != FakePlayers )
 	{
 		SettingChangeNotifications.AddItem("FakePlayers="$ StagedConfig.FakePlayers $" (old: "$FakePlayers$")");
-		FakePlayers = StagedConfig.FakePlayers;
+		SetFakePlayers( StagedConfig.FakePlayers );
 	}
 
 	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
@@ -1690,7 +1745,6 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 			" (old: "$ GetWeaponTimeoutString() $")");
 		WeaponTimeout = StagedConfig.WeaponTimeout;
 	}
-
 
 	if ( StagedConfig.SpawnCycle != SpawnCycle )
 	{
@@ -1740,12 +1794,6 @@ private function bool ApplyStagedConfig( out string MessageToClients, const stri
 		ZTSpawnMode = StagedConfig.ZTSpawnMode;
 		SetZTSpawnModeEnum();
 	}
-
-//	if ( StagedConfig.TraderTime != TraderTime )
-//	{
-//		SettingChangeNotifications.AddItem("TraderTime="$ StagedConfig.TraderTime $" (old: "$TraderTime$")");
-//		TraderTime = StagedConfig.TraderTime;
-//	}
 
 	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
 	{
@@ -2224,7 +2272,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 	{
 		if ( WorldInfo.NetMode == NM_StandAlone )
 		{
-			AssumedPlayerCount = 1 + FakePlayers;
+			AssumedPlayerCount = 1 + FakePlayersInt; // TODO is FakePlayersInt still right?
 			GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" players = 1 human + "$FakePlayers$" fake(s) in current game length...", false );
 		}
 		else

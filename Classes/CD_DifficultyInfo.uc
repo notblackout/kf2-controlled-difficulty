@@ -51,7 +51,7 @@ function float GetTraderTimeByDifficulty()
 // configuration getter
 function int GetNumFakePlayers()
 {
-	return Outer.FakePlayers;
+	return Outer.FakePlayersInt;
 }
 
 // configuration getter
