@@ -34,13 +34,10 @@ struct StructStagedConfig
 	var bool     AlbinoCrawlers;
 	var bool     AlbinoGorefasts;
 	var string   Boss;
-	var float    MinSpawnIntervalFloat;
 	var string   SpawnCycle;
-	var float    SpawnModFloat;
 //	var int      TraderTime;
 	var string   WeaponTimeout;
 	var bool     ZedsTeleportCloser;
-	var float    ZTSpawnSlowdownFloat;
 	var string   ZTSpawnMode;
 };
 
@@ -49,8 +46,6 @@ struct StructAuthorizedUsers
 	var string SteamID;
 	var string Comment;
 };
-
-var CD_ConfigTender ConfigTender;
 
 ////////////////////
 // Config options //
@@ -76,6 +71,7 @@ var config int TraderTime;
 // spawnvolume entities.
 // In the unmodded game, this is hardcoded to one second.
 var config string MinSpawnInterval;
+var config const array<string> MinSpawnIntervalDefs; 
 var float MinSpawnIntervalFloat;
 
 // The maximum number of zeds that CD's SpawnManager may spawn
@@ -104,9 +100,11 @@ var int CohortSizeInt;
 // apparently no way to control the default value used when the ini file
 // does not have an explicit setting (defaultproperties issues a warning). 
 var config string SpawnMod;
+var config const array<string> SpawnModDefs;
 var float SpawnModFloat;
 
 var config string ZTSpawnSlowdown;
+var config const array<string> ZTSpawnSlowdownDefs;
 var float ZTSpawnSlowdownFloat;
 
 var config string ZTSpawnMode;
@@ -181,6 +179,9 @@ var config CDAuthLevel DefaultAuthLevel;
 var CD_RegulatedOption CohortSizeOption;
 var CD_RegulatedOption FakePlayersOption;
 var CD_RegulatedOption MaxMonstersOption;
+var CD_RegulatedOption MinSpawnIntervalOption;
+var CD_RegulatedOption SpawnModOption;
+var CD_RegulatedOption ZTSpawnSlowdownOption;
 
 // SpawnCycle parsed out of the SpawnCycleDefs strings
 var array<CD_AIWaveInfo> IniWaveInfos;
@@ -238,9 +239,6 @@ event InitGame( string Options, out string ErrorMessage )
 	// Print CD's commit hash (version)
 	GameInfo_CDCP.Print( "Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded" );
 
-	ConfigTender = new(Self) class'CD_ConfigTender';
-	ConfigTender.SetConsolePrinter( GameInfo_CDCP );
-
 	SetupRegulatedOptions();
 
 	ParseCDGameOptions( Options );
@@ -257,10 +255,21 @@ private function SetupRegulatedOptions()
 {
 	CohortSizeOption = new(self) class'CD_CohortSizeOption';
 	CohortSizeOption.IniDefsArray = CohortSizeDefs;
+
 	FakePlayersOption = new(self) class'CD_FakePlayersOption';
 	FakePlayersOption.IniDefsArray = FakePlayersDefs;
+
 	MaxMonstersOption = new(self) class'CD_MaxMonstersOption';
 	MaxMonstersOption.IniDefsArray = MaxMonstersDefs;
+
+	SpawnModOption = new(self) class'CD_SpawnModOption';
+	SpawnModOption.IniDefsArray = SpawnModDefs;
+
+	MinSpawnIntervalOption = new(self) class'CD_MinSpawnIntervalOption';
+	MinSpawnIntervalOption.IniDefsArray = MinSpawnIntervalDefs;
+
+	ZTSpawnSlowdownOption = new(self) class'CD_ZTSpawnSlowdownOption';
+	ZTSpawnSlowdownOption.IniDefsArray = ZTSpawnSlowdownDefs;
 }
 
 function bool CheckRelevance(Actor Other)
@@ -336,48 +345,55 @@ function SetGameSpeed( Float T )
 	SetTimer(WorldInfo.TimeDilation, true);
 	if ( ZTSpawnModeEnum == ZTSM_CLOCKWORK )
 	{
-		SetSpawnManagerWakeup();
+		// Tweak the dilation (but do not reset)
+		TuneSpawnManagerTimer();
+	}
+	else
+	{
+		// Restart the timer (but do not tweak the dilation)
+		SetSpawnManagerTimer();
 	}
 }
 
-function SetSpawnManagerWakeup()
+function SetSpawnManagerTimer( const optional bool ForceReset = true )
 {
-	local float ZTTrans;
-	local float LocalDilation;
-
-	if ( !IsTimerActive('SpawnManagerWakeup') )
+	if ( ForceReset || !IsTimerActive('SpawnManagerWakeup') )
 	{
 		// Timer does not exist, set it
 		`cdlog("Setting independent SpawnManagerWakeup timer (" $ MinSpawnIntervalFloat $")");
 		SetTimer(MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
 	}
+}
 
-	// Timer running by the time we reach this line; just modify the time dilation
-	if ( ZTSpawnSlowdownFloat > 1.f && ZedTimeRemaining > 0.f && WorldInfo.TimeDilation <= 1.f )
+function TuneSpawnManagerTimer()
+{
+	local float LocalDilation;
+	local float SlowDivisor;
+
+	LocalDilation = 1.f / WorldInfo.TimeDilation;
+	if ( ZedTimeRemaining > 0.f && ZTSpawnSlowdownFloat > 1.f )
 	{
-		// In standard KF2, time runs at ZedTimeSlomoScale during ZT
-		// At the time this comment was written, ZedTimeSlomoScale=.2,
-		// meaning 5 seconds of gametime pass for every 1 second of realtime.
-		// If we applied this dilation directly to the spawnmanager, then
-		// every kill in zedtime could add up to 4 "free" seconds without
-		// spawn activity (circumstances for this to happen are pretty
-		// special, but it is possible).
-		// (1 - (1/ZTSS)) / stick = istick - istick/ZTSS
-		// .8x = .7     x = .7 /.8
-		// .4x = .35    x = .35/.4
+		if ( ZedTimeRemaining < ZedTimeBlendOutTime )
+		{
+			// if zed time is running out, interpolate between [1.0, ZTSS] using the same lerp-alpha-factor that TickZedTime uses
+			// When zed time first starts to fade, we will use a divisor slightly less than ZTSS
+			// When zed time is on the last tick before it is completly over, we will use slightly more than 1.0
+			// See TickZedTime in KFGameInfo for background
+			SlowDivisor = Lerp(1.0, ZTSpawnSlowdownFloat, ZedTimeRemaining / ZedTimeBlendOutTime);
+		}
+		else
+		{
+			// if zed time is going strong, just use ZTSS
+			SlowDivisor = ZTSpawnSlowdownFloat;
+		}
 
-		// .8x = .5     x = .5/.8
-		// .4x = .25    x = .25/.4
-		// 1x = 1
-		ZTTrans = 1.25f - (1.25f / ZTSpawnSlowdownFloat);  // .8 = 1 - ZedTimeSlomoScale; 1.25 = 1/.8
-		LocalDilation = 1.f - ((1.f - WorldInfo.TimeDilation) * ZTTrans);
-		LocalDilation = FClamp(LocalDilation, 0.2f, 1.0f);
-		`cdlog("SpawnManagerWakeup's scaled timedilation: " $ LocalDilation);
+		LocalDilation = LocalDilation / SlowDivisor;
+
+		`cdlog("SpawnManagerWakeup's slowed clockwork timedilation: " $ LocalDilation $ " (ZTSS=" $ SlowDivisor $ ")");
 	}
 	else
 	{
-		LocalDilation = 1.f / WorldInfo.TimeDilation;
-		`cdlog("SpawnManagerWakeup's clockwork timedilation: " $ LocalDilation);
+		`cdlog("SpawnManagerWakeup's realtime clockwork timedilation: " $ LocalDilation);
 	}
 
 	ModifyTimerTimeDilation('SpawnManagerWakeup', LocalDilation);
@@ -388,12 +404,6 @@ event Timer()
 {
 	super(KFGameInfo).Timer();
 
-	if ( ZTSpawnModeEnum == ZTSM_UNMODDED )
-	{
-		`cdlog("Invoking MinSpawnIntervalFloat from Timer");
-		SpawnManagerWakeup();
-	}
-
 	if ( GameConductor != none )
 	{
 		GameConductor.TimerUpdate();
@@ -402,7 +412,7 @@ event Timer()
 
 private function SpawnManagerWakeup()
 {
-	if( SpawnManager != none )
+	if ( SpawnManager != none )
 	{
 		SpawnManager.Update();
 	}
@@ -410,10 +420,6 @@ private function SpawnManagerWakeup()
 
 private function ParseCDGameOptions( const out string Options )
 {
-
-	ParseAndClampFloatOpt( Options, SpawnMod, SpawnModFloat, "SpawnMod", 1.f, ClampSpawnMod );
-
-
 	if ( HasOption(Options, "WeaponTimeout") )
 	{
 		WeaponTimeout = ParseOption(Options, "WeaponTimeout" );
@@ -462,9 +468,11 @@ private function ParseCDGameOptions( const out string Options )
 
 	MaxMonstersOption.InitFromOptions( Options );
 
-	ParseAndClampFloatOpt( Options, MinSpawnInterval, MinSpawnIntervalFloat, "MinSpawnInterval", 1.f, ClampMinSpawnInterval );
+	MinSpawnIntervalOption.InitFromOptions( Options );
 
-	ParseAndClampFloatOpt( Options, ZTSpawnSlowdown, ZTSpawnSlowdownFloat, "ZTSpawnSlowdown", 1.f, ClampZTSpawnSlowdown );
+	SpawnModOption.InitFromOptions( Options );
+
+	ZTSpawnSlowdownOption.InitFromOptions( Options );
 
 	// Process TraderTime command option, if present
 	if ( HasOption(Options, "TraderTime") )
@@ -609,12 +617,9 @@ private function InitStructStagedConfig()
 	StagedConfig.AlbinoCrawlers = AlbinoCrawlers;
 	StagedConfig.AlbinoGorefasts = AlbinoGorefasts;
 	StagedConfig.Boss = Boss;
-	StagedConfig.MinSpawnIntervalFloat = MinSpawnIntervalFloat;
 	StagedConfig.SpawnCycle = SpawnCycle;
-	StagedConfig.SpawnModFloat = SpawnModFloat;
 	StagedConfig.WeaponTimeout = WeaponTimeout;
 	StagedConfig.ZedsTeleportCloser = ZedsTeleportCloser;
-	StagedConfig.ZTSpawnSlowdownFloat = ZTSpawnSlowdownFloat;
 	StagedConfig.ZTSpawnMode = ZTSpawnMode;
 }
 
@@ -870,36 +875,6 @@ function CreateDifficultyInfo(string Options)
 	`cdlog("CD_DifficultyInfo ready: " $ CustomDifficultyInfo, bLogControlledDifficulty);
 }
 
-function int ClampCohortSize( const out int cs )
-{
-	return 0 > cs ? 0 : cs;
-}
-
-function int ClampFakePlayers( const out int fp )
-{
-	return Clamp(fp, 0, 32);
-}
-
-function int ClampMaxMonsters( const out int mm )
-{
-	return Clamp(mm, 0, 10000);
-}
-
-function float ClampSpawnMod( const out float sm )
-{
-	return FClamp(sm, 0.f, 1.f);
-}
-
-function float ClampMinSpawnInterval( const out float msi )
-{
-	return FClamp(msi, 0.05 /* 50 ms */, 60.f /* 1 min */);
-}
-
-function float ClampZTSpawnSlowdown( const out float ztss )
-{
-	return FClamp(ztss, 1.f, 10.f);
-}
-
 function string ClampWeaponTimeout( const out string wt )
 {
 	local int ParsedSeconds;
@@ -1062,6 +1037,20 @@ function WaveEnded( EWaveEndCondition WinCondition )
 }
 
 
+private function RegulateOptionsForNextWave()
+{
+	local int NWN;
+
+	NWN = WaveNum + 1;
+
+	CohortSizeOption.RegulateValue( NWN );
+	FakePlayersOption.RegulateValue( NWN );
+	MaxMonstersOption.RegulateValue( NWN );
+	MinSpawnIntervalOption.RegulateValue( NWN );
+	SpawnModOption.RegulateValue( NWN );
+	ZTSpawnSlowdownOption.RegulateValue( NWN );
+}
+
 function StartWave()
 {
 	local string CDSettingChangeMessage;
@@ -1071,9 +1060,13 @@ function StartWave()
 		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
 	}
 
-	// Call the config tender 
-	// WaveNum has *not* yet been incremented (that happens in super.StartWave() below)
-	ConfigTender.Activate( WaveNum + 1 );
+	RegulateOptionsForNextWave();
+
+	// Restart the SpawnManager's wakeup timer.
+	// This synchronizing effect is virtually unnoticeable when MinSpawnInterval is
+	// low (say 1s), but very noticable when it is long (say 30s)
+	SetSpawnManagerTimer();
+	SetGameSpeed( WorldInfo.TimeDilation );
 	
 	super.StartWave();
 
@@ -1126,18 +1119,15 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 	}
 
 	TempString = FakePlayersOption.CommitStagedChanges( WaveNum + 1 );
-	`cdlog("FakePlayers Commit Message: "$ TempString);
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
+	TempString = MinSpawnIntervalOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
 	{
-		SettingChangeNotifications.AddItem("MinSpawnInterval="$ StagedConfig.MinSpawnIntervalFloat $" (old: "$MinSpawnIntervalFloat$")");
-		MinSpawnIntervalFloat = StagedConfig.MinSpawnIntervalFloat;
-		MinSpawnInterval = string(MinSpawnIntervalFloat);
-		SetSpawnManagerWakeup();
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
 	TempString = MaxMonstersOption.CommitStagedChanges( WaveNum + 1 );
@@ -1182,18 +1172,16 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		}
 	}
 
-	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, SpawnModEpsilon ) )
+	TempString = SpawnModOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
 	{
-		SettingChangeNotifications.AddItem("SpawnMod="$ StagedConfig.SpawnModFloat $" (old: "$SpawnModFloat$")");
-		SpawnModFloat = StagedConfig.SpawnModFloat;
-		SpawnMod = string(SpawnModFloat);
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	if ( !EpsilonClose( StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
+	TempString = ZTSpawnSlowdownOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
 	{
-		SettingChangeNotifications.AddItem("ZTSpawnSlowdown="$ StagedConfig.ZTSpawnSlowdownFloat $" (old: "$ZTSpawnSlowdownFloat$")");
-		ZTSpawnSlowdownFloat = StagedConfig.ZTSpawnSlowdownFloat;
-		ZTSpawnSlowdown = string(ZTSpawnSlowdownFloat);
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
 	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )

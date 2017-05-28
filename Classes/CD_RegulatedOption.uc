@@ -11,10 +11,10 @@ class CD_RegulatedOption extends Object
       and how to regulate the option value at runtime.  The
       parser looks for some known values related to regulation
       (just "ini" for now, but maybe "bilinear:..." later),
-      then falls back on trying to convert the string using an
-      int(...) cast in every other case.
+      then falls back on trying to convert the string using a
+      float(...) cast in every other case.
 
-    - "value", an int.  This is either set directly by the
+    - "value", a float.  This is either set directly by the
       user, or if the user specified automatic option regulation,
       by the regulator at each wave start.
 
@@ -25,12 +25,10 @@ class CD_RegulatedOption extends Object
     non-None when regulation is enabled.
 */
 
-// ints
-
 var CD_SettingRegulator ActualRegulator;
 
 var string StagedIndicator;
-var int StagedValue;
+var float StagedValue;
 var CD_SettingRegulator StagedRegulator;
 
 var array<string> IniDefsArray;
@@ -38,9 +36,13 @@ var array<string> IniDefsArray;
 var const string IniDefsArrayName;
 var const string OptionName;
 // Default must be set within [min,max]; the default is *not* bounds-checked
-var const int DefaultSettingValue;
-var const int MinSettingValue;
-var const int MaxSettingValue;
+var const float DefaultSettingValue;
+// Minima and maxima may be chosen mostly arbitrarily, but keep them within
+// the integer precision range on IEEE 754 floats.  We don't do any arithmetic,
+// so we aren't subject to cumulative error, but getting near the 2^24 boundary
+// is just asking for roundoff that suprises the user.
+var const float MinSettingValue;
+var const float MaxSettingValue;
 
 function bool StageIndicator( const out string Raw, out string StatusMsg, const optional bool ForceOverwrite = false )
 {
@@ -70,18 +72,18 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 		}
 		else
 		{
-			StatusMsg = "Unable to parse "$ OptionName $" definitions; defaulting to "$ DefaultSettingValue;
-			`cdlog(StatusMsg, bLogControlledDifficulty);
-			StagedIndicator = string( StagedValue );
 			StagedValue = DefaultSettingValue;
+			StagedIndicator = PrettyValue( StagedValue );
+			StatusMsg = "Unable to parse "$ OptionName $" definitions; defaulting to "$ StagedIndicator;
+			`cdlog(StatusMsg, bLogControlledDifficulty);
 			return false;
 		}
 	}
 	else
 	{
-		StagedValue = Clamp( int( Raw ), MinSettingValue, MaxSettingValue );
-		StagedIndicator = string( StagedValue );
-		`cdlog("Converted raw string "$ Raw $" to staged int value "$ StagedValue 
+		StagedValue = Clamp( float( Raw ), MinSettingValue, MaxSettingValue );
+		StagedIndicator = PrettyValue( StagedValue );
+		`cdlog("Converted raw string "$ Raw $" to staged float value "$ StagedValue 
 			$" (indicator: "$ StagedIndicator $")", bLogControlledDifficulty);
 	}
 
@@ -101,14 +103,19 @@ protected function WriteIndicator( const out string Ind )
 	// TODO throw a fatal error
 }
 
-protected function int ReadValue()
+protected function float ReadValue()
 {
 	// TODO throw a fatal error
 }
 
-protected function WriteValue( const out int Val )
+protected function WriteValue( const out float Val )
 {
 	// TODO throw a fatal error
+}
+
+protected function string PrettyValue( const float RawValue )
+{
+	return string(RawValue);
 }
 
 function bool HasStagedChanges()
@@ -120,7 +127,7 @@ function string GetChatLine()
 {
 	local string Result;
 	local string CurIndicator;
-	local int TempValue, TempWaveNum;
+	local float TempValue, TempWaveNum;
 	local name GameStateName;
 
 	Result = OptionName $"=";
@@ -142,22 +149,22 @@ function string GetChatLine()
 		{
 			// Before the match starts, show the value that would be used on wave 1
 			TempValue = ActualRegulator.GetValue( 1, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );	
-			Result $= string(TempValue) $"@W01";
+			Result $= PrettyValue( TempValue ) $"@W01";
 		}
 		else if ( GameStateName == 'TraderOpen' )
 		{
 			// During trader, show the current/last wave value and next wave values
 			TempValue = ActualRegulator.GetValue( WaveNum + 1, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );	
-			Result $= string(TempValue) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum + 1 ) $",";
+			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum + 1 ) $",";
 			TempValue = ActualRegulator.GetValue( WaveNum, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );	
-			Result $= string(TempValue) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum );
+			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum );
 		}
 		else
 		{
 			// During or after the game, show the current/last wave value
 			TempWaveNum = 1 > WaveNum ? 1 : WaveNum;
 			TempValue = ActualRegulator.GetValue( TempWaveNum, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );
-			Result $= string(TempValue) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( TempWaveNum );
+			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( TempWaveNum );
 		}
 		Result $= "]";
 	}
@@ -231,7 +238,7 @@ function string CommitStagedChanges( const int OverrideWaveNum, const optional b
 
 function RegulateValue( const int OverrideWaveNum )
 {
-	local int OldValue, NewValue;
+	local float OldValue, NewValue;
 
 	`cdlog("Tending "$ OptionName, bLogControlledDifficulty);
 
@@ -242,11 +249,11 @@ function RegulateValue( const int OverrideWaveNum )
 		WriteValue( NewValue );
 		if ( OldValue != NewValue )
 		{
-			`cdlog("CD_ConfigTender: "$ OptionName $"="$ NewValue $" (was: "$ OldValue $ ")");
+			`cdlog("Regulated "$ OptionName $"="$ PrettyValue( NewValue ) $" (was: "$ PrettyValue( OldValue ) $ ")");
 		}
 		else
 		{
-			`cdlog("CD_ConfigTender: "$ OptionName $"="$ NewValue $" (no change)");
+			`cdlog("Regulated "$ OptionName $"="$ PrettyValue( NewValue ) $" (no change)");
 		}
 	}
 }

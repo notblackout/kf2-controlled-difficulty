@@ -11,14 +11,19 @@ protected function WriteIndicator( const out string Ind )
 	Outer.MaxMonsters = Ind;
 }
 
-protected function int ReadValue()
+protected function float ReadValue()
 {
-	return Outer.MaxMonstersInt;
+	return float(Outer.MaxMonstersInt);
 }
 
-protected function WriteValue( const out int Val )
+protected function WriteValue( const out float Val )
 {
-	Outer.MaxMonstersInt = Val;
+	Outer.MaxMonstersInt = int(Val);
+}
+
+protected function string PrettyValue( const float RawValue )
+{
+	return string(int(RawValue));
 }
 
 defaultproperties

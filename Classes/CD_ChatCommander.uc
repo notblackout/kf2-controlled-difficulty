@@ -214,14 +214,14 @@ function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", FakePlayersOption.GetChatLine );
 //	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
 	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", MaxMonstersOption.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", GetMinSpawnIntervalChatString );
+	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", MinSpawnIntervalOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
-	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", GetSpawnModChatString );
+	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", SpawnModOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
 	SetupSimpleReadCommand( scc, "!cdzedsteleportcloser", "Display ZedsTeleportCloser setting", GetZedsTeleportCloserChatString );
-	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", GetZTSpawnSlowdownChatString );
+	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", ZTSpawnSlowdownOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
 
 	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", "true|false", SetAlbinoAlphasChatCommand );
@@ -231,12 +231,12 @@ function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", CohortSizeOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", FakePlayersOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int|ini|bilinear:...", MaxMonstersOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", SetMinSpawnIntervalChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", MinSpawnIntervalOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SetSpawnModChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SpawnModOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdzedsteleportcloser", "Set ZedsTeleportCloser", "true|false", SetZedsTeleportCloserChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", SetZTSpawnSlowdownChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", ZTSpawnSlowdownOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
@@ -450,36 +450,7 @@ private function string SetBossChatCommand( const out array<string> params )
 // moved to regulated option class
 
 // MinSpawnInterval
-
-private function string GetMinSpawnIntervalChatString()
-{
-	local string MinSpawnIntervalLatchedString;
-
-	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
-	{
-		MinSpawnIntervalLatchedString = " (staged: " $ StagedConfig.MinSpawnIntervalFloat $ ")";
-	}
-
-	return "MinSpawnInterval="$ MinSpawnIntervalFloat $ MinSpawnIntervalLatchedString;
-}
-
-private function string SetMinSpawnIntervalChatCommand( const out array<string> params )
-{
-	local float TempFloat;
-
-	TempFloat = float( params[0] );
-	TempFloat = ClampMinSpawnInterval( TempFloat );
-	StagedConfig.MinSpawnIntervalFloat = TempFloat;
-	if ( !EpsilonClose( MinSpawnIntervalFloat, StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
-	{
-		return "Staged: MinSpawnInterval=" $ StagedConfig.MinSpawnIntervalFloat $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "MinSpawnInterval is already " $ MinSpawnInterval;
-	}
-}
+// moved to regulated option class
 
 // SpawnCycle
 
@@ -510,36 +481,7 @@ private function string SetSpawnCycleChatCommand( const out array<string> params
 }
 
 // SpawnMod
-
-private function string GetSpawnModChatString()
-{
-	local string SpawnModLatchedString;
-
-	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, SpawnModEpsilon ) )
-	{
-		SpawnModLatchedString = " (staged: " $ StagedConfig.SpawnModFloat $ ")";
-	}
-
-	return "SpawnMod="$ SpawnModFloat $ SpawnModLatchedString;
-}
-
-private function string SetSpawnModChatCommand( const out array<string> params )
-{
-	local float TempFloat;
-
-	TempFloat = float( params[0] );
-	TempFloat = ClampSpawnMod( TempFloat );
-	StagedConfig.SpawnModFloat = TempFloat;
-	if ( !EpsilonClose( SpawnModFloat, StagedConfig.SpawnModFloat, SpawnModEpsilon ) )
-	{
-		return "Staged: SpawnMod=" $ StagedConfig.SpawnModFloat $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "SpawnMod is already " $ SpawnMod;
-	}
-}
+// moved to regulated option class
 
 // TraderTime (read-only)
 
@@ -654,37 +596,7 @@ private function string SetZTSpawnModeChatCommand( const out array<string> param
 }
 
 // ZTSpawnSlowdown
-
-private function string GetZTSpawnSlowdownChatString()
-{
-	local string ZTSpawnSlowdownLatchedString;
-
-	if ( !EpsilonClose( StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
-	{
-		ZTSpawnSlowdownLatchedString = " (staged: " $ StagedConfig.ZTSpawnSlowdownFloat $ ")";
-	}
-
-	return "ZTSpawnSlowdown="$ ZTSpawnSlowdownFloat $ ZTSpawnSlowdownLatchedString;
-}
-
-private function string SetZTSpawnSlowdownChatCommand( const out array<string> params )
-{
-	local float TempFloat;
-
-	TempFloat = float( params[0] );
-	TempFloat = ClampZTSpawnSlowdown( TempFloat );
-	StagedConfig.ZTSpawnSlowdownFloat = TempFloat;
-	if ( !EpsilonClose( ZTSpawnSlowdownFloat, StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
-	{
-		return "Staged: ZTSpawnSlowdown=" $ StagedConfig.ZTSpawnSlowdownFloat $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "ZTSpawnSlowdown is already " $ ZTSpawnSlowdown;
-	}
-}
-
+// moved to regulated option class
 
 // Info and Help
 
@@ -714,19 +626,19 @@ function string GetCDInfoChatString( const string Verbosity )
 		       CohortSizeOption.GetChatLine() $ "\n" $
 		       FakePlayersOption.GetChatLine() $ "\n" $
 		       MaxMonstersOption.GetChatLine() $ "\n" $
-		       GetMinSpawnIntervalChatString() $ "\n" $
+		       MinSpawnIntervaloption.GetChatLine() $ "\n" $
 		       GetSpawnCycleChatString() $ "\n" $
-		       GetSpawnModChatString() $ "\n" $
+		       SpawnModOption.GetChatLine() $ "\n" $
 		       GetTraderTimeChatString() $ "\n" $
 		       GetWeaponTimeoutChatString() $ "\n" $
-		       GetZTSpawnSlowdownChatString() $ "\n" $
+		       ZTSpawnSlowdownOption.GetChatLine() $ "\n" $
 		       GetZTSpawnModeChatString();
 	}
 	else
 	{
 		return FakePlayersOption.GetChatLine() $ "\n" $
 		       MaxMonstersOption.GetChatLine() $ "\n" $
-		       GetSpawnModChatString() $ "\n" $
+		       SpawnModOption.GetChatLine() $ "\n" $
 		       CohortSizeOption.GetChatLine() $ "\n" $
 		       GetSpawnCycleChatString();
 	}

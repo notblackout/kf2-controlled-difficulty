@@ -11,14 +11,19 @@ protected function WriteIndicator( const out string Ind )
 	Outer.FakePlayers = Ind;
 }
 
-protected function int ReadValue()
+protected function float ReadValue()
 {
-	return Outer.FakePlayersInt;
+	return float(Outer.FakePlayersInt);
 }
 
-protected function WriteValue( const out int Val )
+protected function WriteValue( const out float Val )
 {
-	Outer.FakePlayersInt = Val;
+	Outer.FakePlayersInt = int(Val);
+}
+
+protected function string PrettyValue( const float RawValue )
+{
+	return string(int(RawValue));
 }
 
 defaultproperties

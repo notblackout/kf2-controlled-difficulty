@@ -11,14 +11,19 @@ protected function WriteIndicator( const out string Ind )
 	Outer.CohortSize = Ind;
 }
 
-protected function int ReadValue()
+protected function float ReadValue()
 {
-	return Outer.CohortSizeInt;
+	return float(Outer.CohortSizeInt);
 }
 
-protected function WriteValue( const out int Val )
+protected function WriteValue( const out float Val )
 {
-	Outer.CohortSizeInt = Val;
+	Outer.CohortSizeInt = int(Val);
+}
+
+protected function string PrettyValue( const float RawValue )
+{
+	return string(int(RawValue));
 }
 
 defaultproperties
