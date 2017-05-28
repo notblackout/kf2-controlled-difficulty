@@ -629,7 +629,7 @@ private function DisplayBriefWaveStatsInChat()
 
 	s = CDSpawnManager( SpawnManager ).GetWaveAverageSpawnrate();
 
-	super.Broadcast(None, "[CD] Wave Recap:\n"$ s, 'CDEcho');
+	super.Broadcast(None, "Wave " $ WaveNum $ " Recap:\n"$ s, 'CDEcho');
 }
 
 State TraderOpen
@@ -638,7 +638,8 @@ State TraderOpen
 	{
 		super.BeginState( PreviousStateName );
 
-		SetTimer(1.f, false, 'DisplayBriefWaveStatsInChat');
+		CDSpawnManager( SpawnManager ).WaveEnded();
+		SetTimer(2.f, false, 'DisplayBriefWaveStatsInChat');
 	}
 }
 
@@ -648,6 +649,7 @@ function EndOfMatch(bool bVictory)
 
 	if ( !bVictory && WaveNum < WaveMax )
 	{
+		CDSpawnManager( SpawnManager ).WaveEnded();
 		SetTimer(2.f, false, 'DisplayBriefWaveStatsInChat');
 	}
 }

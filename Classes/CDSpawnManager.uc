@@ -22,10 +22,13 @@ var int CohortZedsSpawned;
 var int CohortSquadsSpawned;
 var int CohortVolumeIndex;
 
+var int SpawnEventsThisWave;
+
 var float WaveSetupTimestamp;
 var float FirstSpawnTimestamp;
 var float FinalSpawnTimestamp;
 var float LatestSpawnTimestamp;
+var float WaveEndTimestamp;
 
 function SetCustomWaves( array<CD_AIWaveInfo> inWaves )
 {
@@ -92,6 +95,8 @@ function Update()
 	{
 		TimeUntilNextSpawn = CalcNextGroupSpawnTime();
 
+		SpawnEventsThisWave += 1;
+
 		LatestSpawnTimestamp = Outer.Worldinfo.TimeSeconds;
 
 		if ( 0 > FirstSpawnTimestamp )
@@ -136,8 +141,8 @@ function bool ShouldAddAI()
 function string GetWaveAverageSpawnrate()
 {
 	local string SpawnrateString;
-	local string DelayString;
-	local string ZedCountString;
+	local string ZedCountString, GroupName;
+	local string DelayString, SpawnDurationString, LingerString;
 
 	// There are a bunch of edge cases in here
 
@@ -159,7 +164,7 @@ function string GetWaveAverageSpawnrate()
 		FinalSpawnTimestamp = LatestSpawnTimestamp;
 	}
 
-	if ( 0 > FirstSpawnTimestamp || 0 > FinalSpawnTimestamp )
+	if ( 0 > FirstSpawnTimestamp || 0 > FinalSpawnTimestamp || 0 == SpawnEventsThisWave)
 	{
 		return "0/" $ WaveTotalAI $ " zeds spawned";
 	}
@@ -173,16 +178,37 @@ function string GetWaveAverageSpawnrate()
 		SpawnrateString = FormatFloatToTwoDecimalPlaces( WaveTotalAI / ( FinalSpawnTimestamp - FirstSpawnTimestamp) ) $ " avg zed/s spawnrate";
 	}
 
-	DelayString = FormatFloatToTwoDecimalPlaces( FirstSpawnTimestamp - WaveSetupTimestamp );
 
+	DelayString = FormatFloatToOneDecimalPlace( FirstSpawnTimestamp - WaveSetupTimestamp );
+	SpawnDurationString = FormatFloatToOneDecimalPlace( FinalSpawnTimestamp - FirstSpawnTimestamp );
+	LingerString = FormatFloatToOneDecimalPlace( WaveEndTimestamp - FinalSpawnTimestamp );
+
+	GroupName = 0 < Outer.CohortSizeInt ? "cohorts" : "squads" ;
 	ZedCountString = NumAISpawnsQueued < WaveTotalAI ?
 		(NumAISpawnsQueued $"/"$ WaveTotalAI) :
 		string(WaveTotalAI);
 
 	return
-	    ZedCountString $ " zeds, " $ DelayString $ " s delay\n" $
+		ZedCountString $ " zeds, " $ SpawnEventsThisWave $ " " $ GroupName $ "\n" $
+		DelayString $ " s delay, " $ SpawnDurationString $ " s live, " $ LingerString $ " s linger\n" $
 		SpawnrateString $ "\n" $
 	    " (timed first spawn to last)";
+}
+
+private function string FormatFloatToOneDecimalPlace( const float f )
+{
+	local int l;
+	local string s;	
+
+	s = string( f );
+
+	l = Len( s );
+	if ( 5 <= l )
+	{
+		s = Left( s, l - 3 );
+	}
+
+	return s;
 }
 
 private function string FormatFloatToTwoDecimalPlaces( const float f )
@@ -208,8 +234,14 @@ function SetupNextWave(byte NextWaveIndex)
 	FirstSpawnTimestamp = -1.f;
 	FinalSpawnTimestamp = -1.f;
 	LatestSpawnTimestamp = -1.f;
+	WaveEndTimestamp = -1.f;
+	SpawnEventsThisWave = 0;
 }
 
+function WaveEnded()
+{
+	WaveEndTimestamp = Outer.WorldInfo.TimeSeconds;
+}
 
 // This function is invoked by the spawning system in the base game.
 // Its return value is the maximum number of simultaneously live zeds
