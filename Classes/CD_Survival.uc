@@ -103,6 +103,22 @@ var config string SpawnMod;
 var config const array<string> SpawnModDefs;
 var float SpawnModFloat;
 
+var config string ZedHPFakePlayers;
+var config const array<string> ZedHPFakePlayersDefs;
+var int ZedHPFakePlayersInt;
+
+var config string FleshpoundHPFakePlayers;
+var config const array<string> FleshpoundHPFakePlayersDefs;
+var int FleshpoundHPFakePlayersInt;
+
+var config string ScrakeHPFakePlayers;
+var config const array<string> ScrakeHPFakePlayersDefs;
+var int ScrakeHPFakePlayersInt;
+
+var config string BossHPFakePlayers;
+var config const array<string> BossHPFakePlayersDefs;
+var int BossHPFakePlayersInt;
+
 var config string ZTSpawnSlowdown;
 var config const array<string> ZTSpawnSlowdownDefs;
 var float ZTSpawnSlowdownFloat;
@@ -176,11 +192,15 @@ var config CDAuthLevel DefaultAuthLevel;
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
 
+var CD_RegulatedOption BossHPFakePlayersOption;
 var CD_RegulatedOption CohortSizeOption;
 var CD_RegulatedOption FakePlayersOption;
 var CD_RegulatedOption MaxMonstersOption;
 var CD_RegulatedOption MinSpawnIntervalOption;
 var CD_RegulatedOption SpawnModOption;
+var CD_RegulatedOption ZedHPFakePlayersOption;
+var CD_RegulatedOption FleshpoundHPFakePlayersOption;
+var CD_RegulatedOption ScrakeHPFakePlayersOption;
 var CD_RegulatedOption ZTSpawnSlowdownOption;
 
 // SpawnCycle parsed out of the SpawnCycleDefs strings
@@ -253,6 +273,9 @@ event InitGame( string Options, out string ErrorMessage )
 
 private function SetupRegulatedOptions()
 {
+	BossHPFakePlayersOption = new(self) class'CD_BossHPFakePlayersOption';
+	BossHPFakePlayersOption.IniDefsArray = BossHPFakePlayersDefs;
+
 	CohortSizeOption = new(self) class'CD_CohortSizeOption';
 	CohortSizeOption.IniDefsArray = CohortSizeDefs;
 
@@ -267,6 +290,15 @@ private function SetupRegulatedOptions()
 
 	MinSpawnIntervalOption = new(self) class'CD_MinSpawnIntervalOption';
 	MinSpawnIntervalOption.IniDefsArray = MinSpawnIntervalDefs;
+
+	ScrakeHPFakePlayersOption = new(self) class'CD_ScrakeHPFakePlayersOption';
+	ScrakeHPFakePlayersOption.IniDefsArray = ScrakeHPFakePlayersDefs;
+
+	FleshpoundHPFakePlayersOption = new(self) class'CD_FleshpoundHPFakePlayersOption';
+	FleshpoundHPFakePlayersOption.IniDefsArray = FleshpoundHPFakePlayersDefs;
+
+	ZedHPFakePlayersOption = new(self) class'CD_ZedHPFakePlayersOption';
+	ZedHPFakePlayersOption.IniDefsArray = ZedHPFakePlayersDefs;
 
 	ZTSpawnSlowdownOption = new(self) class'CD_ZTSpawnSlowdownOption';
 	ZTSpawnSlowdownOption.IniDefsArray = ZTSpawnSlowdownDefs;
@@ -462,6 +494,8 @@ private function ParseCDGameOptions( const out string Options )
 		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycle, bLogControlledDifficulty);
 	}
 
+	BossHPFakePlayersOption.InitFromOptions( Options );
+
 	CohortSizeOption.InitFromOptions( Options );
 
 	FakePlayersOption.InitFromOptions( Options );
@@ -471,6 +505,12 @@ private function ParseCDGameOptions( const out string Options )
 	MinSpawnIntervalOption.InitFromOptions( Options );
 
 	SpawnModOption.InitFromOptions( Options );
+
+	ScrakeHPFakePlayersOption.InitFromOptions( Options );
+
+	FleshpoundHPFakePlayersOption.InitFromOptions( Options );
+
+	ZedHPFakePlayersOption.InitFromOptions( Options );
 
 	ZTSpawnSlowdownOption.InitFromOptions( Options );
 
@@ -1045,11 +1085,15 @@ private function RegulateOptionsForNextWave()
 
 	NWN = WaveNum + 1;
 
+	BossHPFakePlayersOption.RegulateValue( NWN );
 	CohortSizeOption.RegulateValue( NWN );
 	FakePlayersOption.RegulateValue( NWN );
 	MaxMonstersOption.RegulateValue( NWN );
 	MinSpawnIntervalOption.RegulateValue( NWN );
 	SpawnModOption.RegulateValue( NWN );
+	ScrakeHPFakePlayersOption.RegulateValue( NWN );
+	FleshpoundHPFakePlayersOption.RegulateValue( NWN );
+	ZedHPFakePlayersOption.RegulateValue( NWN );
 	ZTSpawnSlowdownOption.RegulateValue( NWN );
 }
 
@@ -1112,6 +1156,12 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 	{
 		SettingChangeNotifications.AddItem("Boss="$ StagedConfig.Boss $" (old: "$Boss$")");
 		Boss = StagedConfig.Boss;
+	}
+
+	TempString = BossHPFakePlayersOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
+	{
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
 	TempString = CohortSizeOption.CommitStagedChanges( WaveNum + 1 );
@@ -1180,6 +1230,30 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
+	TempString = ScrakeHPFakePlayersOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
+	{
+		SettingChangeNotifications.AddItem( TempString );
+	}
+
+	TempString = FleshpoundHPFakePlayersOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
+	{
+		SettingChangeNotifications.AddItem( TempString );
+	}
+
+	TempString = ZedHPFakePlayersOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
+	{
+		SettingChangeNotifications.AddItem( TempString );
+	}
+
+	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
+	{
+		SettingChangeNotifications.AddItem("ZedsTeleportCloser="$ StagedConfig.ZedsTeleportCloser $" (old: "$ZedsTeleportCloser$")");
+		ZedsTeleportCloser = StagedConfig.ZedsTeleportCloser;
+	}
+
 	TempString = ZTSpawnSlowdownOption.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
@@ -1193,11 +1267,6 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		SetZTSpawnModeEnum();
 	}
 
-	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
-	{
-		SettingChangeNotifications.AddItem("ZedsTeleportCloser="$ StagedConfig.ZedsTeleportCloser $" (old: "$ZedsTeleportCloser$")");
-		ZedsTeleportCloser = StagedConfig.ZedsTeleportCloser;
-	}
 
 	if ( 0 < SettingChangeNotifications.Length )
 	{

@@ -209,6 +209,7 @@ function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
+	SetupSimpleReadCommand( scc, "!cdbosshpfakeplayers", "Display Boss health FakePlayers count", BossHPFakePlayersOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", CohortSizeOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
 	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", FakePlayersOption.GetChatLine );
@@ -220,6 +221,9 @@ function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
+	SetupSimpleReadCommand( scc, "!cdzedhpfakeplayers", "Display regular zed health FakePlayers count", ZedHPFakePlayersOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdscrakehpfakeplayers", "Display scrake health FakePlayers count", ScrakeHPFakePlayersOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdfleshpoundhpfakeplayers", "Display fleshpound health FakePlayers count", FleshpoundHPFakePlayersOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdzedsteleportcloser", "Display ZedsTeleportCloser setting", GetZedsTeleportCloserChatString );
 	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", ZTSpawnSlowdownOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
@@ -228,6 +232,7 @@ function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdbosshpfakeplayers", "Set Boss health FakePlayers", "int|ini|bilinear:...", BossHPFakePlayersOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", CohortSizeOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", FakePlayersOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int|ini|bilinear:...", MaxMonstersOption.ChatWriteCommand );
@@ -238,6 +243,9 @@ function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdzedsteleportcloser", "Set ZedsTeleportCloser", "true|false", SetZedsTeleportCloserChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", ZTSpawnSlowdownOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdzedhpfakeplayers", "Set regular zed health FakePlayers", "int|ini|bilinear:...", ZedHPFakePlayersOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdscrakehpfakeplayers", "Set scrake health FakePlayers", "int|ini|bilinear:...", ScrakeHPFakePlayersOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdfleshpoundhpfakeplayers", "Set fleshpound health FakePlayers", "int|ini|bilinear:...", FleshpoundHPFakePlayersOption.ChatWriteCommand );
 }
 
 private function bool MatchChatCommand( const string CmdName, out StructChatCommand Cmd, const CDAuthLevel AuthLevel, const int ParamCount )
@@ -619,6 +627,7 @@ function string GetCDInfoChatString( const string Verbosity )
 {
 	if ( Verbosity == "full" )
 	{
+		// TODO regular zed and boss hp scaling
 		return GetAlbinoAlphasChatString() $ "\n" $
 		       GetAlbinoCrawlersChatString() $ "\n" $
 		       GetAlbinoGorefastsChatString() $ "\n" $

@@ -21,10 +21,63 @@ function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 
 	sum = NumLivingPlayers + fp;
 
-	`cdlog("Adding ControlledDifficulty FakePlayers = "$fp$" to NumLivingPlayers = "$NumLivingPlayers$" in GetPlayerNumAIMaxModifier", bLogControlledDifficulty);
+	`cdlog("MaxAI: Adding FakePlayers = "$fp$" to NumLivingPlayers = "$NumLivingPlayers$" in GetPlayerNumAIMaxModifier", bLogControlledDifficulty);
 	`cdlog("Final GetPlayerNumMaxAIModifier = "$sum, bLogControlledDifficulty);
 	
 	return GetNumPlayersModifier( NumPlayers_WaveSize, sum );
+}
+
+/** Scales the health this Zed has by the difficulty level */
+// This is invoked by the base game.
+function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte NumLivingPlayers, out float HealthMod, out float HeadHealthMod, optional bool bApplyDifficultyScaling=true)
+{
+	local byte EffectiveNumPlayers;
+	local int FPBonus;
+
+	if ( P != none )
+	{
+		// Global mod * character mod
+		if( bApplyDifficultyScaling )
+		{
+	    	HealthMod = GetGlobalHealthMod() * GetCharHealthModDifficulty(P, ForGameDifficulty);
+			HeadHealthMod = GetGlobalHealthMod() * GetCharHeadHealthModDifficulty(P, ForGameDifficulty);
+		}
+
+		// invalid scaling?
+		if ( HealthMod <= 0 )
+		{
+			HealthMod = 1.f;
+			if( HeadHealthMod <= 0 )
+			{
+                HeadHealthMod = 1.f;
+            }
+			return;
+		}
+
+		if ( None != KFPawn_MonsterBoss( P ) )
+		{
+			FPBonus = Outer.BossHPFakePlayersInt;
+		}
+		else if ( None != KFPawn_ZedFleshpound( P ) )
+		{
+			FPBonus = Outer.FleshpoundHPFakePlayersInt;
+		}
+		else if ( None != KFPawn_ZedScrake( P ) )
+		{
+			FPBonus = Outer.ScrakeHPFakePlayersInt;
+		}
+		else
+		{
+			FPBonus = Outer.ZedHPFakePlayersInt;
+		}
+
+		EffectiveNumPlayers = NumLivingPlayers + FPBonus;
+
+		HealthMod *= 1.0 + GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_BodyHealth );
+		HeadHealthMod *= 1.0 + GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_HeadHealth );
+
+		`cdlog("HealthMod="$ HealthMod $" for "$ P $" (NumLivingPlayers="$ NumLivingPlayers $" Fake="$ FPBonus $")", bLogControlledDifficulty);
+	}
 }
 
 function float GetRawPlayerNumMaxAIModifier( byte TotalPlayers )
