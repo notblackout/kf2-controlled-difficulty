@@ -1,24 +1,24 @@
-class CD_FleshpoundHPFakePlayersOption extends CD_RegulatedOption
+class CD_TrashFPOption extends CD_RegulatedOption
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.FleshpoundHPFakePlayers;
+	return Outer.TrashFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.FleshpoundHPFakePlayers = Ind;
+	Outer.TrashFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.FleshpoundHPFakePlayersInt);
+	return float(Outer.TrashFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.FleshpoundHPFakePlayersInt = int(Val);
+	Outer.TrashFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,8 +28,8 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="FleshpoundHPFakePlayersDefs"
-	OptionName="FleshpoundHPFakePlayers"
+	IniDefsArrayName="TrashFPDefs"
+	OptionName="TrashFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32

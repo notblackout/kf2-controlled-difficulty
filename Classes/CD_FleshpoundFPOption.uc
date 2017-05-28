@@ -1,24 +1,24 @@
-class CD_BossHPFakePlayersOption extends CD_RegulatedOption
+class CD_FleshpoundFPOption extends CD_RegulatedOption
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.BossHPFakePlayers;
+	return Outer.FleshpoundFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.BossHPFakePlayers = Ind;
+	Outer.FleshpoundFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.BossHPFakePlayersInt);
+	return float(Outer.FleshpoundFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.BossHPFakePlayersInt = int(Val);
+	Outer.FleshpoundFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,8 +28,8 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="BossHPFakePlayersDefs"
-	OptionName="BossHPFakePlayers"
+	IniDefsArrayName="FleshpoundFPDefs"
+	OptionName="FleshpoundFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32

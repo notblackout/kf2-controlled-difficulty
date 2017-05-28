@@ -1,24 +1,24 @@
-class CD_ScrakeHPFakePlayersOption extends CD_RegulatedOption
+class CD_ScrakeFPOption extends CD_RegulatedOption
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.ScrakeHPFakePlayers;
+	return Outer.ScrakeFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.ScrakeHPFakePlayers = Ind;
+	Outer.ScrakeFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.ScrakeHPFakePlayersInt);
+	return float(Outer.ScrakeFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.ScrakeHPFakePlayersInt = int(Val);
+	Outer.ScrakeFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,8 +28,8 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="ScrakeHPFakePlayersDefs"
-	OptionName="ScrakeHPFakePlayers"
+	IniDefsArrayName="ScrakeFPDefs"
+	OptionName="ScrakeFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32

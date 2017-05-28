@@ -56,19 +56,19 @@ function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte Num
 
 		if ( None != KFPawn_MonsterBoss( P ) )
 		{
-			FPBonus = Outer.BossHPFakePlayersInt;
+			FPBonus = Outer.BossFPInt;
 		}
 		else if ( None != KFPawn_ZedFleshpound( P ) )
 		{
-			FPBonus = Outer.FleshpoundHPFakePlayersInt;
+			FPBonus = Outer.FleshpoundFPInt;
 		}
 		else if ( None != KFPawn_ZedScrake( P ) )
 		{
-			FPBonus = Outer.ScrakeHPFakePlayersInt;
+			FPBonus = Outer.ScrakeFPInt;
 		}
 		else
 		{
-			FPBonus = Outer.ZedHPFakePlayersInt;
+			FPBonus = Outer.TrashFPInt;
 		}
 
 		EffectiveNumPlayers = NumLivingPlayers + FPBonus;
