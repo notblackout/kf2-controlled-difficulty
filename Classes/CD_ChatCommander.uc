@@ -144,80 +144,6 @@ function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 	}
 }
 
-private function bool MatchChatCommand( const string CmdName, out StructChatCommand Cmd, const CDAuthLevel AuthLevel, const int ParamCount )
-{
-	local int CCIndex;
-	local int NameIndex;
-
-	for ( CCIndex = 0; CCIndex < ChatCommands.length; CCIndex++ )
-	{
-		if ( AuthLevel < ChatCommands[CCIndex].AuthLevel )
-		{
-			continue;
-		}
-
-		if ( ParamCount != ChatCommands[CCIndex].ParamHints.Length )
-		{
-			continue;
-		}
-
-		for ( NameIndex = 0; NameIndex < ChatCommands[CCIndex].Names.Length; NameIndex++ )
-		{
-			if ( ChatCommands[CCIndex].Names[NameIndex] == CmdName )
-			{
-				Cmd = ChatCommands[CCIndex];
-				return true;
-				`cdlog("MatchChatCommand["$ CCIndex $"]: found Name="$ CmdName $" ParamCount="$ ParamCount $" AuthLevel="$ AuthLevel, bLogControlledDifficulty);
-			}
-		}
-	}
-
-	return false;
-}
-
-
-private function SetupSimpleReadCommand( out StructChatCommand scc, const string CmdName, const string Desc, const delegate<ChatCommandNullaryImpl> Impl )
-{
-	local array<string> n;
-	local array<string> empty;
-
-	empty.length = 0;
-	n.Length = 1;
-	n[0] = CmdName;
-
-	scc.Names = n;
-	scc.ParamHints = empty;
-	scc.NullaryImpl = Impl;
-	scc.ParamsImpl = None;
-	scc.Description = Desc;
-	scc.AuthLevel = CDAUTH_READ;
-	scc.ModifiesConfig = false;
-
-	ChatCommands.AddItem( scc );
-}
-
-private function SetupSimpleWriteCommand( out StructChatCommand scc, const string CmdName, const string Desc, const string Hint, const delegate<ChatCommandParamsImpl> Impl )
-{
-	local array<string> n;
-	local array<string> hints;
-
-	n.Length = 1;
-	n[0] = CmdName;
-
-	hints.Length = 1;
-	hints[0] = Hint;
-
-	scc.Names = n;
-	scc.ParamHints = hints;
-	scc.NullaryImpl = None;
-	scc.ParamsImpl = Impl;
-	scc.Description = Desc;
-	scc.AuthLevel = CDAUTH_WRITE;
-	scc.ModifiesConfig = true;
-
-	ChatCommands.AddItem( scc );
-}
-
 function SetupChatCommands()
 {
 	local array<string> n;
@@ -314,19 +240,91 @@ function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
-private function string SetZedsTeleportCloserChatCommand( const out array<string> params )
+private function bool MatchChatCommand( const string CmdName, out StructChatCommand Cmd, const CDAuthLevel AuthLevel, const int ParamCount )
 {
-	StagedConfig.ZedsTeleportCloser = bool( params[0] );
+	local int CCIndex;
+	local int NameIndex;
 
-	if ( ZedsTeleportCloser != StagedConfig.ZedsTeleportCloser )
+	for ( CCIndex = 0; CCIndex < ChatCommands.length; CCIndex++ )
 	{
-		return "Staged: ZedsTeleportCloser=" $ StagedConfig.ZedsTeleportCloser $
-			"\nEffective after current wave"; 
+		if ( AuthLevel < ChatCommands[CCIndex].AuthLevel )
+		{
+			continue;
+		}
+
+		if ( ParamCount != ChatCommands[CCIndex].ParamHints.Length )
+		{
+			continue;
+		}
+
+		for ( NameIndex = 0; NameIndex < ChatCommands[CCIndex].Names.Length; NameIndex++ )
+		{
+			if ( ChatCommands[CCIndex].Names[NameIndex] == CmdName )
+			{
+				Cmd = ChatCommands[CCIndex];
+				return true;
+				`cdlog("MatchChatCommand["$ CCIndex $"]: found Name="$ CmdName $" ParamCount="$ ParamCount $" AuthLevel="$ AuthLevel, bLogControlledDifficulty);
+			}
+		}
 	}
-	else
+
+	return false;
+}
+
+private function SetupSimpleReadCommand( out StructChatCommand scc, const string CmdName, const string Desc, const delegate<ChatCommandNullaryImpl> Impl )
+{
+	local array<string> n;
+	local array<string> empty;
+
+	empty.length = 0;
+	n.Length = 1;
+	n[0] = CmdName;
+
+	scc.Names = n;
+	scc.ParamHints = empty;
+	scc.NullaryImpl = Impl;
+	scc.ParamsImpl = None;
+	scc.Description = Desc;
+	scc.AuthLevel = CDAUTH_READ;
+	scc.ModifiesConfig = false;
+
+	ChatCommands.AddItem( scc );
+}
+
+private function SetupSimpleWriteCommand( out StructChatCommand scc, const string CmdName, const string Desc, const string Hint, const delegate<ChatCommandParamsImpl> Impl )
+{
+	local array<string> n;
+	local array<string> hints;
+
+	n.Length = 1;
+	n[0] = CmdName;
+
+	hints.Length = 1;
+	hints[0] = Hint;
+
+	scc.Names = n;
+	scc.ParamHints = hints;
+	scc.NullaryImpl = None;
+	scc.ParamsImpl = Impl;
+	scc.Description = Desc;
+	scc.AuthLevel = CDAUTH_WRITE;
+	scc.ModifiesConfig = true;
+
+	ChatCommands.AddItem( scc );
+}
+
+// AlbinoAlphas
+
+private function string GetAlbinoAlphasChatString()
+{
+	local string AlbinoAlphasLatchedString;
+
+	if ( StagedConfig.AlbinoAlphas != AlbinoAlphas )
 	{
-		return "ZedsTeleportCloser is already " $ ZedsTeleportCloser;
+		AlbinoAlphasLatchedString = " (staged: " $ StagedConfig.AlbinoAlphas $ ")";
 	}
+
+	return "AlbinoAlphas=" $ AlbinoAlphas $ AlbinoAlphasLatchedString;
 }
 
 private function string SetAlbinoAlphasChatCommand( const out array<string> params )
@@ -344,6 +342,20 @@ private function string SetAlbinoAlphasChatCommand( const out array<string> para
 	}
 }
 
+// AlbinoCrawlers
+
+private function string GetAlbinoCrawlersChatString()
+{
+	local string AlbinoCrawlersLatchedString;
+
+	if ( StagedConfig.AlbinoCrawlers != AlbinoCrawlers )
+	{
+		AlbinoCrawlersLatchedString = " (staged: " $ StagedConfig.AlbinoCrawlers $ ")";
+	}
+
+	return "AlbinoCrawlers=" $ AlbinoCrawlers $ AlbinoCrawlersLatchedString;
+}
+
 private function string SetAlbinoCrawlersChatCommand( const out array<string> params )
 {
 	StagedConfig.AlbinoCrawlers = bool( params[0] );
@@ -357,6 +369,20 @@ private function string SetAlbinoCrawlersChatCommand( const out array<string> pa
 	{
 		return "AlbinoCrawlers is already " $ AlbinoCrawlers;
 	}
+}
+
+// AlbinoGorefasts
+
+private function string GetAlbinoGorefastsChatString()
+{
+	local string AlbinoGorefastsLatchedString;
+
+	if ( StagedConfig.AlbinoGorefasts != AlbinoGorefasts )
+	{
+		AlbinoGorefastsLatchedString = " (staged: " $ StagedConfig.AlbinoGorefasts $ ")";
+	}
+
+	return "AlbinoGorefasts=" $ AlbinoGorefasts $ AlbinoGorefastsLatchedString;
 }
 
 private function string SetAlbinoGorefastsChatCommand( const out array<string> params )
@@ -374,48 +400,19 @@ private function string SetAlbinoGorefastsChatCommand( const out array<string> p
 	}
 }
 
-private function string SetCohortSizeChatCommand( const out array<string> params )
+// Boss
+
+private function string GetBossChatString()
 {
-	local int TempInt;
+	local string BossLatchedString;
 
-	TempInt = int( params[0] );
-	TempInt = ClampCohortSize( TempInt );
-	StagedConfig.CohortSize = TempInt;
-	if ( CohortSize != StagedConfig.CohortSize )
+	if ( StagedConfig.Boss != Boss )
 	{
-		return "Staged: CohortSize=" $ StagedConfig.CohortSize $
-			"\nEffective after current wave"; 
+		BossLatchedString = " (staged: " $ StagedConfig.Boss $ ")";
 	}
-	else
-	{
-		return "CohortSize is already " $ CohortSize;
-	}
+
+	return "Boss=" $ Boss $ BossLatchedString;
 }
-
-private function string SetZTSpawnModeChatCommand( const out array<string> params )
-{
-	local string TempString;
-
-	TempString = Locs( params[0] );
-
-	if ( TempString == ZTSpawnMode )
-	{
-		return "ZTSpawnMode is already " $ ZTSpawnMode;
-	}
-
-	else if ( IsValidZTSpawnModeString( TempString ) )
-	{
-		StagedConfig.ZTSpawnMode = TempString;
-		return "Staged: ZTSpawnMode=" $ StagedConfig.ZTSpawnMode $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "Not a valid ZTSpawnMode string\n" $
-			"Try unmodded or clockwork"; 
-	}
-}
-
 
 private function string SetBossChatCommand( const out array<string> params )
 {
@@ -443,6 +440,52 @@ private function string SetBossChatCommand( const out array<string> params )
 	}
 }
 
+// CohortSize
+
+private function string GetCohortSizeChatString()
+{
+	local string CohortSizeLatchedString;
+
+	if ( StagedConfig.CohortSize != CohortSize )
+	{
+		CohortSizeLatchedString = " (staged: " $ StagedConfig.CohortSize $ ")";
+	}
+
+	return "CohortSize=" $ CohortSize $ CohortSizeLatchedString;
+}
+
+private function string SetCohortSizeChatCommand( const out array<string> params )
+{
+	local int TempInt;
+
+	TempInt = int( params[0] );
+	TempInt = ClampCohortSize( TempInt );
+	StagedConfig.CohortSize = TempInt;
+	if ( CohortSize != StagedConfig.CohortSize )
+	{
+		return "Staged: CohortSize=" $ StagedConfig.CohortSize $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "CohortSize is already " $ CohortSize;
+	}
+}
+
+// FakePlayers
+
+private function string GetFakePlayersChatString()
+{
+	local string FakePlayersLatchedString;
+
+	if ( StagedConfig.FakePlayers != FakePlayers )
+	{
+		FakePlayersLatchedString = " (staged: " $ StagedConfig.FakePlayers $ ")";
+	}
+
+	return "FakePlayers=" $ FakePlayers $ FakePlayersLatchedString;
+}
+
 private function string SetFakePlayersChatCommand( const out array<string> params )
 {
 	StagedConfig.FakePlayers = params[0];
@@ -458,19 +501,18 @@ private function string SetFakePlayersChatCommand( const out array<string> param
 	}
 }
 
-private function string SetWeaponTimeoutChatCommand( const out array<string> params )
-{
-	StagedConfig.WeaponTimeout = ClampWeaponTimeout( params[0] );
+// MaxMonsters
 
-	if ( WeaponTimeout != StagedConfig.WeaponTimeout )
+private function string GetMaxMonstersChatString()
+{
+	local string MaxMonstersLatchedString;
+
+	if ( StagedConfig.MaxMonsters != MaxMonsters )
 	{
-		return "Staged: WeaponTimeout=" $ GetWeaponTimeoutStringForArg( StagedConfig.WeaponTimeout ) $
-			"\nEffective after current wave"; 
+		MaxMonstersLatchedString = " (staged: " $ GetMaxMonstersStringForArg(StagedConfig.MaxMonsters) $ ")";
 	}
-	else
-	{
-		return "WeaponTimeout is already " $ WeaponTimeout;
-	}
+
+	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
 }
 
 private function string SetMaxMonstersChatCommand( const out array<string> params )
@@ -495,6 +537,20 @@ private function string SetMaxMonstersChatCommand( const out array<string> param
 	}
 }
 
+// MinSpawnInterval
+
+private function string GetMinSpawnIntervalChatString()
+{
+	local string MinSpawnIntervalLatchedString;
+
+	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
+	{
+		MinSpawnIntervalLatchedString = " (staged: " $ StagedConfig.MinSpawnIntervalFloat $ ")";
+	}
+
+	return "MinSpawnInterval="$ MinSpawnIntervalFloat $ MinSpawnIntervalLatchedString;
+}
+
 private function string SetMinSpawnIntervalChatCommand( const out array<string> params )
 {
 	local float TempFloat;
@@ -513,6 +569,19 @@ private function string SetMinSpawnIntervalChatCommand( const out array<string> 
 	}
 }
 
+// SpawnCycle
+
+private function string GetSpawnCycleChatString()
+{
+	local string SpawnCycleLatchedString;
+
+	if ( StagedConfig.SpawnCycle != SpawnCycle )
+	{
+		SpawnCycleLatchedString = " (staged: " $ StagedConfig.SpawnCycle $ ")";
+	}
+
+	return "SpawnCycle=" $ SpawnCycle $ SpawnCycleLatchedString;
+}
 
 private function string SetSpawnCycleChatCommand( const out array<string> params )
 {
@@ -526,6 +595,20 @@ private function string SetSpawnCycleChatCommand( const out array<string> params
 	{
 		return "SpawnCycle is already " $ SpawnCycle;
 	}
+}
+
+// SpawnMod
+
+private function string GetSpawnModChatString()
+{
+	local string SpawnModLatchedString;
+
+	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, SpawnModEpsilon ) )
+	{
+		SpawnModLatchedString = " (staged: " $ StagedConfig.SpawnModFloat $ ")";
+	}
+
+	return "SpawnMod="$ SpawnModFloat $ SpawnModLatchedString;
 }
 
 private function string SetSpawnModChatCommand( const out array<string> params )
@@ -546,6 +629,132 @@ private function string SetSpawnModChatCommand( const out array<string> params )
 	}
 }
 
+// TraderTime (read-only)
+
+private function string GetTraderTimeChatString()
+{
+	local string TraderTimeLatchedString;
+
+//	if ( StagedConfig.TraderTime != TraderTime )
+//	{
+//		TraderTimeLatchedString = " (staged: " $ StagedConfig.TraderTime $ ")";
+//	}
+
+	TraderTimeLatchedString = "";
+
+	return "TraderTime=" $ TraderTime $ TraderTimeLatchedString;
+}
+
+// WeaponTimeout
+
+private function string GetWeaponTimeoutChatString()
+{
+	local string WeaponTimeoutLatchedString;
+
+	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
+	{
+		WeaponTimeoutLatchedString = " (staged: " $ GetWeaponTimeoutStringForArg(StagedConfig.WeaponTimeout) $ ")";
+	}
+
+	return "WeaponTimeout="$ GetWeaponTimeoutString() $ WeaponTimeoutLatchedString;
+}
+
+private function string SetWeaponTimeoutChatCommand( const out array<string> params )
+{
+	StagedConfig.WeaponTimeout = ClampWeaponTimeout( params[0] );
+
+	if ( WeaponTimeout != StagedConfig.WeaponTimeout )
+	{
+		return "Staged: WeaponTimeout=" $ GetWeaponTimeoutStringForArg( StagedConfig.WeaponTimeout ) $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "WeaponTimeout is already " $ WeaponTimeout;
+	}
+}
+
+// ZedsTeleportCloser
+
+private function string GetZedsTeleportCloserChatString()
+{
+	local string ZedsTeleportCloserLatchedString;
+
+	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
+	{
+		ZedsTeleportCloserLatchedString = " (staged: " $ StagedConfig.ZedsTeleportCloser $ ")";
+	}
+
+	return "ZedsTeleportCloser=" $ ZedsTeleportCloser $ ZedsTeleportCloserLatchedString;
+}
+
+private function string SetZedsTeleportCloserChatCommand( const out array<string> params )
+{
+	StagedConfig.ZedsTeleportCloser = bool( params[0] );
+
+	if ( ZedsTeleportCloser != StagedConfig.ZedsTeleportCloser )
+	{
+		return "Staged: ZedsTeleportCloser=" $ StagedConfig.ZedsTeleportCloser $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "ZedsTeleportCloser is already " $ ZedsTeleportCloser;
+	}
+}
+
+// ZTSpawnMode
+
+private function string GetZTSpawnModeChatString()
+{
+	local string ZTSpawnModeLatchedString;
+
+	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
+	{
+		ZTSpawnModeLatchedString = " (staged: " $ StagedConfig.ZTSpawnMode $ ")";
+	}
+
+	return "ZTSpawnMode=" $ ZTSpawnMode $ ZTSpawnModeLatchedString;
+}
+
+private function string SetZTSpawnModeChatCommand( const out array<string> params )
+{
+	local string TempString;
+
+	TempString = Locs( params[0] );
+
+	if ( TempString == ZTSpawnMode )
+	{
+		return "ZTSpawnMode is already " $ ZTSpawnMode;
+	}
+
+	else if ( IsValidZTSpawnModeString( TempString ) )
+	{
+		StagedConfig.ZTSpawnMode = TempString;
+		return "Staged: ZTSpawnMode=" $ StagedConfig.ZTSpawnMode $
+			"\nEffective after current wave"; 
+	}
+	else
+	{
+		return "Not a valid ZTSpawnMode string\n" $
+			"Try unmodded or clockwork"; 
+	}
+}
+
+// ZTSpawnSlowdown
+
+private function string GetZTSpawnSlowdownChatString()
+{
+	local string ZTSpawnSlowdownLatchedString;
+
+	if ( !EpsilonClose( StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
+	{
+		ZTSpawnSlowdownLatchedString = " (staged: " $ StagedConfig.ZTSpawnSlowdownFloat $ ")";
+	}
+
+	return "ZTSpawnSlowdown="$ ZTSpawnSlowdownFloat $ ZTSpawnSlowdownLatchedString;
+}
+
 private function string SetZTSpawnSlowdownChatCommand( const out array<string> params )
 {
 	local float TempFloat;
@@ -563,6 +772,9 @@ private function string SetZTSpawnSlowdownChatCommand( const out array<string> p
 		return "ZTSpawnSlowdown is already " $ ZTSpawnSlowdown;
 	}
 }
+
+
+// Info and Help
 
 
 private function string GetCDChatHelpReferralString() {
@@ -606,189 +818,6 @@ function string GetCDInfoChatString( const string Verbosity )
 		       GetCohortSizeChatString() $ "\n" $
 		       GetSpawnCycleChatString();
 	}
-}
-
-private function string GetZedsTeleportCloserChatString()
-{
-	local string ZedsTeleportCloserLatchedString;
-
-	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
-	{
-		ZedsTeleportCloserLatchedString = " (staged: " $ StagedConfig.ZedsTeleportCloser $ ")";
-	}
-
-	return "ZedsTeleportCloser=" $ ZedsTeleportCloser $ ZedsTeleportCloserLatchedString;
-}
-
-private function string GetAlbinoAlphasChatString()
-{
-	local string AlbinoAlphasLatchedString;
-
-	if ( StagedConfig.AlbinoAlphas != AlbinoAlphas )
-	{
-		AlbinoAlphasLatchedString = " (staged: " $ StagedConfig.AlbinoAlphas $ ")";
-	}
-
-	return "AlbinoAlphas=" $ AlbinoAlphas $ AlbinoAlphasLatchedString;
-}
-
-private function string GetAlbinoCrawlersChatString()
-{
-	local string AlbinoCrawlersLatchedString;
-
-	if ( StagedConfig.AlbinoCrawlers != AlbinoCrawlers )
-	{
-		AlbinoCrawlersLatchedString = " (staged: " $ StagedConfig.AlbinoCrawlers $ ")";
-	}
-
-	return "AlbinoCrawlers=" $ AlbinoCrawlers $ AlbinoCrawlersLatchedString;
-}
-
-private function string GetAlbinoGorefastsChatString()
-{
-	local string AlbinoGorefastsLatchedString;
-
-	if ( StagedConfig.AlbinoGorefasts != AlbinoGorefasts )
-	{
-		AlbinoGorefastsLatchedString = " (staged: " $ StagedConfig.AlbinoGorefasts $ ")";
-	}
-
-	return "AlbinoGorefasts=" $ AlbinoGorefasts $ AlbinoGorefastsLatchedString;
-}
-
-private function string GetZTSpawnModeChatString()
-{
-	local string ZTSpawnModeLatchedString;
-
-	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
-	{
-		ZTSpawnModeLatchedString = " (staged: " $ StagedConfig.ZTSpawnMode $ ")";
-	}
-
-	return "ZTSpawnMode=" $ ZTSpawnMode $ ZTSpawnModeLatchedString;
-}
-
-private function string GetBossChatString()
-{
-	local string BossLatchedString;
-
-	if ( StagedConfig.Boss != Boss )
-	{
-		BossLatchedString = " (staged: " $ StagedConfig.Boss $ ")";
-	}
-
-	return "Boss=" $ Boss $ BossLatchedString;
-}
-
-private function string GetCohortSizeChatString()
-{
-	local string CohortSizeLatchedString;
-
-	if ( StagedConfig.CohortSize != CohortSize )
-	{
-		CohortSizeLatchedString = " (staged: " $ StagedConfig.CohortSize $ ")";
-	}
-
-	return "CohortSize=" $ CohortSize $ CohortSizeLatchedString;
-}
-
-private function string GetFakePlayersChatString()
-{
-	local string FakePlayersLatchedString;
-
-	if ( StagedConfig.FakePlayers != FakePlayers )
-	{
-		FakePlayersLatchedString = " (staged: " $ StagedConfig.FakePlayers $ ")";
-	}
-
-	return "FakePlayers=" $ FakePlayers $ FakePlayersLatchedString;
-}
-
-private function string GetMaxMonstersChatString()
-{
-	local string MaxMonstersLatchedString;
-
-	if ( StagedConfig.MaxMonsters != MaxMonsters )
-	{
-		MaxMonstersLatchedString = " (staged: " $ GetMaxMonstersStringForArg(StagedConfig.MaxMonsters) $ ")";
-	}
-
-	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
-}
-
-private function string GetMinSpawnIntervalChatString()
-{
-	local string MinSpawnIntervalLatchedString;
-
-	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
-	{
-		MinSpawnIntervalLatchedString = " (staged: " $ StagedConfig.MinSpawnIntervalFloat $ ")";
-	}
-
-	return "MinSpawnInterval="$ MinSpawnIntervalFloat $ MinSpawnIntervalLatchedString;
-}
-
-private function string GetWeaponTimeoutChatString()
-{
-	local string WeaponTimeoutLatchedString;
-
-	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
-	{
-		WeaponTimeoutLatchedString = " (staged: " $ GetWeaponTimeoutStringForArg(StagedConfig.WeaponTimeout) $ ")";
-	}
-
-	return "WeaponTimeout="$ GetWeaponTimeoutString() $ WeaponTimeoutLatchedString;
-}
-
-private function string GetSpawnCycleChatString()
-{
-	local string SpawnCycleLatchedString;
-
-	if ( StagedConfig.SpawnCycle != SpawnCycle )
-	{
-		SpawnCycleLatchedString = " (staged: " $ StagedConfig.SpawnCycle $ ")";
-	}
-
-	return "SpawnCycle=" $ SpawnCycle $ SpawnCycleLatchedString;
-}
-
-private function string GetSpawnModChatString()
-{
-	local string SpawnModLatchedString;
-
-	if ( !EpsilonClose( StagedConfig.SpawnModFloat, SpawnModFloat, SpawnModEpsilon ) )
-	{
-		SpawnModLatchedString = " (staged: " $ StagedConfig.SpawnModFloat $ ")";
-	}
-
-	return "SpawnMod="$ SpawnModFloat $ SpawnModLatchedString;
-}
-
-private function string GetZTSpawnSlowdownChatString()
-{
-	local string ZTSpawnSlowdownLatchedString;
-
-	if ( !EpsilonClose( StagedConfig.ZTSpawnSlowdownFloat, ZTSpawnSlowdownFloat, ZTSpawnSlowdownEpsilon ) )
-	{
-		ZTSpawnSlowdownLatchedString = " (staged: " $ StagedConfig.ZTSpawnSlowdownFloat $ ")";
-	}
-
-	return "ZTSpawnSlowdown="$ ZTSpawnSlowdownFloat $ ZTSpawnSlowdownLatchedString;
-}
-
-
-private function string GetTraderTimeChatString()
-{
-	local string TraderTimeLatchedString;
-
-//	if ( StagedConfig.TraderTime != TraderTime )
-//	{
-//		TraderTimeLatchedString = " (staged: " $ StagedConfig.TraderTime $ ")";
-//	}
-
-	TraderTimeLatchedString = "";
-
-	return "TraderTime=" $ TraderTime $ TraderTimeLatchedString;
 }
 
 private function string GetCDVersionChatString()
