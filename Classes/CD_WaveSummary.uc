@@ -53,22 +53,22 @@ function string GetString()
 {
 	local string s;
 
-	s =	"Crawl="$ZeroPadIntString(Crawlers, 4)$
-		" Cyst="$ZeroPadIntString(Cysts, 4)$
-		" Alpha="$ZeroPadIntString(Alphas, 4)$
-		" Slash="$ZeroPadIntString(Slashers, 4)$
-		" Stalk="$ZeroPadIntString(Stalkers, 4)$
-		" Gore="$ZeroPadIntString(Gorefasts, 4)$
-		" Bloat="$ZeroPadIntString(Bloats, 3)$
-		" Husk="$ZeroPadIntString(Husks, 3)$
-		" Siren="$ZeroPadIntString(Sirens, 3)$
-		" SC="$ZeroPadIntString(Scrakes, 2)$
-		" FP="$ZeroPadIntString(Fleshpounds, 2)$
+	s =	"Crawl="$class'CD_StringUtils'.static.ZeroPadIntString(Crawlers, 4)$
+		" Cyst="$class'CD_StringUtils'.static.ZeroPadIntString(Cysts, 4)$
+		" Alpha="$class'CD_StringUtils'.static.ZeroPadIntString(Alphas, 4)$
+		" Slash="$class'CD_StringUtils'.static.ZeroPadIntString(Slashers, 4)$
+		" Stalk="$class'CD_StringUtils'.static.ZeroPadIntString(Stalkers, 4)$
+		" Gore="$class'CD_StringUtils'.static.ZeroPadIntString(Gorefasts, 4)$
+		" Bloat="$class'CD_StringUtils'.static.ZeroPadIntString(Bloats, 3)$
+		" Husk="$class'CD_StringUtils'.static.ZeroPadIntString(Husks, 3)$
+		" Siren="$class'CD_StringUtils'.static.ZeroPadIntString(Sirens, 3)$
+		" SC="$class'CD_StringUtils'.static.ZeroPadIntString(Scrakes, 2)$
+		" FP="$class'CD_StringUtils'.static.ZeroPadIntString(Fleshpounds, 2)$
 		" // TOTALS:"$
-		" Trash="$ZeroPadIntString(GetTrash(), 4)$
-		" Medium="$ZeroPadIntString(GetMedium(), 3)$
-		" Big="$ZeroPadIntString(GetBig(), 3)$
-		" ALL="$ZeroPadIntString(GetTotal(), 4);
+		" Trash="$class'CD_StringUtils'.static.ZeroPadIntString(GetTrash(), 4)$
+		" Medium="$class'CD_StringUtils'.static.ZeroPadIntString(GetMedium(), 3)$
+		" Big="$class'CD_StringUtils'.static.ZeroPadIntString(GetBig(), 3)$
+		" ALL="$class'CD_StringUtils'.static.ZeroPadIntString(GetTotal(), 4);
 
 	return s;
 }
@@ -108,18 +108,4 @@ function int GetBig()
 function int GetTotal()
 {
 	return GetTrash() + GetMedium() + GetBig();
-}
-
-private static function string ZeroPadIntString( int numberToFormat, int totalWidth )
-{
-	local string numberAsString;
-
-	numberAsString = string( numberToFormat );
-
-	while ( Len(numberAsString) < totalWidth )
-	{
-		numberAsString = "0" $ numberAsString;
-	}
-	
-	return numberAsString;
 }

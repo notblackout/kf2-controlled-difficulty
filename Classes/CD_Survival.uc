@@ -34,9 +34,6 @@ struct StructStagedConfig
 	var bool     AlbinoCrawlers;
 	var bool     AlbinoGorefasts;
 	var string   Boss;
-	var int      CohortSize;
-	var string   FakePlayers;
-	var int      MaxMonsters;
 	var float    MinSpawnIntervalFloat;
 	var string   SpawnCycle;
 	var float    SpawnModFloat;
@@ -65,7 +62,7 @@ var CD_ConfigTender ConfigTender;
 // refrain from buying if you want an extra challenge, but if the mod denied
 // you that bonus dosh, it could end up being gamebreaking for some runs
 var config string FakePlayers; 
-var config array<string> FakePlayersDefs; 
+var config const array<string> FakePlayersDefs; 
 var int FakePlayersInt;
 
 // the trader time, in seconds.  if this is zero or negative, its value is
@@ -91,7 +88,9 @@ var float MinSpawnIntervalFloat;
 // per attempt, no matter how much headroom might exist under
 // the MaxMonsters limit, or how many eligible spawnvolumes
 // might be available to accomodate more squads.
-var config int CohortSize;
+var config string CohortSize;
+var config const array<string> CohortSizeDefs;
+var int CohortSizeInt;
 
 // the forced spawn modifier, expressed as a float between 0 and 1.
 // 1.0 is KFGameConductor's player-friendliest state.
@@ -120,7 +119,9 @@ var const string ZTSpawnModeDefaultValue;
 // any other case (such as when playing alone on a dedicated server).  if this
 // is set to a nonpositive value, then the vanilla behavior prevails.  if this
 // is set to a positive value, then it overrides the vanilla behavior.
-var config int MaxMonsters;
+var config string MaxMonsters;
+var config const array<string> MaxMonstersDefs;
+var int MaxMonstersInt;
 
 // true to allow albino crawlers to spawn as they do in the unmodded game.
 // false to spawn regular crawlers in place of albino crawlers.
@@ -176,6 +177,10 @@ var config CDAuthLevel DefaultAuthLevel;
 ////////////////////////////////////////////////////////////////
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
+
+var CD_RegulatedOption CohortSizeOption;
+var CD_RegulatedOption FakePlayersOption;
+var CD_RegulatedOption MaxMonstersOption;
 
 // SpawnCycle parsed out of the SpawnCycleDefs strings
 var array<CD_AIWaveInfo> IniWaveInfos;
@@ -236,6 +241,8 @@ event InitGame( string Options, out string ErrorMessage )
 	ConfigTender = new(Self) class'CD_ConfigTender';
 	ConfigTender.SetConsolePrinter( GameInfo_CDCP );
 
+	SetupRegulatedOptions();
+
 	ParseCDGameOptions( Options );
 
 	ChatCommander = new(self) class'CD_ChatCommander';
@@ -244,6 +251,16 @@ event InitGame( string Options, out string ErrorMessage )
 	SaveConfig();
 
 	InitStructStagedConfig();
+}
+
+private function SetupRegulatedOptions()
+{
+	CohortSizeOption = new(self) class'CD_CohortSizeOption';
+	CohortSizeOption.IniDefsArray = CohortSizeDefs;
+	FakePlayersOption = new(self) class'CD_FakePlayersOption';
+	FakePlayersOption.IniDefsArray = FakePlayersDefs;
+	MaxMonstersOption = new(self) class'CD_MaxMonstersOption';
+	MaxMonstersOption.IniDefsArray = MaxMonstersDefs;
 }
 
 function bool CheckRelevance(Actor Other)
@@ -396,11 +413,6 @@ private function ParseCDGameOptions( const out string Options )
 
 	ParseAndClampFloatOpt( Options, SpawnMod, SpawnModFloat, "SpawnMod", 1.f, ClampSpawnMod );
 
-	if ( HasOption(Options, "MaxMonsters") )
-	{
-		MaxMonsters = GetIntOption( Options, "MaxMonsters", -1 );
-		`cdlog("MaxMonstersFromGameOptions = "$MaxMonsters$" (-1=default)", bLogControlledDifficulty);
-	}
 
 	if ( HasOption(Options, "WeaponTimeout") )
 	{
@@ -444,9 +456,11 @@ private function ParseCDGameOptions( const out string Options )
 		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycle, bLogControlledDifficulty);
 	}
 
-	ParseAndClampIntOpt( Options, CohortSize, "CohortSize", 0, ClampCohortSize );
+	CohortSizeOption.InitFromOptions( Options );
 
-	InitFakePlayers( Options );
+	FakePlayersOption.InitFromOptions( Options );
+
+	MaxMonstersOption.InitFromOptions( Options );
 
 	ParseAndClampFloatOpt( Options, MinSpawnInterval, MinSpawnIntervalFloat, "MinSpawnInterval", 1.f, ClampMinSpawnInterval );
 
@@ -481,19 +495,6 @@ private function ParseCDGameOptions( const out string Options )
 
 	ParseAndSanitizeStringOpt( Options, ZTSpawnMode, "ZTSpawnMode", ZTSpawnModeDefaultValue, ZTSpawnModeHelpString, IsValidZTSpawnModeString );
 	SetZTSpawnModeEnum();
-}
-
-private function InitFakePlayers( const out string Options )
-{
-	if ( HasOption( Options, "FakePlayers" ) )
-	{
-		FakePlayers = ParseOption( Options, "FakePlayers" );
-	}
-
-	SetFakePlayers( FakePlayers );
-
-	GameInfo_CDCP.Print("FakePlayers="$FakePlayers);
-	GameInfo_CDCP.Print("FakePlayersInt="$FakePlayersInt);
 }
 
 private function SetZTSpawnModeEnum()
@@ -608,9 +609,6 @@ private function InitStructStagedConfig()
 	StagedConfig.AlbinoCrawlers = AlbinoCrawlers;
 	StagedConfig.AlbinoGorefasts = AlbinoGorefasts;
 	StagedConfig.Boss = Boss;
-	StagedConfig.CohortSize = CohortSize;
-	StagedConfig.FakePlayers = FakePlayers;
-	StagedConfig.MaxMonsters = MaxMonsters;
 	StagedConfig.MinSpawnIntervalFloat = MinSpawnIntervalFloat;
 	StagedConfig.SpawnCycle = SpawnCycle;
 	StagedConfig.SpawnModFloat = SpawnModFloat;
@@ -645,7 +643,7 @@ function EndOfMatch(bool bVictory)
 
 	if ( !bVictory && WaveNum < WaveMax )
 	{
-		SetTimer(1.f, false, 'DisplayBriefWaveStatsInChat');
+		SetTimer(2.f, false, 'DisplayBriefWaveStatsInChat');
 	}
 }
 
@@ -882,6 +880,11 @@ function int ClampFakePlayers( const out int fp )
 	return Clamp(fp, 0, 32);
 }
 
+function int ClampMaxMonsters( const out int mm )
+{
+	return Clamp(mm, 0, 10000);
+}
+
 function float ClampSpawnMod( const out float sm )
 {
 	return FClamp(sm, 0.f, 1.f);
@@ -989,8 +992,6 @@ function InitSpawnManager()
 		GameInfo_CDCP.Print("WARNING: SpawnManager "$SpawnManager$" appears to be misconfigured! CD might not work correctly.");
 		return;
 	}
-
-	GameInfo_CDCP.Print( "MaxMonsters=" $ GetMaxMonstersString() );
 
 	LoadSpawnCycle( ActiveWaveInfos );
 
@@ -1118,16 +1119,17 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		Boss = StagedConfig.Boss;
 	}
 
-	if ( StagedConfig.CohortSize != CohortSize )
+	TempString = CohortSizeOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
 	{
-		SettingChangeNotifications.AddItem("CohortSize="$ StagedConfig.CohortSize $" (old: "$CohortSize$")");
-		CohortSize = StagedConfig.CohortSize;
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	if ( StagedConfig.FakePlayers != FakePlayers )
+	TempString = FakePlayersOption.CommitStagedChanges( WaveNum + 1 );
+	`cdlog("FakePlayers Commit Message: "$ TempString);
+	if ( TempString != "" )
 	{
-		SettingChangeNotifications.AddItem("FakePlayers="$ StagedConfig.FakePlayers $" (old: "$FakePlayers$")");
-		SetFakePlayers( StagedConfig.FakePlayers );
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
 	if ( !EpsilonClose( StagedConfig.MinSpawnIntervalFloat, MinSpawnIntervalFloat, MinSpawnIntervalEpsilon ) )
@@ -1138,12 +1140,10 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		SetSpawnManagerWakeup();
 	}
 
-	if ( StagedConfig.MaxMonsters != MaxMonsters )
+	TempString = MaxMonstersOption.CommitStagedChanges( WaveNum + 1 );
+	if ( TempString != "" )
 	{
-		SettingChangeNotifications.AddItem(
-			"MaxMonsters="$ GetMaxMonstersStringForArg( StagedConfig.MaxMonsters ) $
-			" (old: "$ GetMaxMonstersString() $")");
-		MaxMonsters = StagedConfig.MaxMonsters;
+		SettingChangeNotifications.AddItem( TempString );
 	}
 
 	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
@@ -1625,62 +1625,6 @@ function string GetWeaponTimeoutStringForArg( const string wt )
 function string GetWeaponTimeoutString()
 {
 	return GetWeaponTimeoutStringForArg( WeaponTimeout );
-}
-
-function string GetMaxMonstersStringForArg( const int mm )
-{
-	if (0 < mm)
-	{
-		return string(mm);
-	}
-	else if ( WorldInfo.NetMode == NM_StandAlone )
-	{
-		return string(class'CDSpawnManager'.default.MaxMonstersSolo[GameDifficulty]);
-	}
-	else
-	{
-		return string(class'CDSpawnManager'.default.MaxMonsters);
-	}
-}
-
-function string GetMaxMonstersString()
-{
-	return GetMaxMonstersStringForArg( MaxMonsters );
-}
-
-
-private function SetFakePlayers( const out string raw )
-{
-	// takes unsanitized string "raw", attempts to interpret it as
-	// a fakeplayers directive, and assigns to both FakePlayers and
-	// its associated option regulator
-
-	local CD_SettingRegulator_IniDefs IniDefsRegulator;
-	local int Tmp;
-
-	if ( raw == "ini" )
-	{
-		IniDefsRegulator = new class'CD_SettingRegulator_IniDefs';
-		IniDefsRegulator.SetConsolePrinter( GameInfo_CDCP );
-		if ( IniDefsRegulator.ParseDefs( FakePlayersDefs, "FakePlayersDefs" ) )
-		{
-			ConfigTender.FakePlayersRegulator = IniDefsRegulator;
-			FakePlayers = raw;
-		}
-		else
-		{
-			// TODO
-			// unable to parse FakePlayers defs from the ini file
-			// echo an short error message (and log a long one?)
-		}
-	}
-	else
-	{
-		Tmp = int(raw);
-		FakePlayersInt = ClampFakePlayers( Tmp );
-		FakePlayers = string( Tmp );
-		ConfigTender.FakePlayersRegulator = None;
-	}
 }
 
 function string getStringForBossSetting()

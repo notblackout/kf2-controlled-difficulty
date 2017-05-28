@@ -64,7 +64,7 @@ static function PrintSpawnDetails(
 		}
 
 		JoinArray( SquadList, s, ", " );
-		CDCP.Print( "["$GetShortWaveName( WaveIndex )$"] "$s, false );
+		CDCP.Print( "["$class'CD_StringUtils'.static.GetShortWaveNameByIndex( WaveIndex )$"] "$s, false );
 	}
 }
 
@@ -108,7 +108,7 @@ static function PrintSpawnSummaries(
 		GameSummary.AddParamToSelf( WaveSummary );
 		WaveSummaryString = WaveSummary.GetString();
 
-		CDCP.Print( "["$GetShortWaveName( WaveIndex )$"] "$WaveSummaryString, false );
+		CDCP.Print( "["$class'CD_StringUtils'.static.GetShortWaveNameByIndex( WaveIndex )$"] "$WaveSummaryString, false );
 	}
 
 	CDCP.Print( " >> Projected Game Totals:", false );
@@ -163,18 +163,4 @@ private static function GetCDWaveSummary(
 	}
 }
 
-private static function string GetShortWaveName( int WaveIndex )
-{
-	local string s;
 
-	s = string( WaveIndex + 1 );
-
-	while ( 2 > Len(s) )
-	{
-		s = "0" $ s;
-	}
-
-	s = "W" $ s;
-
-	return s;
-}

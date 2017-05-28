@@ -64,7 +64,7 @@ function Update()
 		SpawnSquadResult = SpawnSquad( SpawnList );
 		NumAISpawnsQueued += SpawnSquadResult;
 		CohortZedsSpawned += SpawnSquadResult;
-		if ( 0 == SpawnSquadResult || 0 >= Outer.CohortSize )
+		if ( 0 == SpawnSquadResult || 0 >= Outer.CohortSizeInt )
 		{
 			CohortSaturated = true;
 			break;
@@ -73,7 +73,7 @@ function Update()
     }
 
 	// Log cohort composition (if cohorting is enabled)
-	if ( 0 < Outer.CohortSize )
+	if ( 0 < Outer.CohortSizeInt )
 	{
 		if ( 0 < CohortZedsSpawned )
 		{
@@ -112,6 +112,25 @@ function Update()
 	CohortVolumeIndex = 0;
 	CohortSaturated = false;
 }
+
+// We override this solely to add logging
+function bool ShouldAddAI()
+{
+	local int ain;
+
+	`cdlog("TimeUntilNextSpawn=" $ TimeUntilNextSpawn, bLogControlledDifficulty);
+
+	// If it is time to spawn the next squad, or there are any leftovers from the last batch spawn them
+	if( (LeftoverSpawnSquad.Length > 0 || TimeUntilNextSpawn <= 0) && !IsFinishedSpawning() )
+	{
+		ain = GetNumAINeeded();
+		`cdlog("GetNumAINeeded()=" $ ain, bLogControlledDifficulty);
+        return ain > 0;
+	}
+
+	return false;
+}
+
 
 
 function string GetWaveAverageSpawnrate()
@@ -204,7 +223,7 @@ function int GetMaxMonsters()
 	// want to ignore the KFAISpawnManager variable and consider only Outer.MaxMonsters,
 	// which is the user-specified CD_Survival setting.
 
-	mm = Outer.MaxMonsters;
+	mm = Outer.MaxMonstersInt;
 
 	if (0 < mm)
 	{
@@ -634,9 +653,9 @@ function int GetNumAINeeded()
 
 	n = super.GetNumAINeeded();
 
-	if ( 0 < Outer.CohortSize )
+	if ( 0 < Outer.CohortSizeInt )
 	{
-		n = Min( n, Outer.CohortSize - CohortZedsSpawned );
+		n = Min( n, Outer.CohortSizeInt - CohortZedsSpawned );
 	}
 
 	return n;

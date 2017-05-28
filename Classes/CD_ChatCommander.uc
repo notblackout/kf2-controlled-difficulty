@@ -122,7 +122,7 @@ function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 			// Check whether we're allowed to modify settings right now.
 			// If so, change settings immediately and let ApplyStagedSettings()
 			// format an appropriate notification message.
-			GameStateName = GetStateName();
+			GameStateName = Outer.GetStateName();
 			if ( !SkipStagedConfigApplication && ( GameStateName == 'PendingMatch' || GameStateName == 'MatchEnded' || GameStateName == 'TraderOpen' ) )
 			{
 				ApplyStagedConfig( ResponseMessage, "" );
@@ -209,11 +209,11 @@ function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
-	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", GetCohortSizeChatString );
+	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", CohortSizeOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
-	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", GetFakePlayersChatString );
+	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", FakePlayersOption.GetChatLine );
 //	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
-	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", GetMaxMonstersChatString );
+	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", MaxMonstersOption.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", GetMinSpawnIntervalChatString );
 	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
 	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", GetSpawnModChatString );
@@ -228,9 +228,9 @@ function SetupChatCommands()
 	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", SetCohortSizeChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", SetFakePlayersChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int", SetMaxMonstersChatCommand );
+	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", CohortSizeOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", FakePlayersOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int|ini|bilinear:...", MaxMonstersOption.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", SetMinSpawnIntervalChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SetSpawnModChatCommand );
@@ -441,101 +441,13 @@ private function string SetBossChatCommand( const out array<string> params )
 }
 
 // CohortSize
-
-private function string GetCohortSizeChatString()
-{
-	local string CohortSizeLatchedString;
-
-	if ( StagedConfig.CohortSize != CohortSize )
-	{
-		CohortSizeLatchedString = " (staged: " $ StagedConfig.CohortSize $ ")";
-	}
-
-	return "CohortSize=" $ CohortSize $ CohortSizeLatchedString;
-}
-
-private function string SetCohortSizeChatCommand( const out array<string> params )
-{
-	local int TempInt;
-
-	TempInt = int( params[0] );
-	TempInt = ClampCohortSize( TempInt );
-	StagedConfig.CohortSize = TempInt;
-	if ( CohortSize != StagedConfig.CohortSize )
-	{
-		return "Staged: CohortSize=" $ StagedConfig.CohortSize $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "CohortSize is already " $ CohortSize;
-	}
-}
+// moved to regulated option class
 
 // FakePlayers
-
-private function string GetFakePlayersChatString()
-{
-	local string FakePlayersLatchedString;
-
-	if ( StagedConfig.FakePlayers != FakePlayers )
-	{
-		FakePlayersLatchedString = " (staged: " $ StagedConfig.FakePlayers $ ")";
-	}
-
-	return "FakePlayers=" $ FakePlayers $ FakePlayersLatchedString;
-}
-
-private function string SetFakePlayersChatCommand( const out array<string> params )
-{
-	StagedConfig.FakePlayers = params[0];
-
-	if ( FakePlayers != StagedConfig.FakePlayers )
-	{
-		return "Staged: FakePlayers=" $ StagedConfig.FakePlayers $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "FakePlayers is already " $ FakePlayers;
-	}
-}
+// moved to regulated option class
 
 // MaxMonsters
-
-private function string GetMaxMonstersChatString()
-{
-	local string MaxMonstersLatchedString;
-
-	if ( StagedConfig.MaxMonsters != MaxMonsters )
-	{
-		MaxMonstersLatchedString = " (staged: " $ GetMaxMonstersStringForArg(StagedConfig.MaxMonsters) $ ")";
-	}
-
-	return "MaxMonsters="$ GetMaxMonstersString() $ MaxMonstersLatchedString;
-}
-
-private function string SetMaxMonstersChatCommand( const out array<string> params )
-{
-	local int TempInt;
-
-	TempInt = int( params[0] );
-	if ( TempInt < 0 )
-	{
-		TempInt = 0;
-	} 
-	StagedConfig.MaxMonsters = TempInt;
-
-	if ( MaxMonsters != StagedConfig.MaxMonsters )
-	{
-		return "Staged: MaxMonsters=" $ GetMaxMonstersStringForArg( StagedConfig.MaxMonsters ) $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "MaxMonsters is already " $ MaxMonsters;
-	}
-}
+// moved to regulated option class
 
 // MinSpawnInterval
 
@@ -799,9 +711,9 @@ function string GetCDInfoChatString( const string Verbosity )
 		       GetAlbinoCrawlersChatString() $ "\n" $
 		       GetAlbinoGorefastsChatString() $ "\n" $
 		       GetBossChatString() $ "\n" $
-		       GetCohortSizeChatString() $ "\n" $
-		       GetFakePlayersChatString() $ "\n" $
-		       GetMaxMonstersChatString() $ "\n" $
+		       CohortSizeOption.GetChatLine() $ "\n" $
+		       FakePlayersOption.GetChatLine() $ "\n" $
+		       MaxMonstersOption.GetChatLine() $ "\n" $
 		       GetMinSpawnIntervalChatString() $ "\n" $
 		       GetSpawnCycleChatString() $ "\n" $
 		       GetSpawnModChatString() $ "\n" $
@@ -812,10 +724,10 @@ function string GetCDInfoChatString( const string Verbosity )
 	}
 	else
 	{
-		return GetFakePlayersChatString() $ "\n" $
-		       GetMaxMonstersChatString() $ "\n" $
+		return FakePlayersOption.GetChatLine() $ "\n" $
+		       MaxMonstersOption.GetChatLine() $ "\n" $
 		       GetSpawnModChatString() $ "\n" $
-		       GetCohortSizeChatString() $ "\n" $
+		       CohortSizeOption.GetChatLine() $ "\n" $
 		       GetSpawnCycleChatString();
 	}
 }
