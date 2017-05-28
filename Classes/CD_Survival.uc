@@ -192,16 +192,16 @@ var config CDAuthLevel DefaultAuthLevel;
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
 
-var CD_RegulatedOption BossFPOption;
-var CD_RegulatedOption CohortSizeOption;
-var CD_RegulatedOption FakePlayersOption;
-var CD_RegulatedOption FleshpoundFPOption;
-var CD_RegulatedOption MaxMonstersOption;
-var CD_RegulatedOption MinSpawnIntervalOption;
-var CD_RegulatedOption ScrakeFPOption;
-var CD_RegulatedOption SpawnModOption;
-var CD_RegulatedOption TrashFPOption;
-var CD_RegulatedOption ZTSpawnSlowdownOption;
+var CD_ProgrammableSetting BossFPSetting;
+var CD_ProgrammableSetting CohortSizeSetting;
+var CD_ProgrammableSetting FakePlayersSetting;
+var CD_ProgrammableSetting FleshpoundFPSetting;
+var CD_ProgrammableSetting MaxMonstersSetting;
+var CD_ProgrammableSetting MinSpawnIntervalSetting;
+var CD_ProgrammableSetting ScrakeFPSetting;
+var CD_ProgrammableSetting SpawnModSetting;
+var CD_ProgrammableSetting TrashFPSetting;
+var CD_ProgrammableSetting ZTSpawnSlowdownSetting;
 
 // SpawnCycle parsed out of the SpawnCycleDefs strings
 var array<CD_AIWaveInfo> IniWaveInfos;
@@ -259,7 +259,7 @@ event InitGame( string Options, out string ErrorMessage )
 	// Print CD's commit hash (version)
 	GameInfo_CDCP.Print( "Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded" );
 
-	SetupRegulatedOptions();
+	SetupProgrammableSettings();
 
 	ParseCDGameOptions( Options );
 
@@ -271,37 +271,37 @@ event InitGame( string Options, out string ErrorMessage )
 	InitStructStagedConfig();
 }
 
-private function SetupRegulatedOptions()
+private function SetupProgrammableSettings()
 {
-	BossFPOption = new(self) class'CD_BossFPOption';
-	BossFPOption.IniDefsArray = BossFPDefs;
+	BossFPSetting = new(self) class'CD_ProgrammableSetting_BossFP';
+	BossFPSetting.IniDefsArray = BossFPDefs;
 
-	CohortSizeOption = new(self) class'CD_CohortSizeOption';
-	CohortSizeOption.IniDefsArray = CohortSizeDefs;
+	CohortSizeSetting = new(self) class'CD_ProgrammableSetting_CohortSize';
+	CohortSizeSetting.IniDefsArray = CohortSizeDefs;
 
-	FakePlayersOption = new(self) class'CD_FakePlayersOption';
-	FakePlayersOption.IniDefsArray = FakePlayersDefs;
+	FakePlayersSetting = new(self) class'CD_ProgrammableSetting_FakePlayers';
+	FakePlayersSetting.IniDefsArray = FakePlayersDefs;
 
-	MaxMonstersOption = new(self) class'CD_MaxMonstersOption';
-	MaxMonstersOption.IniDefsArray = MaxMonstersDefs;
+	MaxMonstersSetting = new(self) class'CD_ProgrammableSetting_MaxMonsters';
+	MaxMonstersSetting.IniDefsArray = MaxMonstersDefs;
 
-	SpawnModOption = new(self) class'CD_SpawnModOption';
-	SpawnModOption.IniDefsArray = SpawnModDefs;
+	SpawnModSetting = new(self) class'CD_ProgrammableSetting_SpawnMod';
+	SpawnModSetting.IniDefsArray = SpawnModDefs;
 
-	MinSpawnIntervalOption = new(self) class'CD_MinSpawnIntervalOption';
-	MinSpawnIntervalOption.IniDefsArray = MinSpawnIntervalDefs;
+	MinSpawnIntervalSetting = new(self) class'CD_ProgrammableSetting_MinSpawnInterval';
+	MinSpawnIntervalSetting.IniDefsArray = MinSpawnIntervalDefs;
 
-	ScrakeFPOption = new(self) class'CD_ScrakeFPOption';
-	ScrakeFPOption.IniDefsArray = ScrakeFPDefs;
+	ScrakeFPSetting = new(self) class'CD_ProgrammableSetting_ScrakeFP';
+	ScrakeFPSetting.IniDefsArray = ScrakeFPDefs;
 
-	FleshpoundFPOption = new(self) class'CD_FleshpoundFPOption';
-	FleshpoundFPOption.IniDefsArray = FleshpoundFPDefs;
+	FleshpoundFPSetting = new(self) class'CD_ProgrammableSetting_FleshpoundFP';
+	FleshpoundFPSetting.IniDefsArray = FleshpoundFPDefs;
 
-	TrashFPOption = new(self) class'CD_TrashFPOption';
-	TrashFPOption.IniDefsArray = TrashFPDefs;
+	TrashFPSetting = new(self) class'CD_ProgrammableSetting_TrashFP';
+	TrashFPSetting.IniDefsArray = TrashFPDefs;
 
-	ZTSpawnSlowdownOption = new(self) class'CD_ZTSpawnSlowdownOption';
-	ZTSpawnSlowdownOption.IniDefsArray = ZTSpawnSlowdownDefs;
+	ZTSpawnSlowdownSetting = new(self) class'CD_ProgrammableSetting_ZTSpawnSlowdown';
+	ZTSpawnSlowdownSetting.IniDefsArray = ZTSpawnSlowdownDefs;
 }
 
 function bool CheckRelevance(Actor Other)
@@ -462,14 +462,6 @@ private function ParseCDGameOptions( const out string Options )
 	`cdlog("Clamped WeaponTimeout = "$WeaponTimeout, bLogControlledDifficulty);
 	GameInfo_CDCP.Print("WeaponTimeout="$ GetWeaponTimeoutString() );
 
-	if ( HasOption(Options, "AlbinoCrawlers") )
-	{
-		AlbinoCrawlers = GetBoolOption( Options, "AlbinoCrawlers", true );
-		`cdlog("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlers$" (true=default)", bLogControlledDifficulty);
-	}
-
-	GameInfo_CDCP.Print( "AlbinoCrawlers="$AlbinoCrawlers );
-
 	if ( HasOption(Options, "AlbinoAlphas") )
 	{
 		AlbinoAlphas = GetBoolOption( Options, "AlbinoAlphas", true );
@@ -477,6 +469,14 @@ private function ParseCDGameOptions( const out string Options )
 	}
 
 	GameInfo_CDCP.Print( "AlbinoAlphas="$AlbinoAlphas );
+
+	if ( HasOption(Options, "AlbinoCrawlers") )
+	{
+		AlbinoCrawlers = GetBoolOption( Options, "AlbinoCrawlers", true );
+		`cdlog("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlers$" (true=default)", bLogControlledDifficulty);
+	}
+
+	GameInfo_CDCP.Print( "AlbinoCrawlers="$AlbinoCrawlers );
 
 	if ( HasOption(Options, "AlbinoGorefasts") )
 	{
@@ -500,25 +500,25 @@ private function ParseCDGameOptions( const out string Options )
 		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycle, bLogControlledDifficulty);
 	}
 
-	BossFPOption.InitFromOptions( Options );
+	BossFPSetting.InitFromOptions( Options );
 
-	CohortSizeOption.InitFromOptions( Options );
+	CohortSizeSetting.InitFromOptions( Options );
 
-	FakePlayersOption.InitFromOptions( Options );
+	FakePlayersSetting.InitFromOptions( Options );
 
-	MaxMonstersOption.InitFromOptions( Options );
+	MaxMonstersSetting.InitFromOptions( Options );
 
-	MinSpawnIntervalOption.InitFromOptions( Options );
+	MinSpawnIntervalSetting.InitFromOptions( Options );
 
-	SpawnModOption.InitFromOptions( Options );
+	SpawnModSetting.InitFromOptions( Options );
 
-	ScrakeFPOption.InitFromOptions( Options );
+	ScrakeFPSetting.InitFromOptions( Options );
 
-	FleshpoundFPOption.InitFromOptions( Options );
+	FleshpoundFPSetting.InitFromOptions( Options );
 
-	TrashFPOption.InitFromOptions( Options );
+	TrashFPSetting.InitFromOptions( Options );
 
-	ZTSpawnSlowdownOption.InitFromOptions( Options );
+	ZTSpawnSlowdownSetting.InitFromOptions( Options );
 
 	// Process TraderTime command option, if present
 	if ( HasOption(Options, "TraderTime") )
@@ -1082,22 +1082,22 @@ function WaveEnded( EWaveEndCondition WinCondition )
 }
 
 
-private function RegulateOptionsForNextWave()
+private function ProgramSettingsForNextWave()
 {
 	local int NWN;
 
 	NWN = WaveNum + 1;
 
-	BossFPOption.RegulateValue( NWN );
-	CohortSizeOption.RegulateValue( NWN );
-	FakePlayersOption.RegulateValue( NWN );
-	MaxMonstersOption.RegulateValue( NWN );
-	MinSpawnIntervalOption.RegulateValue( NWN );
-	SpawnModOption.RegulateValue( NWN );
-	ScrakeFPOption.RegulateValue( NWN );
-	FleshpoundFPOption.RegulateValue( NWN );
-	TrashFPOption.RegulateValue( NWN );
-	ZTSpawnSlowdownOption.RegulateValue( NWN );
+	BossFPSetting.RegulateValue( NWN );
+	CohortSizeSetting.RegulateValue( NWN );
+	FakePlayersSetting.RegulateValue( NWN );
+	MaxMonstersSetting.RegulateValue( NWN );
+	MinSpawnIntervalSetting.RegulateValue( NWN );
+	SpawnModSetting.RegulateValue( NWN );
+	ScrakeFPSetting.RegulateValue( NWN );
+	FleshpoundFPSetting.RegulateValue( NWN );
+	TrashFPSetting.RegulateValue( NWN );
+	ZTSpawnSlowdownSetting.RegulateValue( NWN );
 }
 
 function StartWave()
@@ -1109,7 +1109,7 @@ function StartWave()
 		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
 	}
 
-	RegulateOptionsForNextWave();
+	ProgramSettingsForNextWave();
 
 	// Restart the SpawnManager's wakeup timer.
 	// This synchronizing effect is virtually unnoticeable when MinSpawnInterval is
@@ -1161,37 +1161,37 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		Boss = StagedConfig.Boss;
 	}
 
-	TempString = BossFPOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = BossFPSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = CohortSizeOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = CohortSizeSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = FakePlayersOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = FakePlayersSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = FleshpoundFPOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = FleshpoundFPSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = MinSpawnIntervalOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = MinSpawnIntervalSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = MaxMonstersOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = MaxMonstersSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
@@ -1233,19 +1233,19 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		}
 	}
 
-	TempString = ScrakeFPOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = ScrakeFPSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = SpawnModOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = SpawnModSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
 	}
 
-	TempString = TrashFPOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = TrashFPSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );
@@ -1264,7 +1264,7 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		SetZTSpawnModeEnum();
 	}
 
-	TempString = ZTSpawnSlowdownOption.CommitStagedChanges( WaveNum + 1 );
+	TempString = ZTSpawnSlowdownSetting.CommitStagedChanges( WaveNum + 1 );
 	if ( TempString != "" )
 	{
 		SettingChangeNotifications.AddItem( TempString );

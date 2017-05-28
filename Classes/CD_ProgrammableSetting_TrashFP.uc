@@ -1,24 +1,24 @@
-class CD_MaxMonstersOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_TrashFP extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.MaxMonsters;
+	return Outer.TrashFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.MaxMonsters = Ind;
+	Outer.TrashFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.MaxMonstersInt);
+	return float(Outer.TrashFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.MaxMonstersInt = int(Val);
+	Outer.TrashFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,9 +28,9 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="MaxMonstersDefs"
-	OptionName="MaxMonsters"
+	IniDefsArrayName="TrashFPDefs"
+	OptionName="TrashFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=10000
+	MaxSettingValue=32
 }

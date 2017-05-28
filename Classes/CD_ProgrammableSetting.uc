@@ -1,4 +1,4 @@
-class CD_RegulatedOption extends Object
+class CD_ProgrammableSetting extends Object
 	within CD_Survival
 	Abstract;
 
@@ -18,18 +18,18 @@ class CD_RegulatedOption extends Object
       user, or if the user specified automatic option regulation,
       by the regulator at each wave start.
 
-    - "regulator", a CD_SettingRegulator.
+    - "regulator", a CD_ValueProgram.
 
     The indicator must always be non-empty and valid.  The
     regulator will be None when regulation is disabled and
     non-None when regulation is enabled.
 */
 
-var CD_SettingRegulator ActualRegulator;
+var CD_ValueProgram ActualRegulator;
 
 var string StagedIndicator;
 var float StagedValue;
-var CD_SettingRegulator StagedRegulator;
+var CD_ValueProgram StagedRegulator;
 
 var array<string> IniDefsArray;
 
@@ -49,7 +49,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 	// takes unsanitized string "Raw", attempts to interpret it as
 	// a value directive, and assigns to staging state variables
 
-	local CD_SettingRegulator_IniDefs IniDefsRegulator;
+	local CD_ValueProgram_IniDefs IniDefsRegulator;
 
 	if ( Raw != "" && Raw == StagedIndicator && !ForceOverwrite )
 	{
@@ -63,7 +63,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 
 	if ( Raw == "ini" )
 	{
-		IniDefsRegulator = new class'CD_SettingRegulator_IniDefs';
+		IniDefsRegulator = new class'CD_ValueProgram_IniDefs';
 		IniDefsRegulator.SetConsolePrinter( GameInfo_CDCP );
 		if ( IniDefsRegulator.ParseDefs( IniDefsArray, IniDefsArrayName ) )
 		{

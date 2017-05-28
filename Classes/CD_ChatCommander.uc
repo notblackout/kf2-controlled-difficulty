@@ -209,42 +209,42 @@ function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
 	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
-	SetupSimpleReadCommand( scc, "!cdbossfp", "Display Boss health FakePlayers count", BossFPOption.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", CohortSizeOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdbossfp", "Display Boss health FakePlayers count", BossFPSetting.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", CohortSizeSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
-	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", FakePlayersOption.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdfleshpoundfp", "Display fleshpound health FakePlayers count", FleshpoundFPOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", FakePlayersSetting.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdfleshpoundfp", "Display fleshpound health FakePlayers count", FleshpoundFPSetting.GetChatLine );
 //	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
-	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", MaxMonstersOption.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", MinSpawnIntervalOption.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdscrakefp", "Display scrake health FakePlayers count", ScrakeFPOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", MaxMonstersSetting.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", MinSpawnIntervalSetting.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdscrakefp", "Display scrake health FakePlayers count", ScrakeFPSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
-	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", SpawnModOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", SpawnModSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
-	SetupSimpleReadCommand( scc, "!cdtrashfp", "Display regular zed health FakePlayers count", TrashFPOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdtrashfp", "Display regular zed health FakePlayers count", TrashFPSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
 	SetupSimpleReadCommand( scc, "!cdzedsteleportcloser", "Display ZedsTeleportCloser setting", GetZedsTeleportCloserChatString );
-	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", ZTSpawnSlowdownOption.GetChatLine );
+	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", ZTSpawnSlowdownSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
 
 	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", "true|false", SetAlbinoAlphasChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdbossfp", "Set Boss health FakePlayers", "int|ini|bilinear:...", BossFPOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", CohortSizeOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", FakePlayersOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdfleshpoundfp", "Set fleshpound health FakePlayers", "int|ini|bilinear:...", FleshpoundFPOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int|ini|bilinear:...", MaxMonstersOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", MinSpawnIntervalOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdscrakefp", "Set scrake health FakePlayers", "int|ini|bilinear:...", ScrakeFPOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdbossfp", "Set Boss health FakePlayers", "int|ini|bilinear:...", BossFPSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", CohortSizeSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", FakePlayersSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdfleshpoundfp", "Set fleshpound health FakePlayers", "int|ini|bilinear:...", FleshpoundFPSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int|ini|bilinear:...", MaxMonstersSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", MinSpawnIntervalSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdscrakefp", "Set scrake health FakePlayers", "int|ini|bilinear:...", ScrakeFPSetting.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SpawnModOption.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdtrashfp", "Set regular zed health FakePlayers", "int|ini|bilinear:...", TrashFPOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SpawnModSetting.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdtrashfp", "Set regular zed health FakePlayers", "int|ini|bilinear:...", TrashFPSetting.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdzedsteleportcloser", "Set ZedsTeleportCloser", "true|false", SetZedsTeleportCloserChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", ZTSpawnSlowdownOption.ChatWriteCommand );
+	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", ZTSpawnSlowdownSetting.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
@@ -632,23 +632,23 @@ function string GetCDInfoChatString( const string Verbosity )
 		       GetAlbinoCrawlersChatString() $ "\n" $
 		       GetAlbinoGorefastsChatString() $ "\n" $
 		       GetBossChatString() $ "\n" $
-		       CohortSizeOption.GetChatLine() $ "\n" $
-		       FakePlayersOption.GetChatLine() $ "\n" $
-		       MaxMonstersOption.GetChatLine() $ "\n" $
-		       MinSpawnIntervaloption.GetChatLine() $ "\n" $
+		       CohortSizeSetting.GetChatLine() $ "\n" $
+		       FakePlayersSetting.GetChatLine() $ "\n" $
+		       MaxMonstersSetting.GetChatLine() $ "\n" $
+		       MinSpawnIntervalSetting.GetChatLine() $ "\n" $
 		       GetSpawnCycleChatString() $ "\n" $
-		       SpawnModOption.GetChatLine() $ "\n" $
+		       SpawnModSetting.GetChatLine() $ "\n" $
 		       GetTraderTimeChatString() $ "\n" $
 		       GetWeaponTimeoutChatString() $ "\n" $
-		       ZTSpawnSlowdownOption.GetChatLine() $ "\n" $
+		       ZTSpawnSlowdownSetting.GetChatLine() $ "\n" $
 		       GetZTSpawnModeChatString();
 	}
 	else
 	{
-		return FakePlayersOption.GetChatLine() $ "\n" $
-		       MaxMonstersOption.GetChatLine() $ "\n" $
-		       SpawnModOption.GetChatLine() $ "\n" $
-		       CohortSizeOption.GetChatLine() $ "\n" $
+		return FakePlayersSetting.GetChatLine() $ "\n" $
+		       MaxMonstersSetting.GetChatLine() $ "\n" $
+		       SpawnModSetting.GetChatLine() $ "\n" $
+		       CohortSizeSetting.GetChatLine() $ "\n" $
 		       GetSpawnCycleChatString();
 	}
 }

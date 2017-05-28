@@ -1,24 +1,24 @@
-class CD_ScrakeFPOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_FakePlayers extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.ScrakeFP;
+	return Outer.FakePlayers;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.ScrakeFP = Ind;
+	Outer.FakePlayers = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.ScrakeFPInt);
+	return float(Outer.FakePlayersInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.ScrakeFPInt = int(Val);
+	Outer.FakePlayersInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,8 +28,8 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="ScrakeFPDefs"
-	OptionName="ScrakeFP"
+	IniDefsArrayName="FakePlayersDefs"
+	OptionName="FakePlayers"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32

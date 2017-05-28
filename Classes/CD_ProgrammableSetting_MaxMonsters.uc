@@ -1,24 +1,24 @@
-class CD_BossFPOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_MaxMonsters extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.BossFP;
+	return Outer.MaxMonsters;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.BossFP = Ind;
+	Outer.MaxMonsters = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.BossFPInt);
+	return float(Outer.MaxMonstersInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.BossFPInt = int(Val);
+	Outer.MaxMonstersInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,9 +28,9 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="BossFPDefs"
-	OptionName="BossFP"
+	IniDefsArrayName="MaxMonstersDefs"
+	OptionName="MaxMonsters"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=32
+	MaxSettingValue=10000
 }

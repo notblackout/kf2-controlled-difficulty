@@ -1,6 +1,6 @@
-class CD_SettingRegulator_IniDefs
+class CD_ValueProgram_IniDefs
 	extends Object
-	implements (CD_SettingRegulator);
+	implements (CD_ValueProgram);
 
 `include(CD_Log.uci)
 

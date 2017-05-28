@@ -1,4 +1,4 @@
-class CD_SpawnModOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_SpawnMod extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()

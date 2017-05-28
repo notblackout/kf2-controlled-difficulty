@@ -1,4 +1,4 @@
-class CD_ZTSpawnSlowdownOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_ZTSpawnSlowdown extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()

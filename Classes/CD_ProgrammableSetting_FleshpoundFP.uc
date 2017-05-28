@@ -1,24 +1,24 @@
-class CD_TrashFPOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_FleshpoundFP extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.TrashFP;
+	return Outer.FleshpoundFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.TrashFP = Ind;
+	Outer.FleshpoundFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.TrashFPInt);
+	return float(Outer.FleshpoundFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.TrashFPInt = int(Val);
+	Outer.FleshpoundFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,8 +28,8 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="TrashFPDefs"
-	OptionName="TrashFP"
+	IniDefsArrayName="FleshpoundFPDefs"
+	OptionName="FleshpoundFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32

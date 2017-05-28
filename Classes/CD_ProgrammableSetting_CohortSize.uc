@@ -1,24 +1,24 @@
-class CD_FakePlayersOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_CohortSize extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.FakePlayers;
+	return Outer.CohortSize;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.FakePlayers = Ind;
+	Outer.CohortSize = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.FakePlayersInt);
+	return float(Outer.CohortSizeInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.FakePlayersInt = int(Val);
+	Outer.CohortSizeInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,9 +28,9 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="FakePlayersDefs"
-	OptionName="FakePlayers"
+	IniDefsArrayName="CohortSizeDefs"
+	OptionName="CohortSize"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=32
+	MaxSettingValue=10000
 }

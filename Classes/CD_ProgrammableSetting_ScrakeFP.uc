@@ -1,24 +1,24 @@
-class CD_FleshpoundFPOption extends CD_RegulatedOption
+class CD_ProgrammableSetting_ScrakeFP extends CD_ProgrammableSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.FleshpoundFP;
+	return Outer.ScrakeFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.FleshpoundFP = Ind;
+	Outer.ScrakeFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.FleshpoundFPInt);
+	return float(Outer.ScrakeFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.FleshpoundFPInt = int(Val);
+	Outer.ScrakeFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,8 +28,8 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="FleshpoundFPDefs"
-	OptionName="FleshpoundFP"
+	IniDefsArrayName="ScrakeFPDefs"
+	OptionName="ScrakeFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32
