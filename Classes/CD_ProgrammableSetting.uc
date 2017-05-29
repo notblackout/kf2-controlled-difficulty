@@ -1,5 +1,6 @@
 class CD_ProgrammableSetting extends Object
 	within CD_Survival
+	implements (CD_Setting)
 	Abstract;
 
 `include(CD_Log.uci)
@@ -34,8 +35,8 @@ var CD_ValueProgram StagedRegulator;
 var array<string> IniDefsArray;
 
 var const string IniDefsArrayName;
-var const string OptionName;
 // Default must be set within [min,max]; the default is *not* bounds-checked
+var const string OptionName;
 var const float DefaultSettingValue;
 // Minima and maxima may be chosen mostly arbitrarily, but keep them within
 // the integer precision range on IEEE 754 floats.  We don't do any arithmetic,
@@ -43,6 +44,11 @@ var const float DefaultSettingValue;
 // is just asking for roundoff that suprises the user.
 var const float MinSettingValue;
 var const float MaxSettingValue;
+
+var const array<string> ChatCommandNames;
+var const string ChatReadDescription;
+var const string ChatWriteDescription;
+var const string ChatWriteParamHintFragment;
 
 function bool StageIndicator( const out string Raw, out string StatusMsg, const optional bool ForceOverwrite = false )
 {
@@ -280,4 +286,65 @@ function string RegulateValue( const int OverrideWaveNum )
 	}
 
 	return StatusMsg;
+}
+
+function string GetOptionName()
+{
+	return OptionName;
+}
+
+function bool GetChatReadCommand( out StructChatCommand scc )
+{
+	local array<string> empty;
+	local string desc;
+
+	if ( ChatReadDescription != "" )
+	{
+		desc = ChatReadDescription;
+	}
+	else
+	{
+		desc = "Get " $ OptionName;
+	}
+
+	empty.length = 0;
+
+	scc.Names = ChatCommandNames;
+	scc.ParamHints = empty;
+	scc.NullaryImpl = GetChatLine;
+	scc.ParamsImpl = None;
+	scc.Description = desc;
+	scc.AuthLevel = CDAUTH_READ;
+	scc.ModifiesConfig = false;
+
+	return true;
+}
+
+function bool GetChatWriteCommand( out StructChatCommand scc )
+{
+	local string desc, hint;
+	local array<string> hints;
+
+	if ( ChatWriteDescription != "" )
+	{
+		desc = ChatWriteDescription;
+	}
+	else
+	{
+		desc = "Set " $ OptionName;
+	}
+
+	hint = "ini|" $ ChatWriteParamHintFragment;
+	hints.length = 1;
+	hints[0] = hint;
+
+	scc.Names = ChatCommandNames;
+	scc.ParamHints = hints;
+	scc.NullaryImpl = None;
+	scc.ParamsImpl = ChatWriteCommand;
+	scc.Description = desc;
+	scc.AuthLevel = CDAUTH_WRITE;
+	scc.ModifiesConfig = true;
+
+	return true;
 }

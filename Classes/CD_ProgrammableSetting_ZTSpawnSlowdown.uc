@@ -28,4 +28,7 @@ defaultproperties
 	DefaultSettingValue=1.f
 	MinSettingValue=1.f
 	MaxSettingValue=10.f
+
+	ChatCommandNames=("!cdztspawnslowdown")
+	ChatWriteParamHintFragment="float, default is 1.0"
 }

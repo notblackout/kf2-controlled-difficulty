@@ -802,9 +802,9 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		}
 	}
 
-	if ( !AlbinoCrawlers )
+	if ( !AlbinoCrawlersBool )
 	{
-		`cdlog("AlbinoCrawlers="$AlbinoCrawlers$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
+		`cdlog("AlbinoCrawlers="$AlbinoCrawlersBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
 
 		// Replace all standard crawler classes with forced-regular crawers
 		MatchClasses.Length = 2;
@@ -815,9 +815,9 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		                 AISpawnList );
 	}
 
-	if ( !AlbinoAlphas )
+	if ( !AlbinoAlphasBool )
 	{
-		`cdlog("AlbinoAlphas="$AlbinoAlphas$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
+		`cdlog("AlbinoAlphas="$AlbinoAlphasBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
 
 		// Replace all standard alpha classes with forced-regular alphas
 		MatchClasses.Length = 2;
@@ -828,9 +828,9 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		                 AISpawnList );
 	}
 
-	if ( !AlbinoGorefasts )
+	if ( !AlbinoGorefastsBool )
 	{
-		`cdlog("AlbinoGorefasts="$AlbinoGorefasts$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
+		`cdlog("AlbinoGorefasts="$AlbinoGorefastsBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
 
 		// Replace all standard gorefast classes with forced-regular gorefasts
 		MatchClasses.Length = 2;

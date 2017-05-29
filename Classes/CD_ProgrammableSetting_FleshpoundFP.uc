@@ -33,4 +33,7 @@ defaultproperties
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32
+
+	ChatCommandNames=("!cdfleshpoundfp")
+	ChatWriteParamHintFragment="int"
 }

@@ -149,6 +149,7 @@ function SetupChatCommands()
 	local array<string> n;
 	local array<string> h;
 	local StructChatCommand scc;
+	local int i;
 
 	ChatCommands.Length = 0;
 
@@ -205,46 +206,27 @@ function SetupChatCommands()
 	scc.ModifiesConfig = false;
 	ChatCommands.AddItem( scc );
 
-	SetupSimpleReadCommand( scc, "!cdalbinoalphas", "Display AlbinoAlphas setting", GetAlbinoAlphasChatString );
-	SetupSimpleReadCommand( scc, "!cdalbinocrawlers", "Display AlbinoCrawlers setting", GetAlbinoCrawlersChatString );
-	SetupSimpleReadCommand( scc, "!cdalbinogorefasts", "Display AlbinoGorefasts setting", GetAlbinoGorefastsChatString );
+	for ( i = 0; i < AllSettings.Length; i++ )
+	{
+		if ( AllSettings[i].GetChatReadCommand( scc ) )
+		{
+			ChatCommands.AddItem( scc );
+		}
+
+		if ( AllSettings[i].GetChatWriteCommand( scc ) )
+		{
+			ChatCommands.AddItem( scc );
+		}
+	}
+
 	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
-	SetupSimpleReadCommand( scc, "!cdbossfp", "Display Boss health FakePlayers count", BossFPSetting.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdcohortsize", "Display spawning cohort size in zeds", CohortSizeSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
-	SetupSimpleReadCommand( scc, "!cdfakeplayers", "Display FakePlayers count", FakePlayersSetting.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdfleshpoundfp", "Display fleshpound health FakePlayers count", FleshpoundFPSetting.GetChatLine );
-//	SetupSimpleReadCommand( scc, "!cdinfo", "Display a summary of CD settings", GetCDInfoChatStringDefault );
-	SetupSimpleReadCommand( scc, "!cdmaxmonsters", "Display MaxMonsters count", MaxMonstersSetting.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdminspawninterval", "Display MinSpawnInterval value", MinSpawnIntervalSetting.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdscrakefp", "Display scrake health FakePlayers count", ScrakeFPSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
-	SetupSimpleReadCommand( scc, "!cdspawnmod", "Display SpawnMod value", SpawnModSetting.GetChatLine );
-	SetupSimpleReadCommand( scc, "!cdtradertime", "Display TraderTime in seconds", GetTraderTimeChatString );
-	SetupSimpleReadCommand( scc, "!cdtrashfp", "Display regular zed health FakePlayers count", TrashFPSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
-	SetupSimpleReadCommand( scc, "!cdweapontimeout", "Display WeaponTimeout in seconds", GetWeaponTimeoutChatString );
-	SetupSimpleReadCommand( scc, "!cdzedsteleportcloser", "Display ZedsTeleportCloser setting", GetZedsTeleportCloserChatString );
-	SetupSimpleReadCommand( scc, "!cdztspawnslowdown", "Display ZTSpawnSlowdown value", ZTSpawnSlowdownSetting.GetChatLine );
 	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
 
-	SetupSimpleWriteCommand( scc, "!cdalbinoalphas", "Set AlbinoAlphas", "true|false", SetAlbinoAlphasChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdalbinocrawlers", "Set AlbinoCrawlers", "true|false", SetAlbinoCrawlersChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdalbinogorefasts", "Set AlbinoGorefasts", "true|false", SetAlbinoGorefastsChatCommand );
 	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdbossfp", "Set Boss health FakePlayers", "int|ini|bilinear:...", BossFPSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdcohortsize", "Set CohortSize", "int", CohortSizeSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdfakeplayers", "Set FakePlayers", "int|ini|bilinear:...", FakePlayersSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdfleshpoundfp", "Set fleshpound health FakePlayers", "int|ini|bilinear:...", FleshpoundFPSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdmaxmonsters", "Set MaxMonsters", "int|ini|bilinear:...", MaxMonstersSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdminspawninterval", "Set MinSpawnInterval", "float", MinSpawnIntervalSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdscrakefp", "Set scrake health FakePlayers", "int|ini|bilinear:...", ScrakeFPSetting.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdspawnmod", "Set SpawnMod", "float", SpawnModSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdtrashfp", "Set regular zed health FakePlayers", "int|ini|bilinear:...", TrashFPSetting.ChatWriteCommand );
-	SetupSimpleWriteCommand( scc, "!cdweapontimeout", "Set WeaponTimeout", "int|max", SetWeaponTimeoutChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdzedsteleportcloser", "Set ZedsTeleportCloser", "true|false", SetZedsTeleportCloserChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdztspawnslowdown", "Set ZTSpawnSlowdown", "float", ZTSpawnSlowdownSetting.ChatWriteCommand );
 	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
@@ -322,91 +304,13 @@ private function SetupSimpleWriteCommand( out StructChatCommand scc, const strin
 }
 
 // AlbinoAlphas
-
-private function string GetAlbinoAlphasChatString()
-{
-	local string AlbinoAlphasLatchedString;
-
-	if ( StagedConfig.AlbinoAlphas != AlbinoAlphas )
-	{
-		AlbinoAlphasLatchedString = " (staged: " $ StagedConfig.AlbinoAlphas $ ")";
-	}
-
-	return "AlbinoAlphas=" $ AlbinoAlphas $ AlbinoAlphasLatchedString;
-}
-
-private function string SetAlbinoAlphasChatCommand( const out array<string> params )
-{
-	StagedConfig.AlbinoAlphas = bool( params[0] );
-
-	if ( AlbinoAlphas != StagedConfig.AlbinoAlphas )
-	{
-		return "Staged: AlbinoAlphas=" $ StagedConfig.AlbinoAlphas $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "AlbinoAlphas is already " $ AlbinoAlphas;
-	}
-}
+// turned into FixedSetting
 
 // AlbinoCrawlers
-
-private function string GetAlbinoCrawlersChatString()
-{
-	local string AlbinoCrawlersLatchedString;
-
-	if ( StagedConfig.AlbinoCrawlers != AlbinoCrawlers )
-	{
-		AlbinoCrawlersLatchedString = " (staged: " $ StagedConfig.AlbinoCrawlers $ ")";
-	}
-
-	return "AlbinoCrawlers=" $ AlbinoCrawlers $ AlbinoCrawlersLatchedString;
-}
-
-private function string SetAlbinoCrawlersChatCommand( const out array<string> params )
-{
-	StagedConfig.AlbinoCrawlers = bool( params[0] );
-
-	if ( AlbinoCrawlers != StagedConfig.AlbinoCrawlers )
-	{
-		return "Staged: AlbinoCrawlers=" $ StagedConfig.AlbinoCrawlers $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "AlbinoCrawlers is already " $ AlbinoCrawlers;
-	}
-}
+// turned into FixedSetting
 
 // AlbinoGorefasts
-
-private function string GetAlbinoGorefastsChatString()
-{
-	local string AlbinoGorefastsLatchedString;
-
-	if ( StagedConfig.AlbinoGorefasts != AlbinoGorefasts )
-	{
-		AlbinoGorefastsLatchedString = " (staged: " $ StagedConfig.AlbinoGorefasts $ ")";
-	}
-
-	return "AlbinoGorefasts=" $ AlbinoGorefasts $ AlbinoGorefastsLatchedString;
-}
-
-private function string SetAlbinoGorefastsChatCommand( const out array<string> params )
-{
-	StagedConfig.AlbinoGorefasts = bool( params[0] );
-
-	if ( AlbinoGorefasts != StagedConfig.AlbinoGorefasts )
-	{
-		return "Staged: AlbinoGorefasts=" $ StagedConfig.AlbinoGorefasts $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "AlbinoGorefasts is already " $ AlbinoGorefasts;
-	}
-}
+// turned into FixedSetting
 
 // Boss
 
@@ -493,77 +397,9 @@ private function string SetSpawnCycleChatCommand( const out array<string> params
 
 // TraderTime (read-only)
 
-private function string GetTraderTimeChatString()
-{
-	local string TraderTimeLatchedString;
-
-//	if ( StagedConfig.TraderTime != TraderTime )
-//	{
-//		TraderTimeLatchedString = " (staged: " $ StagedConfig.TraderTime $ ")";
-//	}
-
-	TraderTimeLatchedString = "";
-
-	return "TraderTime=" $ TraderTime $ TraderTimeLatchedString;
-}
-
 // WeaponTimeout
 
-private function string GetWeaponTimeoutChatString()
-{
-	local string WeaponTimeoutLatchedString;
-
-	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
-	{
-		WeaponTimeoutLatchedString = " (staged: " $ GetWeaponTimeoutStringForArg(StagedConfig.WeaponTimeout) $ ")";
-	}
-
-	return "WeaponTimeout="$ GetWeaponTimeoutString() $ WeaponTimeoutLatchedString;
-}
-
-private function string SetWeaponTimeoutChatCommand( const out array<string> params )
-{
-	StagedConfig.WeaponTimeout = ClampWeaponTimeout( params[0] );
-
-	if ( WeaponTimeout != StagedConfig.WeaponTimeout )
-	{
-		return "Staged: WeaponTimeout=" $ GetWeaponTimeoutStringForArg( StagedConfig.WeaponTimeout ) $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "WeaponTimeout is already " $ WeaponTimeout;
-	}
-}
-
 // ZedsTeleportCloser
-
-private function string GetZedsTeleportCloserChatString()
-{
-	local string ZedsTeleportCloserLatchedString;
-
-	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
-	{
-		ZedsTeleportCloserLatchedString = " (staged: " $ StagedConfig.ZedsTeleportCloser $ ")";
-	}
-
-	return "ZedsTeleportCloser=" $ ZedsTeleportCloser $ ZedsTeleportCloserLatchedString;
-}
-
-private function string SetZedsTeleportCloserChatCommand( const out array<string> params )
-{
-	StagedConfig.ZedsTeleportCloser = bool( params[0] );
-
-	if ( ZedsTeleportCloser != StagedConfig.ZedsTeleportCloser )
-	{
-		return "Staged: ZedsTeleportCloser=" $ StagedConfig.ZedsTeleportCloser $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "ZedsTeleportCloser is already " $ ZedsTeleportCloser;
-	}
-}
 
 // ZTSpawnMode
 
@@ -625,28 +461,29 @@ private function string GetCDInfoChatStringCommand( const out array<string> para
 
 function string GetCDInfoChatString( const string Verbosity )
 {
+	local int i;
+	local string s;
+
 	if ( Verbosity == "full" )
 	{
-		// TODO regular zed and boss hp scaling
-		return GetAlbinoAlphasChatString() $ "\n" $
-		       GetAlbinoCrawlersChatString() $ "\n" $
-		       GetAlbinoGorefastsChatString() $ "\n" $
-		       GetBossChatString() $ "\n" $
-		       BossFPSetting.GetChatLine() $ "\n" $
-		       CohortSizeSetting.GetChatLine() $ "\n" $
-		       FakePlayersSetting.GetChatLine() $ "\n" $
-		       FleshpoundFPSetting.GetChatLine() $ "\n" $
-		       MaxMonstersSetting.GetChatLine() $ "\n" $
-		       MinSpawnIntervalSetting.GetChatLine() $ "\n" $
-		       ScrakeFPSetting.GetChatLine() $ "\n" $
-		       GetSpawnCycleChatString() $ "\n" $
-		       SpawnModSetting.GetChatLine() $ "\n" $
-		       GetTraderTimeChatString() $ "\n" $
-		       TrashFPSetting.GetChatLine() $ "\n" $
-		       GetWeaponTimeoutChatString() $ "\n" $
-		       GetZedsTeleportCloserChatString() $ "\n" $
-		       ZTSpawnSlowdownSetting.GetChatLine() $ "\n" $
-		       GetZTSpawnModeChatString();
+		s = "";
+
+		for ( i = 0; i < AllSettings.Length; i++ )
+		{
+			if ( 0 < i )
+			{
+				s $= "\n";
+			}
+			s $= AllSettings[i].GetChatLine();
+		}
+
+		// TODO
+		s $= 
+			GetBossChatString() $ "\n" $
+			GetSpawnCycleChatString() $ "\n" $
+			GetZTSpawnModeChatString();
+
+		return s;
 	}
 	else
 	{

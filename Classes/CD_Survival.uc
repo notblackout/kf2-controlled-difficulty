@@ -30,14 +30,8 @@ enum CDAuthLevel
 
 struct StructStagedConfig
 {
-	var bool     AlbinoAlphas;
-	var bool     AlbinoCrawlers;
-	var bool     AlbinoGorefasts;
 	var string   Boss;
 	var string   SpawnCycle;
-//	var int      TraderTime;
-	var string   WeaponTimeout;
-	var bool     ZedsTeleportCloser;
 	var string   ZTSpawnMode;
 };
 
@@ -62,7 +56,8 @@ var int FakePlayersInt;
 
 // the trader time, in seconds.  if this is zero or negative, its value is
 // totally ignored, and the difficulty's standard trader time is used instead.
-var config int TraderTime;
+var config string TraderTime;
+var int TraderTimeInt;
 
 // The timer interval, in seconds, for CD's SpawnManager's update function.
 // The update function first checks several state variables to determine
@@ -128,6 +123,18 @@ var EZTSpawnMode ZTSpawnModeEnum;
 var const string ZTSpawnModeHelpString;
 var const string ZTSpawnModeDefaultValue;
 
+var config string BossFPMax;
+var int BossFPMaxInt;
+
+var config string FleshpoundFPMax;
+var int FleshpoundFPMaxInt;
+
+var config string ScrakeFPMax;
+var int ScrakeFPMaxInt;
+
+var config string TrashFPMax;
+var int TrashFPMaxInt;
+
 // the maximum monsters allowed on the map at one time.  in the vanilla game,
 // this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1; 32 in
 // any other case (such as when playing alone on a dedicated server).  if this
@@ -139,15 +146,19 @@ var int MaxMonstersInt;
 
 // true to allow albino crawlers to spawn as they do in the unmodded game.
 // false to spawn regular crawlers in place of albino crawlers.
-var config bool AlbinoCrawlers;
+var config string AlbinoCrawlers;
+var bool AlbinoCrawlersBool;
 
 // same value sense as for AlbinoCrawlers, but for alpha clots
-var config bool AlbinoAlphas;
+var config string AlbinoAlphas;
+var bool AlbinoAlphasBool;
 
 // same value sense as for AlbinoCrawlers, but for double bladed gorefasts
-var config bool AlbinoGorefasts;
+var config string AlbinoGorefasts;
+var bool AlbinoGorefastsBool;
 
-var config bool ZedsTeleportCloser;
+var config string ZedsTeleportCloser;
+var bool ZedsTeleportCloserBool;
 
 // true to log some internal state specific to this mod
 var config bool bLogControlledDifficulty;
@@ -180,6 +191,7 @@ var const string BossOptionDefaultValue;
 // If set to zero, CD behaves as though it had been set to 1.
 // If set to "max", the value 2^31 - 1 is used.
 var config string WeaponTimeout;
+var int WeaponTimeoutInt;
 
 // Defines users always allowed to run any chat command
 var config array<StructAuthorizedUsers> AuthorizedUsers;
@@ -206,6 +218,23 @@ var CD_ProgrammableSetting TrashFPSetting;
 var CD_ProgrammableSetting ZTSpawnSlowdownSetting;
 
 var array<CD_ProgrammableSetting> DynamicSettings;
+
+
+var CD_BasicSetting AlbinoAlphasSetting;
+var CD_BasicSetting AlbinoCrawlersSetting;
+var CD_BasicSetting AlbinoGorefastsSetting;
+var CD_BasicSetting BossFPMaxSetting;
+var CD_BasicSetting FleshpoundFPMaxSetting;
+var CD_BasicSetting ScrakeFPMaxSetting;
+var CD_BasicSetting TraderTimeSetting;
+var CD_BasicSetting TrashFPMaxSetting;
+var CD_BasicSetting WeaponTimeoutSetting;
+var CD_BasicSetting ZedsTeleportCloserSetting;
+
+var array<CD_BasicSetting> BasicSettings;
+
+
+var array<CD_Setting> AllSettings;
 
 // SpawnCycle parsed out of the SpawnCycleDefs strings
 var array<CD_AIWaveInfo> IniWaveInfos;
@@ -267,7 +296,9 @@ event InitGame( string Options, out string ErrorMessage )
 	// Print CD's commit hash (version)
 	GameInfo_CDCP.Print( "Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded" );
 
+	SetupBasicSettings();
 	SetupProgrammableSettings();
+	SortAllSettingsByName();
 
 	ParseCDGameOptions( Options );
 
@@ -279,47 +310,123 @@ event InitGame( string Options, out string ErrorMessage )
 	InitStructStagedConfig();
 }
 
+private function SortAllSettingsByName()
+{
+	AllSettings.sort(SettingNameComparator);
+}
+
+// DO NOT mark the parameters "const out"!  The compiler will accept
+// both modifiers without so much as a warning, but the entire engine
+// will crash to bugsplat when attempting to call this via a dynamic
+// array's sort(<comparator>) function.  Unrealscript should not 
+// generally be able to crash the entire engine in the first place,
+// so I'm guessing this is an engine, bytecode interpreter, or compiler
+// bug (so it's conceivable, though unlikely, that it could get fixed).
+private function int SettingNameComparator( CD_Setting a, CD_Setting b )
+{
+	local string an, bn;
+
+	an = a.GetOptionName();
+	bn = b.GetOptionName();
+
+	if ( an < bn )
+	{
+		return 1;
+	}
+	else if ( an > bn )
+	{
+		return -1;
+	}
+	return 0;
+}
+
+
+private function SetupBasicSettings()
+{
+	AlbinoAlphasSetting = new(self) class'CD_BasicSetting_AlbinoAlphas';
+	RegisterBasicSetting( AlbinoAlphasSetting );
+
+	AlbinoCrawlersSetting = new(self) class'CD_BasicSetting_AlbinoCrawlers';
+	RegisterBasicSetting( AlbinoCrawlersSetting );
+
+	AlbinoGorefastsSetting = new(self) class'CD_BasicSetting_AlbinoGorefasts';
+	RegisterBasicSetting( AlbinoGorefastsSetting );
+
+	BossFPMaxSetting = new(self) class'CD_BasicSetting_BossFPMax';
+	RegisterBasicSetting( BossFPMaxSetting );
+
+	FleshpoundFPMaxSetting = new(self) class'CD_BasicSetting_FleshpoundFPMax';
+	RegisterBasicSetting( FleshpoundFPMaxSetting );
+
+	ScrakeFPMaxSetting = new(self) class'CD_BasicSetting_ScrakeFPMax';
+	RegisterBasicSetting( ScrakeFPMaxSetting );
+
+	TraderTimeSetting = new(self) class'CD_BasicSetting_TraderTime';
+	RegisterBasicSetting( TraderTimeSetting );
+
+	TrashFPMaxSetting = new(self) class'CD_BasicSetting_TrashFPMax';
+	RegisterBasicSetting( TrashFPMaxSetting );
+
+	WeaponTimeoutSetting = new(self) class'CD_BasicSetting_WeaponTimeout';
+	RegisterBasicSetting( WeaponTimeoutSetting );
+
+	ZedsTeleportCloserSetting = new(self) class'CD_BasicSetting_ZedsTeleportCloser';
+	RegisterBasicSetting( ZedsTeleportCloserSetting );
+}
+
+private function RegisterBasicSetting( const out CD_BasicSetting BasicSetting )
+{
+	BasicSettings.AddItem( BasicSetting );
+	AllSettings.AddItem( BasicSetting );
+}
+
+private function RegisterDynamicSetting( const out CD_ProgrammableSetting DynamicSetting )
+{
+	DynamicSettings.AddItem( DynamicSetting );
+	AllSettings.AddItem( DynamicSetting );
+}
+
 private function SetupProgrammableSettings()
 {
 	BossFPSetting = new(self) class'CD_ProgrammableSetting_BossFP';
 	BossFPSetting.IniDefsArray = BossFPDefs;
-	DynamicSettings.AddItem( BossFPSetting );
+	RegisterDynamicSetting( BossFPSetting );
 
 	CohortSizeSetting = new(self) class'CD_ProgrammableSetting_CohortSize';
 	CohortSizeSetting.IniDefsArray = CohortSizeDefs;
-	DynamicSettings.AddItem( CohortSizeSetting );
+	RegisterDynamicSetting( CohortSizeSetting );
 
 	FakePlayersSetting = new(self) class'CD_ProgrammableSetting_FakePlayers';
 	FakePlayersSetting.IniDefsArray = FakePlayersDefs;
-	DynamicSettings.AddItem( FakePlayersSetting );
+	RegisterDynamicSetting( FakePlayersSetting );
 
 	MaxMonstersSetting = new(self) class'CD_ProgrammableSetting_MaxMonsters';
 	MaxMonstersSetting.IniDefsArray = MaxMonstersDefs;
-	DynamicSettings.AddItem( MaxMonstersSetting );
+	RegisterDynamicSetting( MaxMonstersSetting );
 
 	SpawnModSetting = new(self) class'CD_ProgrammableSetting_SpawnMod';
 	SpawnModSetting.IniDefsArray = SpawnModDefs;
-	DynamicSettings.AddItem( SpawnModSetting );
+	RegisterDynamicSetting( SpawnModSetting );
 
 	MinSpawnIntervalSetting = new(self) class'CD_ProgrammableSetting_MinSpawnInterval';
 	MinSpawnIntervalSetting.IniDefsArray = MinSpawnIntervalDefs;
-	DynamicSettings.AddItem( MinSpawnIntervalSetting );
+	RegisterDynamicSetting( MinSpawnIntervalSetting );
 
 	ScrakeFPSetting = new(self) class'CD_ProgrammableSetting_ScrakeFP';
 	ScrakeFPSetting.IniDefsArray = ScrakeFPDefs;
-	DynamicSettings.AddItem( ScrakeFPSetting );
+	RegisterDynamicSetting( ScrakeFPSetting );
 
 	FleshpoundFPSetting = new(self) class'CD_ProgrammableSetting_FleshpoundFP';
 	FleshpoundFPSetting.IniDefsArray = FleshpoundFPDefs;
-	DynamicSettings.AddItem( FleshpoundFPSetting );
+	RegisterDynamicSetting( FleshpoundFPSetting );
 
 	TrashFPSetting = new(self) class'CD_ProgrammableSetting_TrashFP';
 	TrashFPSetting.IniDefsArray = TrashFPDefs;
-	DynamicSettings.AddItem( TrashFPSetting );
+	RegisterDynamicSetting( TrashFPSetting );
 
 	ZTSpawnSlowdownSetting = new(self) class'CD_ProgrammableSetting_ZTSpawnSlowdown';
 	ZTSpawnSlowdownSetting.IniDefsArray = ZTSpawnSlowdownDefs;
-	DynamicSettings.AddItem( ZTSpawnSlowdownSetting );
+	RegisterDynamicSetting( ZTSpawnSlowdownSetting );
 }
 
 function bool CheckRelevance(Actor Other)
@@ -347,8 +454,8 @@ function bool CheckRelevance(Actor Other)
 
 	if ( None != KFAIC )
 	{
-		KFAIC.bCanTeleportCloser = ZedsTeleportCloser;
-		`cdlog("Set bCanTeleportCloser="$ ZedsTeleportCloser $" on "$ KFAIC, bLogControlledDifficulty);
+		KFAIC.bCanTeleportCloser = ZedsTeleportCloserBool;
+		`cdlog("Set bCanTeleportCloser="$ ZedsTeleportCloserBool $" on "$ KFAIC, bLogControlledDifficulty);
 	}
 
 	// Should always be true, due to the early return when false
@@ -359,30 +466,16 @@ function bool CheckRelevance(Actor Other)
 
 private function OverrideWeaponLifespan(KFDroppedPickup Weap)
 {
-	local int seconds;
-
-	seconds = GetWeaponTimeoutSeconds();
-
-	if ( 0 < seconds )
+	if ( 0 < WeaponTimeoutInt )
 	{
-		Weap.Lifespan = seconds;
+		Weap.Lifespan = WeaponTimeoutInt;
 	}
-	else if ( 0 == seconds )
+	else if ( 0 == WeaponTimeoutInt )
 	{
 		Weap.Lifespan = 1;
 	}
-}
 
-private function int GetWeaponTimeoutSeconds()
-{
-	if ( "max" == WeaponTimeout )
-	{
-		return 2147483647;
-	}
-	else
-	{
-		return int( WeaponTimeout );
-	}
+	// If negative, do nothing (TWI's standard lifespan prevails)
 }
 
 //
@@ -470,91 +563,17 @@ private function SpawnManagerWakeup()
 
 private function ParseCDGameOptions( const out string Options )
 {
-	if ( HasOption(Options, "WeaponTimeout") )
+	local int i;
+
+	for ( i = 0; i < AllSettings.Length; i++ )
 	{
-		WeaponTimeout = ParseOption(Options, "WeaponTimeout" );
-		`cdlog("WeaponTimeoutFromGameOptions = "$WeaponTimeout, bLogControlledDifficulty);
+		AllSettings[i].InitFromOptions( Options );
 	}
-
-	WeaponTimeout = ClampWeaponTimeout( WeaponTimeout );
-	`cdlog("Clamped WeaponTimeout = "$WeaponTimeout, bLogControlledDifficulty);
-	GameInfo_CDCP.Print("WeaponTimeout="$ GetWeaponTimeoutString() );
-
-	if ( HasOption(Options, "AlbinoAlphas") )
-	{
-		AlbinoAlphas = GetBoolOption( Options, "AlbinoAlphas", true );
-		`cdlog("AlbinoAlphasFromGameOptions = "$AlbinoAlphas$" (true=default)", bLogControlledDifficulty);
-	}
-
-	GameInfo_CDCP.Print( "AlbinoAlphas="$AlbinoAlphas );
-
-	if ( HasOption(Options, "AlbinoCrawlers") )
-	{
-		AlbinoCrawlers = GetBoolOption( Options, "AlbinoCrawlers", true );
-		`cdlog("AlbinoCrawlersFromGameOptions = "$AlbinoCrawlers$" (true=default)", bLogControlledDifficulty);
-	}
-
-	GameInfo_CDCP.Print( "AlbinoCrawlers="$AlbinoCrawlers );
-
-	if ( HasOption(Options, "AlbinoGorefasts") )
-	{
-		AlbinoGorefasts = GetBoolOption( Options, "AlbinoGorefasts", true );
-		`cdlog("AlbinoGorefastsFromGameOptions = "$AlbinoGorefasts$" (true=default)", bLogControlledDifficulty);
-	}
-
-	GameInfo_CDCP.Print( "AlbinoGorefasts="$AlbinoGorefasts );
-
-	if ( HasOption(Options, "ZedsTeleportCloser") )
-	{
-		ZedsTeleportCloser = GetBoolOption( Options, "ZedsTeleportCloser", true );
-		`cdlog("ZedsTeleportCloserFromGameOptions = "$ZedsTeleportCloser$" (true=default)", bLogControlledDifficulty);
-	}
-
-	GameInfo_CDCP.Print( "ZedsTeleportCloser="$ZedsTeleportCloser );
 
 	if ( HasOption(Options, "SpawnCycle") )
 	{
 		SpawnCycle= ParseOption(Options, "SpawnCycle" );
 		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycle, bLogControlledDifficulty);
-	}
-
-	BossFPSetting.InitFromOptions( Options );
-
-	CohortSizeSetting.InitFromOptions( Options );
-
-	FakePlayersSetting.InitFromOptions( Options );
-
-	MaxMonstersSetting.InitFromOptions( Options );
-
-	MinSpawnIntervalSetting.InitFromOptions( Options );
-
-	SpawnModSetting.InitFromOptions( Options );
-
-	ScrakeFPSetting.InitFromOptions( Options );
-
-	FleshpoundFPSetting.InitFromOptions( Options );
-
-	TrashFPSetting.InitFromOptions( Options );
-
-	ZTSpawnSlowdownSetting.InitFromOptions( Options );
-
-	// Process TraderTime command option, if present
-	if ( HasOption(Options, "TraderTime") )
-	{
-		TraderTime= GetIntOption( Options, "TraderTime", -1 );
-		`cdlog("TraderTimeFromGameOptions = "$TraderTime$" (-1=missing)", bLogControlledDifficulty);
-	}
-
-	// TraderTime is not clamped
-
-	// Print TraderTime to console
-	if ( 0 < TraderTime )
-	{
-		GameInfo_CDCP.Print("TraderTime="$TraderTime);
-	}
-	else
-	{
-		GameInfo_CDCP.Print("TraderTime=<unmodded default>");
 	}
 
 	// Initialize the SpawnCycle option if empty
@@ -677,13 +696,8 @@ private function ParseAndClampIntOpt( const out string Options, out int Value, c
 
 private function InitStructStagedConfig()
 {
-	StagedConfig.AlbinoAlphas = AlbinoAlphas;
-	StagedConfig.AlbinoCrawlers = AlbinoCrawlers;
-	StagedConfig.AlbinoGorefasts = AlbinoGorefasts;
 	StagedConfig.Boss = Boss;
 	StagedConfig.SpawnCycle = SpawnCycle;
-	StagedConfig.WeaponTimeout = WeaponTimeout;
-	StagedConfig.ZedsTeleportCloser = ZedsTeleportCloser;
 	StagedConfig.ZTSpawnMode = ZTSpawnMode;
 }
 
@@ -941,48 +955,6 @@ function CreateDifficultyInfo(string Options)
 	`cdlog("CD_DifficultyInfo ready: " $ CustomDifficultyInfo, bLogControlledDifficulty);
 }
 
-function string ClampWeaponTimeout( const out string wt )
-{
-	local int ParsedSeconds;
-
-	if ( "max" == wt )
-	{
-		return wt;
-	}
-
-	if ( "" != wt )
-	{
-		ParsedSeconds = int(wt);
-
-		if ( 0 == ParsedSeconds )
-		{
-			if ( "0" == wt )
-			{
-				// User specified the exact string "0"; accept it as-is
-				return wt;
-			}
-			else
-			{
-				// This nonempty string converted to 0 (the default value),
-				// but the string itself is not "0".  unrealscript's
-				// string-to-int parser never actually fails, it just stops
-				// when it finds a character it doesn't understand.  this
-				// means the user probably gave us a garbage string.
-				// replace it with "-1", which means use TWI's default
-				// weapon timeout (a safe default).
-				return string(-1);
-			}
-		}
-		else
-		{
-			return string( ParsedSeconds );
-		}
-	}
-
-	return string(-1);
-}
-
-
 /*
  * We override this function to apply FakePlayers modifier
  * to dosh rewards for killing zeds.
@@ -1181,72 +1153,24 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 	local string TempString;
 	local array<CD_AIWaveInfo> ActiveWaveInfos;
 
-	if ( StagedConfig.AlbinoAlphas != AlbinoAlphas )
-	{
-		SettingChangeNotifications.AddItem("AlbinoAlphas="$ StagedConfig.AlbinoAlphas $" (old: "$AlbinoAlphas$")");
-		AlbinoAlphas = StagedConfig.AlbinoAlphas;
-	}
+	local int i, PendingWaveNum;
 
-	if ( StagedConfig.AlbinoCrawlers != AlbinoCrawlers )
-	{
-		SettingChangeNotifications.AddItem("AlbinoCrawlers="$ StagedConfig.AlbinoCrawlers $" (old: "$AlbinoCrawlers$")");
-		AlbinoCrawlers = StagedConfig.AlbinoCrawlers;
-	}
+	PendingWaveNum = WaveNum + 1;
 
-	if ( StagedConfig.AlbinoGorefasts != AlbinoGorefasts )
+	for ( i = 0; i < AllSettings.Length; i++ )
 	{
-		SettingChangeNotifications.AddItem("AlbinoGorefasts="$ StagedConfig.AlbinoGorefasts $" (old: "$AlbinoGorefasts$")");
-		AlbinoGorefasts = StagedConfig.AlbinoGorefasts;
+		TempString = AllSettings[i].CommitStagedChanges( PendingWaveNum );
+
+		if ( TempString != "" )
+		{
+			SettingChangeNotifications.AddItem( TempString );
+		}
 	}
 
 	if ( StagedConfig.Boss != Boss )
 	{
 		SettingChangeNotifications.AddItem("Boss="$ StagedConfig.Boss $" (old: "$Boss$")");
 		Boss = StagedConfig.Boss;
-	}
-
-	TempString = BossFPSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = CohortSizeSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = FakePlayersSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = FleshpoundFPSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = MinSpawnIntervalSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = MaxMonstersSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	if ( StagedConfig.WeaponTimeout != WeaponTimeout )
-	{
-		SettingChangeNotifications.AddItem(
-			"WeaponTimeout="$ GetWeaponTimeoutStringForArg( StagedConfig.WeaponTimeout ) $
-			" (old: "$ GetWeaponTimeoutString() $")");
-		WeaponTimeout = StagedConfig.WeaponTimeout;
 	}
 
 	if ( StagedConfig.SpawnCycle != SpawnCycle )
@@ -1277,41 +1201,11 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		}
 	}
 
-	TempString = ScrakeFPSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = SpawnModSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	TempString = TrashFPSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
-	}
-
-	if ( StagedConfig.ZedsTeleportCloser != ZedsTeleportCloser )
-	{
-		SettingChangeNotifications.AddItem("ZedsTeleportCloser="$ StagedConfig.ZedsTeleportCloser $" (old: "$ZedsTeleportCloser$")");
-		ZedsTeleportCloser = StagedConfig.ZedsTeleportCloser;
-	}
-
 	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
 	{
 		SettingChangeNotifications.AddItem("ZTSpawnMode="$ StagedConfig.ZTSpawnMode $" (old: "$ZTSpawnMode$")");
 		ZTSpawnMode = StagedConfig.ZTSpawnMode;
 		SetZTSpawnModeEnum();
-	}
-
-	TempString = ZTSpawnSlowdownSetting.CommitStagedChanges( WaveNum + 1 );
-	if ( TempString != "" )
-	{
-		SettingChangeNotifications.AddItem( TempString );
 	}
 
 	if ( 0 < SettingChangeNotifications.Length )

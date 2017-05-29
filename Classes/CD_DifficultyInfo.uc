@@ -110,5 +110,5 @@ function int GetNumFakePlayers()
 // configuration getter
 function float GetTraderTime()
 {
-	return Outer.TraderTime;
+	return Outer.TraderTimeInt;
 }

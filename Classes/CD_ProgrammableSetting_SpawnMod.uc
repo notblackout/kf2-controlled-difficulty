@@ -28,4 +28,7 @@ defaultproperties
 	DefaultSettingValue=1.f
 	MinSettingValue=0.f
 	MaxSettingValue=1.f
+
+	ChatCommandNames=("!cdspawnmod","!cdsm")
+	ChatWriteParamHintFragment="float, default is 1.0"
 }

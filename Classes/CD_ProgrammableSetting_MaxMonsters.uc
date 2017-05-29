@@ -33,4 +33,7 @@ defaultproperties
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=10000
+
+	ChatCommandNames=("!cdmaxmonsters","!cdmm")
+	ChatWriteParamHintFragment="int, 0 to use unmodded default"
 }

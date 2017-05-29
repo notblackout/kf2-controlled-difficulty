@@ -33,4 +33,7 @@ defaultproperties
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=10000
+
+	ChatCommandNames=("!cdcohortsize","!cdcs")
+	ChatWriteParamHintFragment="int, 0 disables cohort mode"
 }
