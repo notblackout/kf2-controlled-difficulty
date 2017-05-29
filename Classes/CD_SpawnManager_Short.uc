@@ -1,7 +1,7 @@
 //=============================================================================
-// CDSpawnManager_Short
+// CD_SpawnManager_Short
 //=============================================================================
-class CDSpawnManager_Short extends CDSpawnManager;
+class CD_SpawnManager_Short extends CD_SpawnManager;
 
 DefaultProperties
 {

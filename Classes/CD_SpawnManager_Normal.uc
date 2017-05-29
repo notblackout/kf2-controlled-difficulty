@@ -1,7 +1,7 @@
 //=============================================================================
-// CDSpawnManager_Normal
+// CD_SpawnManager_Normal
 //=============================================================================
-class CDSpawnManager_Normal extends CDSpawnManager;
+class CD_SpawnManager_Normal extends CD_SpawnManager;
 
 DefaultProperties
 {

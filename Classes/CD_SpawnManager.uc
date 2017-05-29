@@ -1,5 +1,5 @@
 //=============================================================================
-// CDSpawnManager
+// CD_SpawnManager
 //
 // This is the common parent class for CD's various game-length-specific
 // SpawnManager subclasses.  Having one subclass per game-length is a
@@ -11,7 +11,7 @@
 // short of overridding the whole thing (i.e. no variables to set or
 // ancillary functions to override in order to get the desired behavior).
 //=============================================================================
-class CDSpawnManager extends KFAISpawnManager
+class CD_SpawnManager extends KFAISpawnManager
 	within CD_Survival;
 
 `include(CD_Log.uci)

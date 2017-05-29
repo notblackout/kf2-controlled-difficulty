@@ -675,7 +675,7 @@ private function DisplayBriefWaveStatsInChat()
 {
 	local string s;
 
-	s = CDSpawnManager( SpawnManager ).GetWaveAverageSpawnrate();
+	s = CD_SpawnManager( SpawnManager ).GetWaveAverageSpawnrate();
 
 	super.Broadcast(None, "Wave " $ WaveNum $ " Recap:\n"$ s, 'CDEcho');
 }
@@ -686,7 +686,7 @@ State TraderOpen
 	{
 		super.BeginState( PreviousStateName );
 
-		CDSpawnManager( SpawnManager ).WaveEnded();
+		CD_SpawnManager( SpawnManager ).WaveEnded();
 		SetTimer(2.f, false, 'DisplayBriefWaveStatsInChat');
 	}
 }
@@ -697,7 +697,7 @@ function EndOfMatch(bool bVictory)
 
 	if ( !bVictory && WaveNum < WaveMax )
 	{
-		CDSpawnManager( SpawnManager ).WaveEnded();
+		CD_SpawnManager( SpawnManager ).WaveEnded();
 		SetTimer(2.f, false, 'DisplayBriefWaveStatsInChat');
 	}
 }
@@ -1001,16 +1001,16 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
  */ 
 function InitSpawnManager()
 {
-	local CDSpawnManager cdsm;
+	local CD_SpawnManager cdsm;
 
 	local array<CD_AIWaveInfo> ActiveWaveInfos;
 
 	super.InitSpawnManager();
 
-	if ( SpawnManager.IsA( 'CDSpawnManager' ) )
+	if ( SpawnManager.IsA( 'CD_SpawnManager' ) )
 	{
-		`cdlog("Checked that SpawnManager "$SpawnManager$" is an instance of CDSpawnManager (OK)", bLogControlledDifficulty);
-		cdsm = CDSpawnManager( SpawnManager );
+		`cdlog("Checked that SpawnManager "$SpawnManager$" is an instance of CD_SpawnManager (OK)", bLogControlledDifficulty);
+		cdsm = CD_SpawnManager( SpawnManager );
 	}
 	else
 	{
@@ -1230,7 +1230,7 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		else
 		{
 			// the new SpawnCycle is either "unmodded" or was successfully loaded
-			CDSpawnManager( SpawnManager ).SetCustomWaves( ActiveWaveInfos );
+			CD_SpawnManager( SpawnManager ).SetCustomWaves( ActiveWaveInfos );
 			SettingChangeNotifications.AddItem("SpawnCycle="$ StagedConfig.SpawnCycle $" (old: "$TempString$")");
 		}
 	}
@@ -1446,7 +1446,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 {
 	local array<CD_AIWaveInfo> WaveInfosToSummarize;
 	local DifficultyWaveInfo DWS;
-	local class<CDSpawnManager> cdsmClass;
+	local class<CD_SpawnManager> cdsmClass;
 	local EWaveInfoStatus wis;
 
 	wis = GetWaveInfosForConsoleCommand( CycleName, WaveInfosToSummarize );
@@ -1497,7 +1497,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 		return;
 	}
 
-	cdsmClass = class<CDSpawnManager>( SpawnManagerClasses[GameLength] );
+	cdsmClass = class<CD_SpawnManager>( SpawnManagerClasses[GameLength] );
 	// No need to instantiate; we just want to check its default 
         // values for about Wave MaxAI 
 	DWS = cdsmClass.default.DifficultyWaveSettings[ Min(GameDifficulty, cdsmClass.default.DifficultyWaveSettings.Length-1) ];
@@ -1718,9 +1718,9 @@ defaultproperties
 
 	DifficultyInfoClass=class'ControlledDifficulty.CD_DifficultyInfo'
 
-	SpawnManagerClasses(0)=class'ControlledDifficulty.CDSpawnManager_Short'
-	SpawnManagerClasses(1)=class'ControlledDifficulty.CDSpawnManager_Normal'
-	SpawnManagerClasses(2)=class'ControlledDifficulty.CDSpawnManager_Long'
+	SpawnManagerClasses(0)=class'ControlledDifficulty.CD_SpawnManager_Short'
+	SpawnManagerClasses(1)=class'ControlledDifficulty.CD_SpawnManager_Normal'
+	SpawnManagerClasses(2)=class'ControlledDifficulty.CD_SpawnManager_Long'
 
 	PlayerControllerClass=class'ControlledDifficulty.CD_PlayerController'
 
