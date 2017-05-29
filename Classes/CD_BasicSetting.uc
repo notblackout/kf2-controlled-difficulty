@@ -17,16 +17,18 @@ var const array<string> ChatWriteParamHints;
 
 function bool StageIndicator( const out string Raw, out string StatusMsg, const optional bool ForceOverwrite = false )
 {
-	// takes unsanitized string "Raw", attempts to interpret it as
-	// a value directive, and assigns to staging state variables
+	local string Candidate;
 
-	if ( Raw != "" && Raw == StagedIndicator && !ForceOverwrite )
+	Candidate = Locs( Raw );
+	Candidate = SanitizeIndicator( Candidate );
+
+	if ( Candidate != "" && Candidate == StagedIndicator && !ForceOverwrite )
 	{
-		StatusMsg = OptionName $" is already "$ Raw;
-		return true;
+		StatusMsg = OptionName $" is already "$ Candidate;
+		return false;
 	}
 
-	StagedIndicator = Sanitize( Raw );
+	StagedIndicator = Candidate;
 
 	`cdlog("Converted raw string "$ Raw $" to staged value "$ StagedIndicator,
 		bLogControlledDifficulty);
@@ -47,7 +49,7 @@ protected function WriteIndicator( const out string Val )
 	// TODO throw a fatal error
 }
 
-protected function string Sanitize( const string Raw )
+protected function string SanitizeIndicator( const string Raw )
 {
 	// TODO throw a fatal error
 }
@@ -159,6 +161,7 @@ function bool GetChatReadCommand( out StructChatCommand scc )
 	scc.ParamHints = empty;
 	scc.NullaryImpl = GetChatLine;
 	scc.ParamsImpl = None;
+	scc.CDSetting = self;
 	scc.Description = desc;
 	scc.AuthLevel = CDAUTH_READ;
 	scc.ModifiesConfig = false;
@@ -183,6 +186,7 @@ function bool GetChatWriteCommand( out StructChatCommand scc )
 	scc.ParamHints = ChatWriteParamHints;
 	scc.NullaryImpl = None;
 	scc.ParamsImpl = ChatWriteCommand;
+	scc.CDSetting = self;
 	scc.Description = desc;
 	scc.AuthLevel = CDAUTH_WRITE;
 	scc.ModifiesConfig = true;

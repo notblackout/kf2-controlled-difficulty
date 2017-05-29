@@ -12,7 +12,7 @@ protected function WriteIndicator( const out string Val )
 	Outer.AlbinoAlphasBool = bool( Val );
 }
 
-protected function string Sanitize( const string Raw )
+protected function string SanitizeIndicator( const string Raw )
 {
 	return string( bool( Raw ) );
 }

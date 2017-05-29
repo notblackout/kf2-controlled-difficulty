@@ -60,7 +60,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 	if ( Raw != "" && Raw == StagedIndicator && !ForceOverwrite )
 	{
 		StatusMsg = OptionName $" is already "$ Raw;
-		return true;
+		return false;
 	}
 
 	StagedIndicator = "";
@@ -313,6 +313,7 @@ function bool GetChatReadCommand( out StructChatCommand scc )
 	scc.ParamHints = empty;
 	scc.NullaryImpl = GetChatLine;
 	scc.ParamsImpl = None;
+	scc.CDSetting = self;
 	scc.Description = desc;
 	scc.AuthLevel = CDAUTH_READ;
 	scc.ModifiesConfig = false;
@@ -342,6 +343,7 @@ function bool GetChatWriteCommand( out StructChatCommand scc )
 	scc.ParamHints = hints;
 	scc.NullaryImpl = None;
 	scc.ParamsImpl = ChatWriteCommand;
+	scc.CDSetting = self;
 	scc.Description = desc;
 	scc.AuthLevel = CDAUTH_WRITE;
 	scc.ModifiesConfig = true;

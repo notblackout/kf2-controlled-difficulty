@@ -28,13 +28,6 @@ enum CDAuthLevel
 	CDAUTH_WRITE
 };
 
-struct StructStagedConfig
-{
-	var string   Boss;
-	var string   SpawnCycle;
-	var string   ZTSpawnMode;
-};
-
 struct StructAuthorizedUsers
 {
 	var string SteamID;
@@ -120,8 +113,6 @@ var float ZTSpawnSlowdownFloat;
 
 var config string ZTSpawnMode;
 var EZTSpawnMode ZTSpawnModeEnum;
-var const string ZTSpawnModeHelpString;
-var const string ZTSpawnModeDefaultValue;
 
 var config string BossFPMax;
 var int BossFPMaxInt;
@@ -168,13 +159,12 @@ var config bool bLogControlledDifficulty;
 // all other values are reserved for potential future preset names
 var config string SpawnCycle;
 var config array<string> SpawnCycleDefs;
+var array<CD_AIWaveInfo> ActiveWaveInfos;
 
 // "hans" or "volter": forces the hans boss wave
 // "pat", "patty", "patriarch": forces the patriarch boss wave
 // else: choose a random boss wave (unmodded game behavior)
 var config string Boss;
-var const string BossOptionHelpString;
-var const string BossOptionDefaultValue;
 
 // Time, in seconds, that dropped weapons remain on the ground before
 // disappearing.  This must be either a valid integer in string form,
@@ -223,13 +213,16 @@ var array<CD_ProgrammableSetting> DynamicSettings;
 var CD_BasicSetting AlbinoAlphasSetting;
 var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
+var CD_BasicSetting BossSetting;
 var CD_BasicSetting BossFPMaxSetting;
 var CD_BasicSetting FleshpoundFPMaxSetting;
 var CD_BasicSetting ScrakeFPMaxSetting;
+var CD_BasicSetting SpawnCycleSetting;
 var CD_BasicSetting TraderTimeSetting;
 var CD_BasicSetting TrashFPMaxSetting;
 var CD_BasicSetting WeaponTimeoutSetting;
 var CD_BasicSetting ZedsTeleportCloserSetting;
+var CD_BasicSetting ZTSpawnModeSetting;
 
 var array<CD_BasicSetting> BasicSettings;
 
@@ -250,15 +243,6 @@ var CD_ConsolePrinter GameInfo_CDCP;
 
 // Authoritative list of known SpawnCycle presets
 var CD_SpawnCycleCatalog SpawnCycleCatalog;
-
-// Configuration changes latched through chat commands.
-// Chat commands always go through StagedConfig, but
-// the StagedConfig is only copied to the live config
-// if a wave is not currently in progress.  If a wave
-// is in progress, the new values sit here in StagedConfig
-// until the wave is over, at which time then CD copies
-// the staged values to their live counterparts.
-var StructStagedConfig StagedConfig;
 
 // Differences in SpawnMod which are less than this
 // value will be considered neglible and ignored, for
@@ -306,8 +290,6 @@ event InitGame( string Options, out string ErrorMessage )
 	ChatCommander.SetupChatCommands();
 
 	SaveConfig();
-
-	InitStructStagedConfig();
 }
 
 private function SortAllSettingsByName()
@@ -352,6 +334,9 @@ private function SetupBasicSettings()
 	AlbinoGorefastsSetting = new(self) class'CD_BasicSetting_AlbinoGorefasts';
 	RegisterBasicSetting( AlbinoGorefastsSetting );
 
+	BossSetting = new(self) class'CD_BasicSetting_Boss';
+	RegisterBasicSetting( BossSetting );
+
 	BossFPMaxSetting = new(self) class'CD_BasicSetting_BossFPMax';
 	RegisterBasicSetting( BossFPMaxSetting );
 
@@ -360,6 +345,9 @@ private function SetupBasicSettings()
 
 	ScrakeFPMaxSetting = new(self) class'CD_BasicSetting_ScrakeFPMax';
 	RegisterBasicSetting( ScrakeFPMaxSetting );
+
+	SpawnCycleSetting = new(self) class'CD_BasicSetting_SpawnCycle';
+	RegisterBasicSetting( SpawnCycleSetting );
 
 	TraderTimeSetting = new(self) class'CD_BasicSetting_TraderTime';
 	RegisterBasicSetting( TraderTimeSetting );
@@ -372,6 +360,9 @@ private function SetupBasicSettings()
 
 	ZedsTeleportCloserSetting = new(self) class'CD_BasicSetting_ZedsTeleportCloser';
 	RegisterBasicSetting( ZedsTeleportCloserSetting );
+
+	ZTSpawnModeSetting = new(self) class'CD_BasicSetting_ZTSpawnMode';
+	RegisterBasicSetting( ZTSpawnModeSetting );
 }
 
 private function RegisterBasicSetting( const out CD_BasicSetting BasicSetting )
@@ -569,26 +560,9 @@ private function ParseCDGameOptions( const out string Options )
 	{
 		AllSettings[i].InitFromOptions( Options );
 	}
-
-	if ( HasOption(Options, "SpawnCycle") )
-	{
-		SpawnCycle= ParseOption(Options, "SpawnCycle" );
-		`cdlog("SpawnCycleFromGameOptions = "$SpawnCycle, bLogControlledDifficulty);
-	}
-
-	// Initialize the SpawnCycle option if empty
-	if ( "" == SpawnCycle )
-	{
-		SpawnCycle = "unmodded";
-	}
-
-	ParseAndSanitizeStringOpt( Options, Boss, "Boss", BossOptionDefaultValue, BossOptionHelpString, IsValidBossString );
-
-	ParseAndSanitizeStringOpt( Options, ZTSpawnMode, "ZTSpawnMode", ZTSpawnModeDefaultValue, ZTSpawnModeHelpString, IsValidZTSpawnModeString );
-	SetZTSpawnModeEnum();
 }
 
-private function SetZTSpawnModeEnum()
+protected function SetZTSpawnModeEnum()
 {
 	if ( ZTSpawnMode == "unmodded" )
 	{
@@ -598,107 +572,6 @@ private function SetZTSpawnModeEnum()
 	{
 		ZTSpawnModeEnum = ZTSM_CLOCKWORK;
 	}
-}
-
-private function ParseAndSanitizeStringOpt( const out string Options, out string Value, const string OptName,
-		const out string DefaultValue, const out string HelpString, const delegate<StringReferencePredicate> Validator )
-{
-	if ( HasOption(Options, OptName) )
-	{
-		Value = ParseOption(Options, OptName );
-		`cdlog(OptName $"FromGameOptions = "$ Value, bLogControlledDifficulty);
-	}
-
-	// Initialize the option if currently the empty string
-	if ( "" == Value )
-	{
-		Value = DefaultValue;
-	}
-
-	if ( !Validator( Value ) )
-	{
-		// TODO
-		GameInfo_CDCP.Print( "WARNING Invalid: "$ OptName $"="$ Value $"; "$ HelpString );
-		GameInfo_CDCP.Print( OptName $"=unmodded (forced because \""$ Value $"\" is invalid)");
-		Value = DefaultValue;
-	}
-	else
-	{
-		GameInfo_CDCP.Print(OptName $"="$ Value);
-	}
-}
-
-private function ParseAndClampFloatOpt( const out string Options, out string StringHolder, out float FloatValue, const string OptName,
-		const float ParseErrorDefaultValue, const delegate<ClampFloatCDOption> Clamper )
-{
-	local float ValueBeforeClamping;
-
-	if ( StringHolder == "" )
-	{
-		FloatValue = ParseErrorDefaultValue;
-	}
-	else
-	{
-		FloatValue = float( StringHolder );
-	}
-
-	if ( HasOption(Options, OptName) )
-	{
-		FloatValue = GetFloatOption( Options, OptName, ParseErrorDefaultValue );
-		`cdlog(OptName $ "FromGameOptions = "$ FloatValue, bLogControlledDifficulty);
-	}
-
-	// FClamp the value
-	ValueBeforeClamping = FloatValue;
-	FloatValue = Clamper( FloatValue );
-	`cdlog("Clamped "$ OptName $" = "$ FloatValue, bLogControlledDifficulty);
-
-	if ( FloatValue == ValueBeforeClamping )
-	{
-		GameInfo_CDCP.Print(OptName $"="$ FloatValue);
-	}
-	else
-	{
-		GameInfo_CDCP.Print(OptName $"="$ FloatValue $" (clamped from "$ ValueBeforeClamping $")");
-	}
-
-	// Make a string copy (by CD convention, only string copies of config opts are saved, not the float copy)
-	StringHolder = string( FloatValue );
-}
-
-private function ParseAndClampIntOpt( const out string Options, out int Value, const string OptName,
-		const int ParseErrorDefaultValue, const delegate<ClampIntCDOption> Clamper )
-{
-	local int ValueBeforeClamping, ValueFromGameOptions;
-
-	// Process command-line option, if present
-	if ( HasOption( Options, OptName ) )
-	{
-		ValueFromGameOptions = GetIntOption( Options, OptName, ParseErrorDefaultValue );
-		`cdlog(OptName $ "FromGameOptions = "$ValueFromGameOptions, bLogControlledDifficulty);
-		Value = ValueFromGameOptions;
-	}
-
-	ValueBeforeClamping = Value;
-	Value = Clamper( Value ); // TODO delegate
-	`cdlog("Clamped "$ OptName $" = "$ Value, bLogControlledDifficulty);
-
-	// Print clamped value to console
-	if ( Value != ValueBeforeClamping )
-	{
-		GameInfo_CDCP.Print(OptName$"="$Value$" (clamped from "$ValueBeforeClamping$")");
-	}
-	else
-	{
-		GameInfo_CDCP.Print(OptName$"="$Value);
-	}
-}
-
-private function InitStructStagedConfig()
-{
-	StagedConfig.Boss = Boss;
-	StagedConfig.SpawnCycle = SpawnCycle;
-	StagedConfig.ZTSpawnMode = ZTSpawnMode;
 }
 
 private function DisplayBriefWaveStatsInChat()
@@ -991,8 +864,6 @@ function InitSpawnManager()
 {
 	local CD_SpawnManager cdsm;
 
-	local array<CD_AIWaveInfo> ActiveWaveInfos;
-
 	super.InitSpawnManager();
 
 	if ( SpawnManager.IsA( 'CD_SpawnManager' ) )
@@ -1006,44 +877,33 @@ function InitSpawnManager()
 		return;
 	}
 
-	LoadSpawnCycle( ActiveWaveInfos );
-
-	if ( 0 == ActiveWaveinfos.length && SpawnCycle != "unmodded" )
-	{
-		GameInfo_CDCP.Print( "SpawnCycle=unmodded (forced because \""$ SpawnCycle $"\" is invalid or does not support this game length)" );
-		SpawnCycle = "unmodded";
-	}
-	else
-	{
-		cdsm.SetCustomWaves( ActiveWaveInfos );
-		GameInfo_CDCP.Print( "SpawnCycle="$ SpawnCycle );
-	}
-
+	cdsm.SetCustomWaves( ActiveWaveInfos );
 }
 
-private function LoadSpawnCycle( out array<CD_AIWaveInfo> ActiveWaveInfos )
+protected function LoadSpawnCycle( const out string OverrideSpawnCycle, out array<CD_AIWaveInfo> OutWaveInfos )
 {
 	// Assign a spawn definition array to CycleDefs (unless SpawnCycle=unmodded)
-	if ( SpawnCycle == "ini" )
+	if ( OverrideSpawnCycle == "ini" )
 	{
 		MaybeLoadIniWaveInfos();
 
-		ActiveWaveInfos = IniWaveInfos;
+		OutWaveInfos = IniWaveInfos;
 	}
-	else if ( SpawnCycle == "unmodded" )
+	else if ( OverrideSpawnCycle == "unmodded" )
 	{
-		`cdlog("Not using a SpawnCycle (value="$SpawnCycle$")", bLogControlledDifficulty);
+		`cdlog("LoadSpawnCycle: found "$OverrideSpawnCycle$", treating as noop", bLogControlledDifficulty);
+		OutWaveInfos.Length = 0;
 	}
 	else
 	{
-		if ( !SpawnCycleCatalog.ParseSquadCyclePreset( SpawnCycle, GameLength, ActiveWaveInfos ) )
+		if ( !SpawnCycleCatalog.ParseSquadCyclePreset( OverrideSpawnCycle, GameLength, OutWaveInfos ) )
 		{
-			ActiveWaveInfos.length = 0;
+			OutWaveInfos.Length = 0;
 		}
 	}
 }
 
-event Broadcast (Actor Sender, coerce string Msg, optional name Type)
+event Broadcast(Actor Sender, coerce string Msg, optional name Type)
 {
 	super.Broadcast(Sender, Msg, Type);
 
@@ -1151,8 +1011,6 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 {
 	local array<string> SettingChangeNotifications;
 	local string TempString;
-	local array<CD_AIWaveInfo> ActiveWaveInfos;
-
 	local int i, PendingWaveNum;
 
 	PendingWaveNum = WaveNum + 1;
@@ -1165,47 +1023,6 @@ protected function bool ApplyStagedConfig( out string MessageToClients, const st
 		{
 			SettingChangeNotifications.AddItem( TempString );
 		}
-	}
-
-	if ( StagedConfig.Boss != Boss )
-	{
-		SettingChangeNotifications.AddItem("Boss="$ StagedConfig.Boss $" (old: "$Boss$")");
-		Boss = StagedConfig.Boss;
-	}
-
-	if ( StagedConfig.SpawnCycle != SpawnCycle )
-	{
-		TempString = SpawnCycle;
-		SpawnCycle = StagedConfig.SpawnCycle;
-
-		LoadSpawnCycle( ActiveWaveInfos );
-
-		if ( 0 == ActiveWaveinfos.length && SpawnCycle != "unmodded" )
-		{
-			// The new SpawnCycle was invalid or could not be loaded (gamelength incompatibility?)
-			// Revert to the old SC
-			SpawnCycle = TempString;
-			// Warn the user
-			SettingChangeNotifications.AddItem("Setting SpawnCycle=" $ StagedConfig.SpawnCycle $ " failed!");
-			SettingChangeNotifications.AddItem("Kept SpawnCycle=" $ SpawnCycle);
-			// Overwrite the user's staged SC choice
-			StagedConfig.SpawnCycle = SpawnCycle;
-			// Reload original SC into ActiveWaveInfos
-			LoadSpawnCycle( ActiveWaveInfos );
-		}
-		else
-		{
-			// the new SpawnCycle is either "unmodded" or was successfully loaded
-			CD_SpawnManager( SpawnManager ).SetCustomWaves( ActiveWaveInfos );
-			SettingChangeNotifications.AddItem("SpawnCycle="$ StagedConfig.SpawnCycle $" (old: "$TempString$")");
-		}
-	}
-
-	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
-	{
-		SettingChangeNotifications.AddItem("ZTSpawnMode="$ StagedConfig.ZTSpawnMode $" (old: "$ZTSpawnMode$")");
-		ZTSpawnMode = StagedConfig.ZTSpawnMode;
-		SetZTSpawnModeEnum();
 	}
 
 	if ( 0 < SettingChangeNotifications.Length )
@@ -1585,19 +1402,6 @@ private function PrintScheduleSlug( string CycleName )
 	}
 }
 
-private static function bool GetBoolOption( string Options, string ParseString, bool CurrentValue )
-{
-	local string InOpt;
-
-	InOpt = ParseOption( Options, ParseString );
-	if ( InOpt != "" )
-	{
-		return bool(InOpt);
-	}
-
-	return CurrentValue;
-}
-
 function bool isRandomBoss()
 {
 	return isRandomBossString( Boss );
@@ -1628,48 +1432,6 @@ static function bool isVolterBossString( const out string s )
 	return s ~= "hans" || s ~= "volter" || s ~= "moregas";
 }
 
-function string GetWeaponTimeoutStringForArg( const string wt )
-{
-	local int seconds;
-
-	if ( "max" == wt )
-	{
-		return "max";
-	}
-
-	seconds = int(wt);
-
-	if ( 0 > seconds )
-	{
-		return "<unmodded default>";
-	}
-	else
-	{
-		return string(seconds);
-	}
-}
-
-function string GetWeaponTimeoutString()
-{
-	return GetWeaponTimeoutStringForArg( WeaponTimeout );
-}
-
-function string getStringForBossSetting()
-{
-	if ( isPatriarchBoss() )
-	{
-		return "patriarch";
-	}
-	else if ( isVolterBoss() )
-	{
-		return "volter";
-	}
-	else
-	{
-		return "random";
-	}
-}
-
 defaultproperties
 {
 	GameConductorClass=class'ControlledDifficulty.CD_DummyGameConductor'
@@ -1690,10 +1452,4 @@ defaultproperties
 	SpawnModEpsilon=0.0001
 	MinSpawnIntervalEpsilon=0.0001
 	ZTSpawnSlowdownEpsilon=0.0001
-
-	BossOptionHelpString="Valid alternatives: patriarch, hans, or unmodded"
-	BossOptionDefaultValue="unmodded"
-
-	ZTSpawnModeHelpString="Valid alternatives: unmodded or clockwork"
-	ZTSpawnModeDefaultValue="unmodded"
 }

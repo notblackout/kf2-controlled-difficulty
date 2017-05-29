@@ -11,6 +11,7 @@ struct StructChatCommand
 	var array<string> ParamHints; 
 	var delegate<ChatCommandNullaryImpl> NullaryImpl;
 	var delegate<ChatCommandParamsImpl> ParamsImpl;
+	var CD_Setting CDSetting;
 	var string Description;
 	var CDAuthLevel AuthLevel;
 	var bool ModifiesConfig;
@@ -72,13 +73,11 @@ function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 	local array<string> CommandTokens;
 	local name GameStateName;
 	local StructChatCommand Cmd;
-
-	local bool SkipStagedConfigApplication;
+	local CD_Setting CDSetting;
+	local string TempString;
 
 	local delegate<ChatCommandNullaryImpl> CNDeleg;
 	local delegate<ChatCommandParamsImpl> CPDeleg;
-
-	SkipStagedConfigApplication = false;
 
 	// First, see if this chat message looks even remotely like a CD command
 	if ( 3 > Len( CommandString ) || !( Left( CommandString, 3 ) ~= "!cd" ) )
@@ -123,9 +122,18 @@ function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 			// If so, change settings immediately and let ApplyStagedSettings()
 			// format an appropriate notification message.
 			GameStateName = Outer.GetStateName();
-			if ( !SkipStagedConfigApplication && ( GameStateName == 'PendingMatch' || GameStateName == 'MatchEnded' || GameStateName == 'TraderOpen' ) )
+			if ( GameStateName == 'PendingMatch' || GameStateName == 'MatchEnded' || GameStateName == 'TraderOpen' )
 			{
-				ApplyStagedConfig( ResponseMessage, "" );
+				CDSetting = CD_Setting( Cmd.CDSetting );
+				if ( None != CDSetting )
+				{
+					TempString = CDSetting.CommitStagedChanges( WaveNum + 1 );
+					if ( TempString != "" )
+					{
+						ResponseMessage = TempString;
+						Outer.SaveConfig();
+					}
+				}
 			}
 		}
 	}
@@ -162,6 +170,7 @@ function SetupChatCommands()
 	scc.ParamHints = h;
 	scc.NullaryImpl = PauseTraderTime;
 	scc.ParamsImpl = None;
+	scc.CDSetting = None;
 	scc.Description = "Pause TraderTime countdown";
 	scc.AuthLevel = CDAUTH_WRITE;
 	scc.ModifiesConfig = false;
@@ -175,6 +184,7 @@ function SetupChatCommands()
 	scc.ParamHints = h;
 	scc.NullaryImpl = UnpauseTraderTime;
 	scc.ParamsImpl = None;
+	scc.CDSetting = None;
 	scc.Description = "Unpause TraderTime countdown";
 	scc.AuthLevel = CDAUTH_WRITE;
 	scc.ModifiesConfig = false;
@@ -188,6 +198,7 @@ function SetupChatCommands()
 	scc.ParamHints = h;
 	scc.NullaryImpl = GetCDInfoChatStringDefault;
 	scc.ParamsImpl = None;
+	scc.CDSetting = None;
 	scc.Description = "Display CD config summary";
 	scc.AuthLevel = CDAUTH_READ;
 	scc.ModifiesConfig = false;
@@ -201,6 +212,7 @@ function SetupChatCommands()
 	scc.ParamHints = h;
 	scc.NullaryImpl = None;
 	scc.ParamsImpl = GetCDInfoChatStringCommand;
+	scc.CDSetting = None;
 	scc.Description = "Display full CD config";
 	scc.AuthLevel = CDAUTH_READ;
 	scc.ModifiesConfig = false;
@@ -219,15 +231,8 @@ function SetupChatCommands()
 		}
 	}
 
-	SetupSimpleReadCommand( scc, "!cdboss", "Display Boss override", GetBossChatString );
 	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
-	SetupSimpleReadCommand( scc, "!cdspawncycle", "Display SpawnCycle name", GetSpawnCycleChatString );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
-	SetupSimpleReadCommand( scc, "!cdztspawnmode", "Display ZTSpawnMode", GetZTSpawnModeChatString );
-
-	SetupSimpleWriteCommand( scc, "!cdboss", "Choose which boss spawns on the final wave", "volter|patriarch|unmodded", SetBossChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdspawncycle", "Set SpawnCycle", "name_of_spawncycle|unmodded", SetSpawnCycleChatCommand );
-	SetupSimpleWriteCommand( scc, "!cdztspawnmode", "Set ZTSpawnMode", "unmodded|clockwork", SetZTSpawnModeChatCommand );
 }
 
 private function bool MatchChatCommand( const string CmdName, out StructChatCommand Cmd, const CDAuthLevel AuthLevel, const int ParamCount )
@@ -274,6 +279,7 @@ private function SetupSimpleReadCommand( out StructChatCommand scc, const string
 	scc.ParamHints = empty;
 	scc.NullaryImpl = Impl;
 	scc.ParamsImpl = None;
+	scc.CDSetting = None;
 	scc.Description = Desc;
 	scc.AuthLevel = CDAUTH_READ;
 	scc.ModifiesConfig = false;
@@ -281,169 +287,7 @@ private function SetupSimpleReadCommand( out StructChatCommand scc, const string
 	ChatCommands.AddItem( scc );
 }
 
-private function SetupSimpleWriteCommand( out StructChatCommand scc, const string CmdName, const string Desc, const string Hint, const delegate<ChatCommandParamsImpl> Impl )
-{
-	local array<string> n;
-	local array<string> hints;
-
-	n.Length = 1;
-	n[0] = CmdName;
-
-	hints.Length = 1;
-	hints[0] = Hint;
-
-	scc.Names = n;
-	scc.ParamHints = hints;
-	scc.NullaryImpl = None;
-	scc.ParamsImpl = Impl;
-	scc.Description = Desc;
-	scc.AuthLevel = CDAUTH_WRITE;
-	scc.ModifiesConfig = true;
-
-	ChatCommands.AddItem( scc );
-}
-
-// AlbinoAlphas
-// turned into FixedSetting
-
-// AlbinoCrawlers
-// turned into FixedSetting
-
-// AlbinoGorefasts
-// turned into FixedSetting
-
-// Boss
-
-private function string GetBossChatString()
-{
-	local string BossLatchedString;
-
-	if ( StagedConfig.Boss != Boss )
-	{
-		BossLatchedString = " (staged: " $ StagedConfig.Boss $ ")";
-	}
-
-	return "Boss=" $ Boss $ BossLatchedString;
-}
-
-private function string SetBossChatCommand( const out array<string> params )
-{
-	local string TempString;
-
-	TempString = Locs( params[0] );
-
-	if ( TempString == Boss )
-	{
-		return "Boss is already " $ Boss;
-	}
-	// I could check for pointless changes here
-	// (e.g. "unmodded" -> "random", equivalent but different strings)
-	// but it is hard to describe the associated subtlety in a chat response
-	else if ( IsValidBossString( TempString ) )
-	{
-		StagedConfig.Boss = TempString;
-		return "Staged: Boss=" $ StagedConfig.Boss $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "Not a valid boss string\n" $
-			"Try hans, pat, or unmodded"; 
-	}
-}
-
-// CohortSize
-// moved to regulated option class
-
-// FakePlayers
-// moved to regulated option class
-
-// MaxMonsters
-// moved to regulated option class
-
-// MinSpawnInterval
-// moved to regulated option class
-
-// SpawnCycle
-
-private function string GetSpawnCycleChatString()
-{
-	local string SpawnCycleLatchedString;
-
-	if ( StagedConfig.SpawnCycle != SpawnCycle )
-	{
-		SpawnCycleLatchedString = " (staged: " $ StagedConfig.SpawnCycle $ ")";
-	}
-
-	return "SpawnCycle=" $ SpawnCycle $ SpawnCycleLatchedString;
-}
-
-private function string SetSpawnCycleChatCommand( const out array<string> params )
-{
-	StagedConfig.SpawnCycle = params[0];
-	if ( SpawnCycle != StagedConfig.SpawnCycle )
-	{
-		return "Staged: SpawnCycle=" $ StagedConfig.SpawnCycle $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "SpawnCycle is already " $ SpawnCycle;
-	}
-}
-
-// SpawnMod
-// moved to regulated option class
-
-// TraderTime (read-only)
-
-// WeaponTimeout
-
-// ZedsTeleportCloser
-
-// ZTSpawnMode
-
-private function string GetZTSpawnModeChatString()
-{
-	local string ZTSpawnModeLatchedString;
-
-	if ( StagedConfig.ZTSpawnMode != ZTSpawnMode )
-	{
-		ZTSpawnModeLatchedString = " (staged: " $ StagedConfig.ZTSpawnMode $ ")";
-	}
-
-	return "ZTSpawnMode=" $ ZTSpawnMode $ ZTSpawnModeLatchedString;
-}
-
-private function string SetZTSpawnModeChatCommand( const out array<string> params )
-{
-	local string TempString;
-
-	TempString = Locs( params[0] );
-
-	if ( TempString == ZTSpawnMode )
-	{
-		return "ZTSpawnMode is already " $ ZTSpawnMode;
-	}
-
-	else if ( IsValidZTSpawnModeString( TempString ) )
-	{
-		StagedConfig.ZTSpawnMode = TempString;
-		return "Staged: ZTSpawnMode=" $ StagedConfig.ZTSpawnMode $
-			"\nEffective after current wave"; 
-	}
-	else
-	{
-		return "Not a valid ZTSpawnMode string\n" $
-			"Try unmodded or clockwork"; 
-	}
-}
-
-// ZTSpawnSlowdown
-// moved to regulated option class
-
 // Info and Help
-
 
 private function string GetCDChatHelpReferralString() {
 	return "Type CDChatHelp in console for chat command info";
@@ -477,12 +321,6 @@ function string GetCDInfoChatString( const string Verbosity )
 			s $= AllSettings[i].GetChatLine();
 		}
 
-		// TODO
-		s $= 
-			GetBossChatString() $ "\n" $
-			GetSpawnCycleChatString() $ "\n" $
-			GetZTSpawnModeChatString();
-
 		return s;
 	}
 	else
@@ -491,7 +329,7 @@ function string GetCDInfoChatString( const string Verbosity )
 		       MaxMonstersSetting.GetChatLine() $ "\n" $
 		       SpawnModSetting.GetChatLine() $ "\n" $
 		       CohortSizeSetting.GetChatLine() $ "\n" $
-		       GetSpawnCycleChatString();
+		       SpawnCycleSetting.GetChatLine();
 	}
 }
 

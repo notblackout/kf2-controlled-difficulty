@@ -12,7 +12,7 @@ protected function WriteIndicator( const out string Val )
 	Outer.TraderTimeInt = int( Val );
 }
 
-protected function string Sanitize( const string Raw )
+protected function string SanitizeIndicator( const string Raw )
 {
 	if ( Locs(Raw) == "max" )
 	{
