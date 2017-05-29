@@ -239,14 +239,17 @@ function string CommitStagedChanges( const int OverrideWaveNum, const optional b
 	return OptionName $"="$ StagedIndicator $" (old: "$ OldIndicator $")";
 }
 
-function RegulateValue( const int OverrideWaveNum )
+function string RegulateValue( const int OverrideWaveNum )
 {
 	local float OldValue, NewValue;
 	local int NumPlayersPlusDebug;
+	local string StatusMsg;
 
 	NumPlayersPlusDebug = Outer.NumPlayers + Outer.DebugExtraProgramPlayers;
 
 	`cdlog("Tending "$ OptionName, bLogControlledDifficulty);
+
+	StatusMsg = "";
 
 	if ( None != ActualRegulator )
 	{
@@ -255,11 +258,19 @@ function RegulateValue( const int OverrideWaveNum )
 		WriteValue( NewValue );
 		if ( OldValue != NewValue )
 		{
-			`cdlog("Regulated "$ OptionName $"="$ PrettyValue( NewValue ) $" (was: "$ PrettyValue( OldValue ) $ ")");
+			StatusMsg = OptionName $"="$ PrettyValue( NewValue ) $" (old: "$ PrettyValue( OldValue ) $ ")";
+			`cdlog( "Regulated "$ StatusMsg ); 
 		}
 		else
 		{
-			`cdlog("Regulated "$ OptionName $"="$ PrettyValue( NewValue ) $" (no change)");
+			StatusMsg = OptionName $"="$ PrettyValue( NewValue ) $" (no change)";
+			`cdlog( "Regulated "$ StatusMsg );
 		}
 	}
+	else
+	{
+		`cdlog( "No regulator configured for "$ OptionName );
+	}
+
+	return StatusMsg;
 }

@@ -205,6 +205,8 @@ var CD_ProgrammableSetting SpawnModSetting;
 var CD_ProgrammableSetting TrashFPSetting;
 var CD_ProgrammableSetting ZTSpawnSlowdownSetting;
 
+var array<CD_ProgrammableSetting> DynamicSettings;
+
 // SpawnCycle parsed out of the SpawnCycleDefs strings
 var array<CD_AIWaveInfo> IniWaveInfos;
 
@@ -248,6 +250,8 @@ var CD_ChatCommander ChatCommander;
 
 var int DebugExtraProgramPlayers;
 
+var string DynamicSettingsBulletin;
+
 delegate int ClampIntCDOption( const out int raw );
 delegate float ClampFloatCDOption( const out float raw );
 
@@ -279,33 +283,43 @@ private function SetupProgrammableSettings()
 {
 	BossFPSetting = new(self) class'CD_ProgrammableSetting_BossFP';
 	BossFPSetting.IniDefsArray = BossFPDefs;
+	DynamicSettings.AddItem( BossFPSetting );
 
 	CohortSizeSetting = new(self) class'CD_ProgrammableSetting_CohortSize';
 	CohortSizeSetting.IniDefsArray = CohortSizeDefs;
+	DynamicSettings.AddItem( CohortSizeSetting );
 
 	FakePlayersSetting = new(self) class'CD_ProgrammableSetting_FakePlayers';
 	FakePlayersSetting.IniDefsArray = FakePlayersDefs;
+	DynamicSettings.AddItem( FakePlayersSetting );
 
 	MaxMonstersSetting = new(self) class'CD_ProgrammableSetting_MaxMonsters';
 	MaxMonstersSetting.IniDefsArray = MaxMonstersDefs;
+	DynamicSettings.AddItem( MaxMonstersSetting );
 
 	SpawnModSetting = new(self) class'CD_ProgrammableSetting_SpawnMod';
 	SpawnModSetting.IniDefsArray = SpawnModDefs;
+	DynamicSettings.AddItem( SpawnModSetting );
 
 	MinSpawnIntervalSetting = new(self) class'CD_ProgrammableSetting_MinSpawnInterval';
 	MinSpawnIntervalSetting.IniDefsArray = MinSpawnIntervalDefs;
+	DynamicSettings.AddItem( MinSpawnIntervalSetting );
 
 	ScrakeFPSetting = new(self) class'CD_ProgrammableSetting_ScrakeFP';
 	ScrakeFPSetting.IniDefsArray = ScrakeFPDefs;
+	DynamicSettings.AddItem( ScrakeFPSetting );
 
 	FleshpoundFPSetting = new(self) class'CD_ProgrammableSetting_FleshpoundFP';
 	FleshpoundFPSetting.IniDefsArray = FleshpoundFPDefs;
+	DynamicSettings.AddItem( FleshpoundFPSetting );
 
 	TrashFPSetting = new(self) class'CD_ProgrammableSetting_TrashFP';
 	TrashFPSetting.IniDefsArray = TrashFPDefs;
+	DynamicSettings.AddItem( TrashFPSetting );
 
 	ZTSpawnSlowdownSetting = new(self) class'CD_ProgrammableSetting_ZTSpawnSlowdown';
 	ZTSpawnSlowdownSetting.IniDefsArray = ZTSpawnSlowdownDefs;
+	DynamicSettings.AddItem( ZTSpawnSlowdownSetting );
 }
 
 function bool CheckRelevance(Actor Other)
@@ -679,7 +693,7 @@ private function DisplayBriefWaveStatsInChat()
 
 	s = CD_SpawnManager( SpawnManager ).GetWaveAverageSpawnrate();
 
-	BroadcastCDEcho( "Wave " $ WaveNum $ " Recap:\n"$ s );
+	BroadcastCDEcho( "[CD - Wave " $ WaveNum $ " Recap]\n"$ s );
 }
 
 State TraderOpen
@@ -1094,20 +1108,27 @@ function WaveEnded( EWaveEndCondition WinCondition )
 
 private function ProgramSettingsForNextWave()
 {
-	local int NWN;
+	local int i, NWN;
+	local string s;
+	local bool DynamicSettingsBulletinStarted;
 
 	NWN = WaveNum + 1;
+	DynamicSettingsBulletinStarted = false;
+	DynamicSettingsBulletin = "";
 
-	BossFPSetting.RegulateValue( NWN );
-	CohortSizeSetting.RegulateValue( NWN );
-	FakePlayersSetting.RegulateValue( NWN );
-	MaxMonstersSetting.RegulateValue( NWN );
-	MinSpawnIntervalSetting.RegulateValue( NWN );
-	SpawnModSetting.RegulateValue( NWN );
-	ScrakeFPSetting.RegulateValue( NWN );
-	FleshpoundFPSetting.RegulateValue( NWN );
-	TrashFPSetting.RegulateValue( NWN );
-	ZTSpawnSlowdownSetting.RegulateValue( NWN );
+	for ( i = 0; i < DynamicSettings.Length; i++ )
+	{
+		s = DynamicSettings[i].RegulateValue( NWN );
+		if ( s != "" )
+		{
+			if ( DynamicSettingsBulletinStarted )
+			{
+				DynamicSettingsBulletin $= "\n";
+			}
+			DynamicSettingsBulletin $= s;
+			DynamicSettingsBulletinStarted = true;
+		}
+	}
 }
 
 function StartWave()
@@ -1134,10 +1155,11 @@ function StartWave()
 	{
 		SetTimer( 2.0f, false, 'DisplayWaveStartMessageInChat' );
 	}
-//	else // If this is a noninitial wave and there are dynamic settings, then print their values
-//	{
-//		SetTimer( 2.0f, false, 'DisplayDynamicSettingSummaryInChat' );
-//	}
+	else // If this is a noninitial wave and there are dynamic settings, then print their values
+	{
+		//SetTimer( 0.5f, false, 'DisplayDynamicSettingSummaryInChat' );
+		DisplayDynamicSettingSummaryInChat();
+	}
 }
 
 private function DisplayWaveStartMessageInChat()
@@ -1145,9 +1167,13 @@ private function DisplayWaveStartMessageInChat()
 	BroadcastCDEcho( "[Controlled Difficulty Active]\n" $ ChatCommander.GetCDInfoChatString( "brief" ) );
 }
 
-//private function DisplayDynamicSettingSummaryInChat()
-//{
-//}
+private function DisplayDynamicSettingSummaryInChat()
+{
+	if ( DynamicSettingsBulletin != "" )
+	{
+		BroadcastCDEcho( "[CD - Dynamic Settings]\n" $ DynamicSettingsBulletin );
+	}
+}
 
 protected function bool ApplyStagedConfig( out string MessageToClients, const string BannerLine )
 {
