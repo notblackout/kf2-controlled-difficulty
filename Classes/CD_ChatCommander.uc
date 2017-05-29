@@ -632,14 +632,19 @@ function string GetCDInfoChatString( const string Verbosity )
 		       GetAlbinoCrawlersChatString() $ "\n" $
 		       GetAlbinoGorefastsChatString() $ "\n" $
 		       GetBossChatString() $ "\n" $
+		       BossFPSetting.GetChatLine() $ "\n" $
 		       CohortSizeSetting.GetChatLine() $ "\n" $
 		       FakePlayersSetting.GetChatLine() $ "\n" $
+		       FleshpoundFPSetting.GetChatLine() $ "\n" $
 		       MaxMonstersSetting.GetChatLine() $ "\n" $
 		       MinSpawnIntervalSetting.GetChatLine() $ "\n" $
+		       ScrakeFPSetting.GetChatLine() $ "\n" $
 		       GetSpawnCycleChatString() $ "\n" $
 		       SpawnModSetting.GetChatLine() $ "\n" $
 		       GetTraderTimeChatString() $ "\n" $
+		       TrashFPSetting.GetChatLine() $ "\n" $
 		       GetWeaponTimeoutChatString() $ "\n" $
+		       GetZedsTeleportCloserChatString() $ "\n" $
 		       ZTSpawnSlowdownSetting.GetChatLine() $ "\n" $
 		       GetZTSpawnModeChatString();
 	}
