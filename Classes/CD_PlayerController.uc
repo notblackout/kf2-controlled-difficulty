@@ -35,9 +35,9 @@ reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, n
 	local bool b;
 	local int LengthThreshold, MessageLength;
 
-	if ( 0 < CDGameInfo.ChatMessageLengthThreshold )
+	if ( 0 < CDGameInfo.ChatMessageThreshold )
 	{
-		LengthThreshold = CDGameInfo.ChatMessageLengthThreshold;
+		LengthThreshold = CDGameInfo.ChatMessageThreshold;
 	}
 	else
 	{
