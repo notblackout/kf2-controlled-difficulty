@@ -114,18 +114,6 @@ var float ZTSpawnSlowdownFloat;
 var config string ZTSpawnMode;
 var EZTSpawnMode ZTSpawnModeEnum;
 
-var config string BossFPMax;
-var int BossFPMaxInt;
-
-var config string FleshpoundFPMax;
-var int FleshpoundFPMaxInt;
-
-var config string ScrakeFPMax;
-var int ScrakeFPMaxInt;
-
-var config string TrashFPMax;
-var int TrashFPMaxInt;
-
 // the maximum monsters allowed on the map at one time.  in the vanilla game,
 // this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1; 32 in
 // any other case (such as when playing alone on a dedicated server).  if this
@@ -214,12 +202,8 @@ var CD_BasicSetting AlbinoAlphasSetting;
 var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
 var CD_BasicSetting BossSetting;
-var CD_BasicSetting BossFPMaxSetting;
-var CD_BasicSetting FleshpoundFPMaxSetting;
-var CD_BasicSetting ScrakeFPMaxSetting;
 var CD_BasicSetting SpawnCycleSetting;
 var CD_BasicSetting TraderTimeSetting;
-var CD_BasicSetting TrashFPMaxSetting;
 var CD_BasicSetting WeaponTimeoutSetting;
 var CD_BasicSetting ZedsTeleportCloserSetting;
 var CD_BasicSetting ZTSpawnModeSetting;
@@ -337,23 +321,11 @@ private function SetupBasicSettings()
 	BossSetting = new(self) class'CD_BasicSetting_Boss';
 	RegisterBasicSetting( BossSetting );
 
-	BossFPMaxSetting = new(self) class'CD_BasicSetting_BossFPMax';
-	RegisterBasicSetting( BossFPMaxSetting );
-
-	FleshpoundFPMaxSetting = new(self) class'CD_BasicSetting_FleshpoundFPMax';
-	RegisterBasicSetting( FleshpoundFPMaxSetting );
-
-	ScrakeFPMaxSetting = new(self) class'CD_BasicSetting_ScrakeFPMax';
-	RegisterBasicSetting( ScrakeFPMaxSetting );
-
 	SpawnCycleSetting = new(self) class'CD_BasicSetting_SpawnCycle';
 	RegisterBasicSetting( SpawnCycleSetting );
 
 	TraderTimeSetting = new(self) class'CD_BasicSetting_TraderTime';
 	RegisterBasicSetting( TraderTimeSetting );
-
-	TrashFPMaxSetting = new(self) class'CD_BasicSetting_TrashFPMax';
-	RegisterBasicSetting( TrashFPMaxSetting );
 
 	WeaponTimeoutSetting = new(self) class'CD_BasicSetting_WeaponTimeout';
 	RegisterBasicSetting( WeaponTimeoutSetting );
