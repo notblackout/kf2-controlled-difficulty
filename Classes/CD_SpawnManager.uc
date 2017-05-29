@@ -190,9 +190,9 @@ function string GetWaveAverageSpawnrate()
 
 	return
 		ZedCountString $ " zeds, " $ SpawnEventsThisWave $ " " $ GroupName $ "\n" $
-		DelayString $ " s delay, " $ SpawnDurationString $ " s live, " $ LingerString $ " s linger\n" $
 		SpawnrateString $ "\n" $
-	    " (timed first spawn to last)";
+		"  (timed first spawn to last)\n" $
+		DelayString $ " s pre, " $ SpawnDurationString $ " s spawning, " $ LingerString $ " s post";
 }
 
 private function string FormatFloatToOneDecimalPlace( const float f )
