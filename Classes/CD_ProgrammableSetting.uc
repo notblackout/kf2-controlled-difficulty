@@ -129,6 +129,9 @@ function string GetChatLine()
 	local string CurIndicator;
 	local float TempValue, TempWaveNum;
 	local name GameStateName;
+	local int NumPlayersPlusDebug;
+
+	NumPlayersPlusDebug = Outer.NumPlayers + Outer.DebugExtraProgramPlayers;
 
 	Result = OptionName $"=";
 
@@ -148,22 +151,22 @@ function string GetChatLine()
 		if ( GameStateName == 'PendingMatch' )
 		{
 			// Before the match starts, show the value that would be used on wave 1
-			TempValue = ActualRegulator.GetValue( 1, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );	
+			TempValue = ActualRegulator.GetValue( 1, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
 			Result $= PrettyValue( TempValue ) $"@W01";
 		}
 		else if ( GameStateName == 'TraderOpen' )
 		{
 			// During trader, show the current/last wave value and next wave values
-			TempValue = ActualRegulator.GetValue( WaveNum + 1, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );	
+			TempValue = ActualRegulator.GetValue( WaveNum + 1, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum + 1 ) $",";
-			TempValue = ActualRegulator.GetValue( WaveNum, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );	
+			TempValue = ActualRegulator.GetValue( WaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum );
 		}
 		else
 		{
 			// During or after the game, show the current/last wave value
 			TempWaveNum = 1 > WaveNum ? 1 : WaveNum;
-			TempValue = ActualRegulator.GetValue( TempWaveNum, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );
+			TempValue = ActualRegulator.GetValue( TempWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( TempWaveNum );
 		}
 		Result $= "]";
@@ -239,13 +242,16 @@ function string CommitStagedChanges( const int OverrideWaveNum, const optional b
 function RegulateValue( const int OverrideWaveNum )
 {
 	local float OldValue, NewValue;
+	local int NumPlayersPlusDebug;
+
+	NumPlayersPlusDebug = Outer.NumPlayers + Outer.DebugExtraProgramPlayers;
 
 	`cdlog("Tending "$ OptionName, bLogControlledDifficulty);
 
 	if ( None != ActualRegulator )
 	{
 		OldValue = ReadValue();
-		NewValue = ActualRegulator.GetValue( OverrideWaveNum, Outer.WaveMax, Outer.NumPlayers, Outer.MaxPlayers );
+		NewValue = ActualRegulator.GetValue( OverrideWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
 		WriteValue( NewValue );
 		if ( OldValue != NewValue )
 		{

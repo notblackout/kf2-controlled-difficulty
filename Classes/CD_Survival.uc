@@ -244,6 +244,8 @@ var int PausedRemainingMinute;
 
 var CD_ChatCommander ChatCommander;
 
+var int DebugExtraProgramPlayers;
+
 delegate int ClampIntCDOption( const out int raw );
 delegate float ClampFloatCDOption( const out float raw );
 
@@ -1605,6 +1607,12 @@ exec function CDSpawnPresets()
 	SpawnCycleCatalog.PrintPresets();
 
 	CDConsolePrintLogfileHint();
+}
+
+exec function CDSetDebugExtraProgramPlayers( int i )
+{
+	DebugExtraProgramPlayers = i;
+	GameInfo_CDCP.Print("Set DebugExtraProgramPlayers="$DebugExtraProgramPlayers);
 }
 
 private function PrintScheduleSlug( string CycleName )
