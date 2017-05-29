@@ -139,7 +139,7 @@ function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 	// be sent to all connected clients
 	if ( "" != ResponseMessage )
 	{
-		DirectBroadcast(None, ResponseMessage, 'CDEcho');
+		BroadcastCDEcho( ResponseMessage );
 		return;
 	}
 }

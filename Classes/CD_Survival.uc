@@ -188,6 +188,8 @@ var config array<StructAuthorizedUsers> AuthorizedUsers;
 // defined in AuthorizedUsers (i.e. the general public)
 var config CDAuthLevel DefaultAuthLevel;
 
+var config int ChatMessageLengthThreshold;
+
 ////////////////////////////////////////////////////////////////
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
@@ -677,7 +679,7 @@ private function DisplayBriefWaveStatsInChat()
 
 	s = CD_SpawnManager( SpawnManager ).GetWaveAverageSpawnrate();
 
-	super.Broadcast(None, "Wave " $ WaveNum $ " Recap:\n"$ s, 'CDEcho');
+	BroadcastCDEcho( "Wave " $ WaveNum $ " Recap:\n"$ s );
 }
 
 State TraderOpen
@@ -1065,11 +1067,17 @@ event Broadcast (Actor Sender, coerce string Msg, optional name Type)
 	}
 }
 
-function DirectBroadcast (Actor Sender, coerce string Msg, optional name Type)
+function BroadcastCDEcho( coerce string Msg )
 {
-	super.Broadcast(Sender, Msg, Type);
-}
+        local PlayerController P;
 
+	// Skip the AllowsBroadcast check
+        
+        foreach WorldInfo.AllControllers(class'PlayerController', P)
+        {
+                BroadcastHandler.BroadcastText( None, P, Msg, 'CDEcho' );
+        }
+}
 
 function WaveEnded( EWaveEndCondition WinCondition )
 {
@@ -1079,7 +1087,7 @@ function WaveEnded( EWaveEndCondition WinCondition )
 
 	if ( ApplyStagedConfig( CDSettingChangeMessage, "Staged settings applied:" ) )
 	{
-		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
+		BroadcastCDEcho( CDSettingChangeMessage );
 	}
 }
 
@@ -1108,7 +1116,7 @@ function StartWave()
 
 	if ( ApplyStagedConfig( CDSettingChangeMessage, "Staged settings applied:" ) )
 	{
-		super.Broadcast(None, CDSettingChangeMessage, 'CDEcho');
+		BroadcastCDEcho( CDSettingChangeMessage );
 	}
 
 	ProgramSettingsForNextWave();
@@ -1126,12 +1134,20 @@ function StartWave()
 	{
 		SetTimer( 2.0f, false, 'DisplayWaveStartMessageInChat' );
 	}
+//	else // If this is a noninitial wave and there are dynamic settings, then print their values
+//	{
+//		SetTimer( 2.0f, false, 'DisplayDynamicSettingSummaryInChat' );
+//	}
 }
 
 private function DisplayWaveStartMessageInChat()
 {
-	super.Broadcast(None, "[Controlled Difficulty Active]\n" $ ChatCommander.GetCDInfoChatString( "brief" ), 'CDEcho');
+	BroadcastCDEcho( "[Controlled Difficulty Active]\n" $ ChatCommander.GetCDInfoChatString( "brief" ) );
 }
+
+//private function DisplayDynamicSettingSummaryInChat()
+//{
+//}
 
 protected function bool ApplyStagedConfig( out string MessageToClients, const string BannerLine )
 {

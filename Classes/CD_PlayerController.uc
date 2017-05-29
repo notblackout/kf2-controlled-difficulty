@@ -4,6 +4,8 @@ class CD_PlayerController extends KFPlayerController;
 
 var const string CDEchoMessageColor;
 
+var CD_Survival CDGameInfo;
+
 /* CD introduces custom alpha and crawler zed classes to
    control albinism.  KF2's zed kill count (displayed at
    the after-action report screen) is based on exact class
@@ -13,36 +15,34 @@ var const string CDEchoMessageColor;
 */
 function AddZedKill( class<KFPawn_Monster> MonsterClass, byte Difficulty, class<DamageType> DT )
 {
-	MonsterClass = class'CD_ZedNameUtils'.static.CheckMonsterClassRemap( MonsterClass, "CD_PlayerController.AddZedKill", ShouldLog() );
+	MonsterClass = class'CD_ZedNameUtils'.static.CheckMonsterClassRemap( MonsterClass, "CD_PlayerController.AddZedKill", CDGameInfo.bLogControlledDifficulty );
 
 	super.AddZedKill( MonsterClass, Difficulty, DT );
 }
 
-private function bool ShouldLog()
+simulated event PostBeginPlay()
 {
-	local CD_Survival CDGameInfo;
-	local bool result;
+	super.PostBeginPlay();
 
-	result = true;
-
-	// Try to read CD_Survival.bLogControlledDifficulty
 	if ( WorldInfo != None )
 	{
 		CDGameInfo = CD_Survival( WorldInfo.Game );
-
-		if ( CDGameInfo != None )
-		{
-			result = CDGameInfo.bLogControlledDifficulty;
-		}
 	}
-
-	return result;
 }
 
 reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type, optional float MsgLifeTime  )
 {
 	local bool b;
-	local bool log;
+	local int LengthThreshold, MessageLength;
+
+	if ( 0 < CDGameInfo.ChatMessageLengthThreshold )
+	{
+		LengthThreshold = CDGameInfo.ChatMessageLengthThreshold;
+	}
+	else
+	{
+		LengthThreshold = 260;
+	}
 
 	// Messages from CD bypass the usual chat display code
 	if ( PRI == None && S != "" && Type == 'CDEcho' )
@@ -51,20 +51,30 @@ reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, n
 		// this happens regardless of what menu state the client is in (lobby, postgame, action)
 		LocalPlayer(Player).ViewportClient.ViewportConsole.OutputText("[ControlledDifficulty Server Message]\n  " $ Repl(S, "\n", "\n  "));
 
-		log = ShouldLog();
+		MessageLength = Len(s);
+
+		if ( MessageLength > LengthThreshold )
+		{
+			S = "[See Console]";
+			`cdlog( "chatdebug: Squelching chat message with length=" $ MessageLength, CDGameInfo.bLogControlledDifficulty );
+		} 
+		else
+		{
+			`cdlog( "chatdebug: Displaying chat message with length=" $ MessageLength, CDGameInfo.bLogControlledDifficulty );
+		}
 
 		// Attempt to append it to the PartyWidget or PostGameMenu (if active)
     	if (MyGFxManager != none)
     	{
-			`cdlog( "chatdebug: PartyWidget instance is " $ MyGFxManager.PartyWidget, log);
+			`cdlog( "chatdebug: PartyWidget instance is " $ MyGFxManager.PartyWidget, CDGameInfo.bLogControlledDifficulty);
 
     		if ( None != MyGFxManager.PartyWidget )
     		{
 				b = MyGFxManager.PartyWidget.ReceiveMessage( S, CDEchoMessageColor );
-				`cdlog( "chatdebug: PartyWidget.ReceiveMessage returned " $ b, log );
+				`cdlog( "chatdebug: PartyWidget.ReceiveMessage returned " $ b, CDGameInfo.bLogControlledDifficulty );
     		}
 
-			`cdlog( "chatdebug: PostGameMenu is " $ MyGFxManager.PostGameMenu, log );
+			`cdlog( "chatdebug: PostGameMenu is " $ MyGFxManager.PostGameMenu, CDGameInfo.bLogControlledDifficulty );
 
     		if( None != MyGFxManager.PostGameMenu )
     		{
