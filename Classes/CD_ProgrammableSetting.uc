@@ -202,6 +202,13 @@ function InitFromOptions( const out string Options )
 	else
 	{
 		UserInd = ReadIndicator();
+
+		if ( UserInd == "" )
+		{
+			UserInd = string( DefaultSettingValue );
+			`cdlog(OptionName $ ": blank config entry detected, initializing default=" $ UserInd,
+				Outer.bLogControlledDifficulty);
+		}
 	}
 
 	StageIndicator( UserInd, StatusMsg, true );
