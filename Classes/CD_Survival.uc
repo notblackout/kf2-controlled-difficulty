@@ -114,6 +114,9 @@ var float ZTSpawnSlowdownFloat;
 var config string ZTSpawnMode;
 var EZTSpawnMode ZTSpawnModeEnum;
 
+var config string AlphaGlitter;
+var bool AlphaGlitterBool;
+
 // the maximum monsters allowed on the map at one time.  in the vanilla game,
 // this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1; 32 in
 // any other case (such as when playing alone on a dedicated server).  if this
@@ -201,6 +204,7 @@ var array<CD_ProgrammableSetting> DynamicSettings;
 var CD_BasicSetting AlbinoAlphasSetting;
 var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
+var CD_BasicSetting AlphaGlitterSetting;
 var CD_BasicSetting BossSetting;
 var CD_BasicSetting SpawnCycleSetting;
 var CD_BasicSetting TraderTimeSetting;
@@ -318,6 +322,9 @@ private function SetupBasicSettings()
 	AlbinoGorefastsSetting = new(self) class'CD_BasicSetting_AlbinoGorefasts';
 	RegisterBasicSetting( AlbinoGorefastsSetting );
 
+	AlphaGlitterSetting = new(self) class'CD_BasicSetting_AlphaGlitter';
+	RegisterBasicSetting( AlphaGlitterSetting );
+
 	BossSetting = new(self) class'CD_BasicSetting_Boss';
 	RegisterBasicSetting( BossSetting );
 
@@ -396,6 +403,7 @@ function bool CheckRelevance(Actor Other)
 {
 	local KFDroppedPickup Weap;
 	local KFAIController KFAIC;
+	local KFPawn_ZedClot_Alpha Alpha;
 	local bool SuperRelevant;
 
 	SuperRelevant = super.CheckRelevance(Other);
@@ -411,6 +419,8 @@ function bool CheckRelevance(Actor Other)
 	if ( None != Weap )
 	{
 		OverrideWeaponLifespan(Weap);
+		// nothing else to do on weapons, can return early
+		return SuperRelevant;
 	}
 
 	KFAIC = KFAIController(Other);
@@ -419,6 +429,18 @@ function bool CheckRelevance(Actor Other)
 	{
 		KFAIC.bCanTeleportCloser = ZedsTeleportCloserBool;
 		`cdlog("Set bCanTeleportCloser="$ ZedsTeleportCloserBool $" on "$ KFAIC, bLogControlledDifficulty);
+		// might have more checks on zeds, can't return yet
+	}
+
+	if ( !AlphaGlitterBool )
+	{
+		Alpha = KFPawn_ZedClot_Alpha(Other);
+		if ( None != Alpha )
+		{
+			Alpha.SpecialMoveHandler.SpecialMoveClasses[SM_Rally] =
+				class'CD_AlphaRally_NoGlitter';
+			`cdlog( "Disabled glitter on alpha "$ Alpha, bLogControlledDifficulty );
+		}
 	}
 
 	// Should always be true, due to the early return when false
