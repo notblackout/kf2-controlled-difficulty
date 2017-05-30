@@ -90,7 +90,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 	{
 		BilinearRegulator = new class'CD_ValueProgram_Bilinear';
 		BilinearRegulator.SetConsolePrinter( GameInfo_CDCP );
-		if ( BilinearRegulator.ParseComposite( Raw ) )
+		if ( BilinearRegulator.ParseComposite( Raw, Outer.bLogControlledDifficulty ) )
 		{
 			StagedIndicator = Raw;
 			StagedRegulator = BilinearRegulator;

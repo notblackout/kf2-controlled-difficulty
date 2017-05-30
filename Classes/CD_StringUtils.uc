@@ -80,13 +80,15 @@ static function bool IsFloat( const out string s )
 	{
 		// Get unicode codepoint (as int) for char at index i
 		UnicodePoint = Asc( Mid( s, i, 1 ) );
+		i++;
 
 		// We allow one dot anywhere after the optional minus sign,
 		// regardless of whether there are or are not preceeding or
 		// following numerals
-		if ( !DotSeen && UnicodePoint == 42 )
+		if ( !DotSeen && UnicodePoint == 46 )
 		{
 			DotSeen = true;
+			continue;
 		}
 
 		// Check for low ascii numerals [0-9]
@@ -98,10 +100,7 @@ static function bool IsFloat( const out string s )
 		{
 			DigitSeen = true;
 		}
-
-		i++;
 	}
 
 	return DigitSeen;
 }
-

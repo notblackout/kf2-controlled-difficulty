@@ -25,22 +25,21 @@ function SetConsolePrinter( const CD_ConsolePrinter NewCDCP )
 	CDCP = NewCDCP;
 }
 
-function bool ParseComposite( const out string Composite )
+function bool ParseComposite( const out string Composite, const bool ShouldLog )
 {
 	local string Body;
 	local array<string> Tokens;
-
 	local float PCMin, PCMax, WCMin, WCMax, OMax;
 
 	if ( Composite == "" )
 	{
-		`cdlog("BilinearParser: ignoring empty specification string");
+		`cdlog( "Bilinear: ignoring empty specification string", ShouldLog );
 		return false;
 	}
 
 	if ( Left( Composite, 9 ) != "bilinear:" )
 	{
-		`cdlog("BilinearParser: Unrecognized prefix (expected \"bilinear\"): " $ Composite);
+		`cdlog( "Bilinear: Unrecognized prefix (expected \"bilinear\"): " $ Composite, ShouldLog );
 		return false;
 	}
 
@@ -48,7 +47,7 @@ function bool ParseComposite( const out string Composite )
 
 	if ( Body == "" )
 	{
-		`cdlog("BilinearParser: ignoring empty body string");
+		`cdlog( "Bilinear: ignoring empty body string", ShouldLog );
 		return false;
 	}
 
@@ -56,24 +55,24 @@ function bool ParseComposite( const out string Composite )
 
 	if ( 0 == Tokens.Length )
 	{
-		`cdlog("BilinearParser: ignoring empty body string");
+		`cdlog( "Bilinear: ignoring empty body string", ShouldLog );
 		return false;
 	}
 
 	if ( 2 < Tokens.Length )
 	{
-		`cdlog("BilinearParser: too many (" $ Tokens.Length $ ") ;-separated tokens in body string: " $ Body);
+		`cdlog( "Bilinear: too many (" $ Tokens.Length $ ") ;-separated tokens in body string: " $ Body, ShouldLog );
 		return false;
 	}
 
-	if ( !ParseCoefficients( Tokens[0], PCMin, PCMax, WCMin, WCMax ) )
+	if ( !ParseCoefficients( Tokens[0], PCMin, PCMax, WCMin, WCMax, ShouldLog ) )
 	{
 		return false;
 	}
 
 	if ( Tokens.Length == 2 )
 	{
-		if ( !ParseMax( Tokens[1], OMax ) )
+		if ( !ParseMax( Tokens[1], OMax, ShouldLog ) )
 		{
 			return false;
 		}
@@ -90,12 +89,12 @@ function bool ParseComposite( const out string Composite )
 	WaveCoefficientMax = WCMax;
 	OverallMax = OMax;
 
-	`cdlog("BilinearParser: read P["$ PCMin $","$ PCMax $"] W["$ WCMin $","$ WCMax $"] OMax="$ OMax);
+	`cdlog( "Bilinear: read P["$ PCMin $","$ PCMax $"] W["$ WCMin $","$ WCMax $"] OMax="$ OMax, ShouldLog );
 
 	return true;
 }
 
-function bool ParseMax( const out string MS, out float Result )
+function bool ParseMax( const out string MS, out float Result, const bool ShouldLog )
 {
 	local string LMS;
 
@@ -108,7 +107,7 @@ function bool ParseMax( const out string MS, out float Result )
 
 	if ( !class'CD_StringUtils'.static.IsFloat(LMS) )
 	{
-		`cdlog("BilinearParser: malformed maxvalue string: " $ LMS);
+		`cdlog( "Bilinear: malformed maxvalue string: " $ LMS, ShouldLog );
 		return false;
 	}
 
@@ -116,7 +115,7 @@ function bool ParseMax( const out string MS, out float Result )
 	return true;
 }
 
-function bool ParseCoefficients( const out string CS, out float PCMin, out float PCMax, out float WCMin, out float WCMax )
+function bool ParseCoefficients( const out string CS, out float PCMin, out float PCMax, out float WCMin, out float WCMax, const bool ShouldLog )
 {
 	local array<string> Tokens;
 
@@ -124,7 +123,7 @@ function bool ParseCoefficients( const out string CS, out float PCMin, out float
 
 	if ( 2 != Tokens.Length || Tokens[0] == "" || Tokens[1] == "" )
 	{
-		`cdlog("BilinearParser: malformed coefficient string: " $ CS);
+		`cdlog( "Bilinear: malformed coefficient string: " $ CS, ShouldLog );
 		return false;
 	}
 
@@ -140,26 +139,26 @@ function bool ParseCoefficients( const out string CS, out float PCMin, out float
 
 	if ( Tokens[0] == "" || Tokens[1] == "" )
 	{
-		`cdlog("BilinearParser: malformed coefficient string: " $ CS);
+		`cdlog( "Bilinear: malformed coefficient string: " $ CS, ShouldLog );
 		return false;
 	}
 
-	if ( !ParseLerpRangeString( Tokens[0], PCMin, PCMax ) )
+	if ( !ParseLerpRangeString( Tokens[0], PCMin, PCMax, ShouldLog ) )
 	{
-		`cdlog("BilinearParser: malformed player coefficient range: " $ Tokens[0]);
+		`cdlog( "Bilinear: malformed player coefficient range: " $ Tokens[0], ShouldLog );
 		return false;
 	}
 
-	if ( !ParseLerpRangeString( Tokens[1], WCMin, WCMax ) )
+	if ( !ParseLerpRangeString( Tokens[1], WCMin, WCMax, ShouldLog ) )
 	{
-		`cdlog("BilinearParser: malformed wave coefficient range: " $ Tokens[1]);
+		`cdlog( "Bilinear: malformed wave coefficient range: " $ Tokens[1], ShouldLog );
 		return false;
 	}
 
 	return true;
 }
 
-function bool ParseLerpRangeString( const out string S, out float Min, out float Max )
+function bool ParseLerpRangeString( const out string S, out float Min, out float Max, const bool ShouldLog )
 {
 	local array<string> Tokens;
 
@@ -167,19 +166,19 @@ function bool ParseLerpRangeString( const out string S, out float Min, out float
 
 	if ( 2 != Tokens.Length || Tokens[0] == "" || Tokens[1] == "" )
 	{
-		`cdlog("BilinearParser: malformed bounds string: " $ S);
+		`cdlog( "Bilinear: malformed bounds string: " $ S, ShouldLog );
 		return false;
 	}
 
 	if ( !class'CD_StringUtils'.static.IsFloat( Tokens[0] ) )
 	{
-		`cdlog("BilinearParser: lower bound is not a float: " $ Tokens[0]);
+		`cdlog( "Bilinear: lower bound is not a float: " $ Tokens[0], ShouldLog );
 		return false;
 	}
 
 	if ( !class'CD_StringUtils'.static.IsFloat( Tokens[1] ) )
 	{
-		`cdlog("BilinearParser: upper bound is not a float: " $ Tokens[1]);
+		`cdlog( "Bilinear: upper bound is not a float: " $ Tokens[1], ShouldLog );
 		return false;
 	}
 
@@ -190,8 +189,8 @@ function bool ParseLerpRangeString( const out string S, out float Min, out float
 
 function float GetValue( const int WaveNum, const int MaxWaveNum, const int HumanPlayers, const int MaxHumanPlayers )
 {
-	local float PlayerAlpha, WaveAlpha, Result, HumanFactor, WaveFactor;
-	local int ClampedWaveIndex, ClampedHumanIndex, MaxWaveIndex, MaxHumanIndex;
+	local float PlayerAlpha, WaveAlpha, HumanFactor, WaveFactor, FinalResult;
+	local int ClampedWaveIndex, ClampedHumanIndex, MaxWaveIndex, MaxHumanIndex, Result;
 
 	MaxHumanIndex = MaxHumanPlayers - 1;
 	ClampedHumanIndex = Clamp( HumanPlayers - 1, 0, MaxHumanIndex );
@@ -199,7 +198,7 @@ function float GetValue( const int WaveNum, const int MaxWaveNum, const int Huma
 	MaxWaveIndex = MaxWaveNum - 2; // subtract 1 for num-to-index conversion, subtract 1 to ignore bosswave
 	ClampedWaveIndex = Clamp( WaveNum - 1, 0, MaxWaveIndex );
 
-	`cdlog("Bilinear: WaveNum="$ WaveNum $" MaxWaveNum="$ MaxWaveNum $" ClampedWaveindex="$ ClampedWaveIndex $" MaxWaveIndex="$ MaxWaveIndex);
+	`cdlog( "Bilinear: WaveNum="$ WaveNum $" MaxWaveNum="$ MaxWaveNum $" ClampedWaveindex="$ ClampedWaveIndex $" MaxWaveIndex="$ MaxWaveIndex );
 
 	PlayerAlpha = float(ClampedHumanIndex) / float(MaxHumanIndex);
 	WaveAlpha = float(ClampedWaveIndex) / float(MaxWaveIndex);
@@ -207,15 +206,26 @@ function float GetValue( const int WaveNum, const int MaxWaveNum, const int Huma
 	HumanFactor = Lerp( PlayerCoefficientMin, PlayerCoefficientMax, PlayerAlpha );
 	WaveFactor = Lerp( WaveCoefficientMin, WaveCoefficientMax, WaveAlpha );
 
-	`cdlog("Bilinear: HumanFactor="$ HumanFactor $" WaveFactor="$ WaveFactor);
+	`cdlog( "Bilinear: HumanFactor="$ HumanFactor $" WaveFactor="$ WaveFactor );
 	Result = HumanFactor * WaveFactor;
-	`cdlog("Bilinear: uncapped result="$ Result);
+	`cdlog( "Bilinear: uncapped unrounded result="$ Result );
 
 	if ( OverallMax >= 0 )
 	{
-		Result = Min( Result, OverallMax );
-		`cdlog("Bilinear: applied max "$ OverallMax $": capped result="$ Result);
+		Result = FMin( Result, OverallMax );
+		`cdlog( "Bilinear: applied max "$ OverallMax $": capped result="$ Result );
 	}
 
-	return Result;
+	if ( 0 <= Result )
+	{
+		FinalResult = int(Result + 0.5f);
+	}
+	else
+	{
+		FinalResult = int(Result - 0.5f);
+	}
+
+	`cdlog( "Bilinear: rounded final result="$ FinalResult );
+
+	return FinalResult;
 }
