@@ -27,6 +27,6 @@ defaultproperties
 	OptionName="ZTSpawnMode"
 	DefaultSettingIndicator="clockwork"
 
-	ChatCommandNames=("!cdboss")
+	ChatCommandNames=("!cdztspawnmode")
 	ChatWriteParamHints=("clockwork|unmodded")
 }
