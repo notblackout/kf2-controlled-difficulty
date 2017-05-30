@@ -56,6 +56,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 	// a value directive, and assigns to staging state variables
 
 	local CD_ValueProgram_IniDefs IniDefsRegulator;
+	local CD_ValueProgram_Bilinear BilinearRegulator;
 
 	if ( Raw != "" && Raw == StagedIndicator && !ForceOverwrite )
 	{
@@ -81,6 +82,24 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 			StagedValue = DefaultSettingValue;
 			StagedIndicator = PrettyValue( StagedValue );
 			StatusMsg = "Unable to parse "$ OptionName $" definitions; defaulting to "$ StagedIndicator;
+			`cdlog(StatusMsg, bLogControlledDifficulty);
+			return false;
+		}
+	}
+	else if ( Left(Raw, 9) ~= "bilinear:" )
+	{
+		BilinearRegulator = new class'CD_ValueProgram_Bilinear';
+		BilinearRegulator.SetConsolePrinter( GameInfo_CDCP );
+		if ( BilinearRegulator.ParseComposite( Raw ) )
+		{
+			StagedIndicator = Raw;
+			StagedRegulator = BilinearRegulator;
+		}
+		else
+		{
+			StagedValue = DefaultSettingValue;
+			StagedIndicator = PrettyValue( StagedValue );
+			StatusMsg = "Unable to parse bilinear spec "$ Raw $"; defaulting to "$ StagedIndicator;
 			`cdlog(StatusMsg, bLogControlledDifficulty);
 			return false;
 		}

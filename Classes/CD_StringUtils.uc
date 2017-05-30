@@ -59,3 +59,49 @@ static function string ZeroPadIntString( int NumberToFormat, const int TotalWidt
 
 	return NumberAsString;
 }
+
+static function bool IsFloat( const out string s )
+{
+	local int i, StrLen, UnicodePoint;
+	local bool DotSeen, DigitSeen;
+
+	DotSeen = false;
+	DigitSeen = false;
+	StrLen = Len( s );
+
+	if ( s == "" )
+	{
+		return false;
+	}
+
+	i = ( Left(s, 1) == "-" ) ? 1 : 0;
+
+	while ( i < StrLen )
+	{
+		// Get unicode codepoint (as int) for char at index i
+		UnicodePoint = Asc( Mid( s, i, 1 ) );
+
+		// We allow one dot anywhere after the optional minus sign,
+		// regardless of whether there are or are not preceeding or
+		// following numerals
+		if ( !DotSeen && UnicodePoint == 42 )
+		{
+			DotSeen = true;
+		}
+
+		// Check for low ascii numerals [0-9]
+		if ( !( 48 <= UnicodePoint && UnicodePoint <= 57 ) )
+		{
+			return false; // not a numeral
+		}
+		else
+		{
+			DigitSeen = true;
+		}
+
+		i++;
+	}
+
+	return DigitSeen;
+}
+

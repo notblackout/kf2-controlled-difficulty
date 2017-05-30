@@ -66,7 +66,7 @@ function bool ParseDefs( const out array<string> NewDefs, const string DefsName 
 
 		for ( j = 0; j < Tokens.Length; j++ )
 		{
-			if ( IsFloat(Tokens[j]) )
+			if ( class'CD_StringUtils'.static.IsFloat(Tokens[j]) )
 			{
 				Defs[i].fs[j] = float( Tokens[j] );
 			}
@@ -114,52 +114,6 @@ private function bool PrintPlayerParseError( const string DefsName, const string
 
 	return false;
 }
-
-private static function bool IsFloat( const out string s )
-{
-	local int i, StrLen, UnicodePoint;
-	local bool DotSeen, DigitSeen;
-
-	DotSeen = false;
-	DigitSeen = false;
-	StrLen = Len( s );
-
-	if ( s == "" )
-	{
-		return false;
-	}
-
-	i = ( Left(s, 1) == "-" ) ? 1 : 0;
-
-	while ( i < StrLen )
-	{
-		// Get unicode codepoint (as int) for char at index i
-		UnicodePoint = Asc( Mid( s, i, 1 ) );
-
-		// We allow one dot anywhere after the optional minus sign,
-		// regardless of whether there are or are not preceeding or
-		// following numerals
-		if ( !DotSeen && UnicodePoint == 42 )
-		{
-			DotSeen = true;
-		}
-
-		// Check for low ascii numerals [0-9]
-		if ( !( 48 <= UnicodePoint && UnicodePoint <= 57 ) )
-		{
-			break; // not a numeral
-		}
-		else
-		{
-			DigitSeen = true;
-		}
-
-		i++;
-	}
-
-	return DigitSeen;
-}
-
 
 function float GetValue( const int WaveNum, const int MaxWaveNum, const int HumanPlayers, const int MaxHumanPlayers )
 {
