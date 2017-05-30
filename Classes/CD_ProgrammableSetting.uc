@@ -106,7 +106,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 	}
 	else
 	{
-		StagedValue = Clamp( float( Raw ), MinSettingValue, MaxSettingValue );
+		StagedValue = FClamp( float( Raw ), MinSettingValue, MaxSettingValue );
 		StagedIndicator = PrettyValue( StagedValue );
 		`cdlog("Converted raw string "$ Raw $" to staged float value "$ StagedValue 
 			$" (indicator: "$ StagedIndicator $")", bLogControlledDifficulty);
