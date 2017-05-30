@@ -181,8 +181,6 @@ var config array<StructAuthorizedUsers> AuthorizedUsers;
 // defined in AuthorizedUsers (i.e. the general public)
 var config CDAuthLevel DefaultAuthLevel;
 
-var config int ChatMessageThreshold;
-
 ////////////////////////////////////////////////////////////////
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
@@ -1354,20 +1352,6 @@ exec function CDSpawnPresets()
 	SpawnCycleCatalog.PrintPresets();
 
 	CDConsolePrintLogfileHint();
-}
-
-exec function CDChatMessageThreshold( optional int i = -2147483648 )
-{
-	if ( i == -2147483648 )
-	{
-		GameInfo_CDCP.Print("ChatMessageThreshold="$ChatMessageThreshold);
-	}
-	else
-	{
-		ChatMessageThreshold = i;
-		SaveConfig();
-		GameInfo_CDCP.Print("Set ChatMessageThreshold="$ChatMessageThreshold);
-	}
 }
 
 exec function DebugCD_ExtraProgramPlayers( optional int i )
