@@ -218,6 +218,21 @@ function SetupChatCommands()
 	scc.ModifiesConfig = false;
 	ChatCommands.AddItem( scc );
 
+	// Setup who command
+	n.Length = 1;
+	h.Length = 0;
+	n[0] = "!cdwho";
+	scc.Names = n;
+	scc.ParamHints = h;
+	scc.NullaryImpl = GetCDWhoChatString;
+	scc.ParamsImpl = None;
+	scc.CDSetting = None;
+	scc.Description = "Display names of connected players";
+	scc.AuthLevel = CDAUTH_READ;
+	scc.ModifiesConfig = false;
+	ChatCommands.AddItem( scc );
+
+
 	for ( i = 0; i < AllSettings.Length; i++ )
 	{
 		if ( AllSettings[i].GetChatReadCommand( scc ) )
@@ -336,4 +351,69 @@ function string GetCDInfoChatString( const string Verbosity )
 private function string GetCDVersionChatString()
 {
 	return "Ver=" $ `CD_COMMIT_HASH $ "\nDate=" $ `CD_AUTHOR_TIMESTAMP;
+}
+
+
+private function string GetCDWhoChatString()
+{
+	local KFPlayerController KFPC;
+	local string Result, Code;
+	local int TotalCount, SpectatorCount;
+	local name GameStateName;
+
+	Result = "";
+	GameStateName = Outer.GetStateName();
+
+        foreach WorldInfo.AllControllers(class'KFPlayerController', KFPC)
+	{
+		Code = "";
+
+		if ( !KFPC.bIsPlayer || KFPC.bDemoOwner )
+		{
+			continue;
+		}
+
+		if ( !KFPC.PlayerReplicationInfo.bOnlySpectator )
+		{
+			SpectatorCount++;
+			Code = "S";
+		}
+
+		if ( GameStateName == 'PendingMatch' )
+		{
+			Code = KFPC.PlayerReplicationInfo.bReadyToPlay ? "R" : "_";
+		}
+		else if ( GameStateName == 'PlayingWave' )
+		{
+			Code = KFPC.Pawn.IsAliveAndWell() ? "L" : "D";
+		}
+		
+		if ( 0 < TotalCount )
+		{
+			Result $= "\n";
+		}
+
+		if ( Code != "" )
+		{
+			Result $= "["$ Code $"] ";
+		}
+
+		Result $= KFPC.PlayerReplicationInfo.PlayerName;
+
+		TotalCount++;
+        }
+
+	if ( Result != "" )
+	{
+		Result $= "\n";
+	}
+
+	Result $= TotalCount $ " total";
+
+	if ( 0 < SpectatorCount )
+	{
+		Result $= ", " $ SpectatorCount $ " spectator(s)";
+	}
+
+	return Result;
 }
