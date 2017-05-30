@@ -6,7 +6,8 @@
 //=============================================================================
 
 class CD_DifficultyInfo extends KFGameDifficulty_Survival
-	within CD_Survival;
+	within CD_Survival
+	DependsOn( CD_Survival );
 
 `include(CD_Log.uci)
 
@@ -14,17 +15,25 @@ class CD_DifficultyInfo extends KFGameDifficulty_Survival
 // This is invoked by the base game.
 function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 {
-	local int sum;
-	local int fp;
+	local int Result;
 
-	fp = GetNumFakePlayers();
+	if ( FakePlayersModeEnum == FPM_ADD )
+	{
+		Result = NumLivingPlayers + Outer.FakePlayersInt;
+		`cdlog("GetPlayerNumAIMaxModifier: using count "$ Result $": added FakePlayers="$ Outer.FakePlayersInt $" to NumLivingPlayers="$ NumLivingPlayers, bLogControlledDifficulty);
+	}
+	else
+	{
+		Result = Outer.FakePlayersInt;
+		if ( 0 >= Result )
+		{
+			`cdlog("FakePlayers="$ Result $" is invalid in FakePlayersMode="$ FakePlayersMode $"; using 1", bLogControlledDifficulty);
+			Result = 1;
+		}
+		`cdlog("GetPlayerNumAIMaxModifier: using count "$ Result $": replaced NumLivingPlayers="$ NumLivingPlayers $" with FakePlayers="$ Outer.FakePlayersInt, bLogControlledDifficulty);
+	}
 
-	sum = NumLivingPlayers + fp;
-
-	`cdlog("MaxAI: Adding FakePlayers = "$fp$" to NumLivingPlayers = "$NumLivingPlayers$" in GetPlayerNumAIMaxModifier", bLogControlledDifficulty);
-	`cdlog("Final GetPlayerNumMaxAIModifier = "$sum, bLogControlledDifficulty);
-	
-	return GetNumPlayersModifier( NumPlayers_WaveSize, sum );
+	return GetNumPlayersModifier( NumPlayers_WaveSize, Result );
 }
 
 /** Scales the health this Zed has by the difficulty level */
@@ -32,7 +41,7 @@ function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte NumLivingPlayers, out float HealthMod, out float HeadHealthMod, optional bool bApplyDifficultyScaling=true)
 {
 	local byte EffectiveNumPlayers;
-	local int FPBonus;
+	local int FakeValue;
 
 	if ( P != none )
 	{
@@ -56,27 +65,40 @@ function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte Num
 
 		if ( None != KFPawn_MonsterBoss( P ) )
 		{
-			FPBonus = Outer.BossFPInt;
+			FakeValue = Outer.BossFPInt;
 		}
 		else if ( None != KFPawn_ZedFleshpound( P ) )
 		{
-			FPBonus = Outer.FleshpoundFPInt;
+			FakeValue = Outer.FleshpoundFPInt;
 		}
 		else if ( None != KFPawn_ZedScrake( P ) )
 		{
-			FPBonus = Outer.ScrakeFPInt;
+			FakeValue = Outer.ScrakeFPInt;
 		}
 		else
 		{
-			FPBonus = Outer.TrashFPInt;
+			FakeValue = Outer.TrashFPInt;
 		}
 
-		EffectiveNumPlayers = NumLivingPlayers + FPBonus;
+		if ( FakePlayersModeEnum == FPM_ADD )
+		{
+			EffectiveNumPlayers = NumLivingPlayers + FakeValue;
+		}
+		else
+		{
+			EffectiveNumPlayers = FakeValue;
+			if ( 0 >= EffectiveNumPlayers )
+			{
+				`cdlog("HealthFP="$ FakeValue $" is invalid in FakePlayersMode="$ FakePlayersMode $"; using 1", bLogControlledDifficulty);
+				EffectiveNumPlayers = 1;
+			}
+		}
 
 		HealthMod *= 1.0 + GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_BodyHealth );
 		HeadHealthMod *= 1.0 + GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_HeadHealth );
 
-		`cdlog("HealthMod="$ HealthMod $" for "$ P $" (NumLivingPlayers="$ NumLivingPlayers $" Fake="$ FPBonus $")", bLogControlledDifficulty);
+		`cdlog("GetAIHealthModifier: Monster="$ P $": HealthMod="$ HealthMod $" EffNumPlayers="$ EffectiveNumPlayers $
+		       " NumLivingPlayers="$ NumLivingPlayers $" FPMode="$ FakePlayersMode $" FakeValue="$ FakeValue $")", bLogControlledDifficulty);
 	}
 }
 
@@ -89,26 +111,10 @@ function float GetRawPlayerNumMaxAIModifier( byte TotalPlayers )
 // This is invoked by the base game.
 function float GetTraderTimeByDifficulty()
 {
-	local int tt;
-
-	tt = GetTraderTime();
-
-	if ( 0 < tt )
+	if ( 0 < Outer.TraderTimeInt )
 	{
-		return tt;
+		return Outer.TraderTimeInt;
 	}
 
 	return super.GetTraderTimeByDifficulty();
-}
-
-// configuration getter
-function int GetNumFakePlayers()
-{
-	return Outer.FakePlayersInt;
-}
-
-// configuration getter
-function float GetTraderTime()
-{
-	return Outer.TraderTimeInt;
 }

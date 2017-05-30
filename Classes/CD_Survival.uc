@@ -16,6 +16,12 @@ enum EWaveInfoStatus
 	WIS_SPAWNCYCLE_NOT_MODDED
 };
 
+enum EFakePlayersMode
+{
+	FPM_ADD,
+	FPM_REPLACE
+};
+
 enum EZTSpawnMode
 {
 	ZTSM_UNMODDED,
@@ -117,6 +123,9 @@ var EZTSpawnMode ZTSpawnModeEnum;
 var config string AlphaGlitter;
 var bool AlphaGlitterBool;
 
+var config string FakePlayersMode;
+var EFakePlayersMode FakePlayersModeEnum;
+
 // the maximum monsters allowed on the map at one time.  in the vanilla game,
 // this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1; 32 in
 // any other case (such as when playing alone on a dedicated server).  if this
@@ -204,6 +213,7 @@ var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
 var CD_BasicSetting AlphaGlitterSetting;
 var CD_BasicSetting BossSetting;
+var CD_BasicSetting FakePlayersModeSetting;
 var CD_BasicSetting SpawnCycleSetting;
 var CD_BasicSetting TraderTimeSetting;
 var CD_BasicSetting WeaponTimeoutSetting;
@@ -325,6 +335,9 @@ private function SetupBasicSettings()
 
 	BossSetting = new(self) class'CD_BasicSetting_Boss';
 	RegisterBasicSetting( BossSetting );
+
+	FakePlayersModeSetting = new(self) class'CD_BasicSetting_FakePlayersMode';
+	RegisterBasicSetting( FakePlayersModeSetting );
 
 	SpawnCycleSetting = new(self) class'CD_BasicSetting_SpawnCycle';
 	RegisterBasicSetting( SpawnCycleSetting );
@@ -554,6 +567,18 @@ private function ParseCDGameOptions( const out string Options )
 	}
 }
 
+protected function SetFakePlayersModeEnum()
+{
+	if ( FakePlayersMode == "add" )
+	{
+		FakePlayersModeEnum = FPM_ADD;
+	}
+	else
+	{
+		FakePlayersModeEnum = FPM_REPLACE;
+	}
+}
+
 protected function SetZTSpawnModeEnum()
 {
 	if ( ZTSpawnMode == "unmodded" )
@@ -665,6 +690,11 @@ private function string UnpauseTraderTime()
 function bool IsValidZTSpawnModeString( const out string ztsm )
 {
 	return "unmodded" == ztsm || "clockwork" == ztsm;
+}
+
+function bool IsValidFakePlayersModeString( const out string fpm )
+{
+	return "add" == fpm || "replace" == fpm;
 }
 
 function bool IsValidBossString( const out string bs )
@@ -828,25 +858,25 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 {
 	local float DoshMod;
 	local int LocalNumPlayers;
-	local int LocalNumFakes;
 	local float LocalMaxAIMod;
 
 	LocalNumPlayers = GetNumPlayers();
-	LocalNumFakes = CustomDifficultyInfo.GetNumFakePlayers();
 	// Only pass actual players to GetPlayerNumMaxAIModifier -- it adds fakes internally
 	LocalMaxAIMod = DifficultyInfo.GetPlayerNumMaxAIModifier(LocalNumPlayers);
 
-	`cdlog("NumPlayers = "$LocalNumPlayers, bLogControlledDifficulty);
-	`cdlog("NumFakes = "$LocalNumFakes, bLogControlledDifficulty);
-	`cdlog("DifficultyInfo.GetPlayerNumMaxAIModifier(NumPlayers) = "$LocalMaxAIMod$"; this is fake-count-adjusted", bLogControlledDifficulty);
-
-	DoshMod = (LocalNumPlayers + LocalNumFakes) / LocalMaxAIMod;
-
-	`cdlog("Starting Dosh Bounty: "$ModifiedValue$" DoshMod: "$DoshMod, bLogControlledDifficulty);
+	if ( FakePlayersModeEnum == FPM_ADD )
+	{
+		DoshMod = (LocalNumPlayers + FakePlayersInt) / LocalMaxAIMod;
+	}
+	else
+	{
+		DoshMod = FakePlayersInt / LocalMaxAIMod;
+	}
 
 	ModifiedValue *= DoshMod;
 
-	`cdlog("Modified Dosh Bounty: "$ModifiedValue, bLogControlledDifficulty);
+	`cdlog("DoshCalc: ModifiedValue="$ ModifiedValue $" FakePlayers="$ FakePlayersInt $
+	       " RealPlayers="$ LocalNumPlayers $" computed MaxAIDoshDenominator="$ LocalMaxAIMod, bLogControlledDifficulty);
 }
 
 /*
