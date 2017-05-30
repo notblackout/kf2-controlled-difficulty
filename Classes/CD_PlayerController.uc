@@ -32,7 +32,7 @@ simulated event PostBeginPlay()
 
 	if ( 0 >= ChatLineThreshold )
 	{
-		ChatLineThreshold = 5;
+		ChatLineThreshold = 7;
 	}
 
 	if ( 0 >= ChatCharThreshold )
