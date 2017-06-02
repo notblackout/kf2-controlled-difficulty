@@ -1,3 +1,12 @@
+//=============================================================================
+// CD_AIWaveInfo
+//=============================================================================
+// As with CD_AISpawnSquad, this exists to work around constness in TWI's
+// KFAIWaveInfo, supporting runtime-modifiable spawn information for
+// user-provided SpawnCycles.
+//=============================================================================
+
+
 class CD_AIWaveInfo extends KFAIWaveInfo;
 
 // TWI declared all of these vars const in KFAIWaveInfo,

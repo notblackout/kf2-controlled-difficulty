@@ -1,3 +1,13 @@
+//=============================================================================
+// CD_ValueProgram_Bilinear
+//=============================================================================
+// Implements a product of two linear interpolations:
+//
+//  (a) player count, lerp 0 to server's max players, inclusive
+//
+//  (b) wave number, lerp 0 to final non-boss wave, inclusive
+//=============================================================================
+
 class CD_ValueProgram_Bilinear
 	extends Object
 	implements (CD_ValueProgram);

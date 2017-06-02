@@ -1,3 +1,11 @@
+//=============================================================================
+// CD_AISpawnSquad
+//=============================================================================
+// This exists because KFAISpawnSquad's MonsterList is constant, and CD needs a
+// squad object with a mutable monster list to support runtime parsing of
+// user-provided SpawnCycles.
+//=============================================================================
+
 class CD_AISpawnSquad extends KFAISpawnSquad
 	dependson(KFSpawnVolume);
 

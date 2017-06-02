@@ -1,3 +1,10 @@
+//=============================================================================
+// CD_BasicSetting
+//=============================================================================
+// Represents a setting that only changes on manual intervention.  Compare with
+// CD_DynamicSetting, which can respond to wave number and player count.
+//=============================================================================
+
 class CD_BasicSetting extends Object
 	within CD_Survival
 	implements (CD_Setting)

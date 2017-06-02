@@ -1,3 +1,14 @@
+//=============================================================================
+// CD_EphemeralMatchStats
+//=============================================================================
+// TWI's stat tracking (supporting the after-action report and some steamworks
+// stats) depends on the classes of zeds killed.  CD uses custom zed subclasses
+// for some behavioral controls (like specifying albinos or non-albinos in
+// SpawnCycles).  This class substitutes CD's custom zed subclasses with
+// ordinary TWI classes just before TWI's stat code tries to count them.
+//=============================================================================
+
+
 class CD_EphemeralMatchStats extends EphemeralMatchStats;
 
 `include(CD_Log.uci)

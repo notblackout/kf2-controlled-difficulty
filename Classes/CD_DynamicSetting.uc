@@ -1,3 +1,11 @@
+//=============================================================================
+// CD_DynamicSetting
+//=============================================================================
+// Represents a setting whose value depends on wave number and player count
+// (and the user's/admin's configuration).  Compare with CD_BasicSetting, which
+// only changes on manual intervention.
+//=============================================================================
+
 class CD_DynamicSetting extends Object
 	within CD_Survival
 	implements (CD_Setting)

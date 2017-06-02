@@ -1,3 +1,10 @@
+//=============================================================================
+// CD_AlphaRally_NoGlitter
+//=============================================================================
+// Extends the albino alpha clot's AOE rally skill to disable its red particle
+// effects.  The rest of the aspects of the rally ability are unchanged.
+//=============================================================================
+
 class CD_AlphaRally_NoGlitter extends KFSM_AlphaRally;
 
 function RallyZeds()

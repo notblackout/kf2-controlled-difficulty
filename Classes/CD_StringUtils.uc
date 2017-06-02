@@ -1,4 +1,11 @@
-class CD_StringUtils extends Object;
+//=============================================================================
+// CD_StringUtils
+//============================================================================
+// Static helper methods for converting things to and from strings
+//=============================================================================
+
+class CD_StringUtils extends Object
+	Abstract;
 
 static function string GetShortWaveNameByIndex( const int WaveIndex )
 {
