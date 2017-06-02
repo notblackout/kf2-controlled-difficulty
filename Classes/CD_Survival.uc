@@ -1038,19 +1038,29 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 	// Only pass actual players to GetPlayerNumMaxAIModifier -- it adds fakes internally
 	LocalMaxAIMod = DifficultyInfo.GetPlayerNumMaxAIModifier(LocalNumPlayers);
 
-	if ( FakePlayersModeEnum == FPM_ADD )
-	{
-		DoshMod = (LocalNumPlayers + FakePlayersInt) / LocalMaxAIMod;
-	}
-	else
-	{
-		DoshMod = FakePlayersInt / LocalMaxAIMod;
-	}
+	DoshMod = GetEffectivePlayerCount( LocalNumPlayers ) / LocalMaxAIMod;
 
 	ModifiedValue *= DoshMod;
 
-	`cdlog("DoshCalc: ModifiedValue="$ ModifiedValue $" FakePlayers="$ FakePlayersInt $
+	`cdlog("DoshCalc: ModifiedValue="$ ModifiedValue $" FakePlayers="$ FakePlayersInt $" FakePlayersMode="$ FakePlayersMode $
 	       " RealPlayers="$ LocalNumPlayers $" computed MaxAIDoshDenominator="$ LocalMaxAIMod, bLogControlledDifficulty);
+}
+
+/*
+ * Get param + FakePlayers (not BossFP, FleshpoundFP, or any other *FP value).
+ * This automatically accounts for FakePlayersMode.  If FPM_REPLACE is
+ * active and FakePlayersInt is 0, then this method returns 1.
+ */
+final function int GetEffectivePlayerCount( int HumanPlayers )
+{
+	if ( FakePlayersModeEnum == FPM_ADD )
+	{
+		return FakePlayersInt + HumanPlayers;
+	}
+	else
+	{
+		return 0 < FakePlayersInt ? FakePlayersInt : 1;
+	}
 }
 
 /*
@@ -1399,8 +1409,8 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 	{
 		if ( WorldInfo.NetMode == NM_StandAlone )
 		{
-			AssumedPlayerCount = 1 + FakePlayersInt; // TODO is FakePlayersInt still right?
-			GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" players = 1 human + "$FakePlayers$" fake(s) in current game length...", false );
+			AssumedPlayerCount = GetEffectivePlayerCount( 1 );
+			GameInfo_CDCP.Print( "Projecting wave summaries for "$AssumedPlayerCount$" player(s) in current game length...", false );
 		}
 		else
 		{

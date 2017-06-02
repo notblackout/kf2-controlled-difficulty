@@ -15,25 +15,11 @@ class CD_DifficultyInfo extends KFGameDifficulty_Survival
 // This is invoked by the base game.
 function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 {
-	local int Result;
+	local int EffectivePlayerCount;
 
-	if ( FakePlayersModeEnum == FPM_ADD )
-	{
-		Result = NumLivingPlayers + Outer.FakePlayersInt;
-		`cdlog("GetPlayerNumAIMaxModifier: using count "$ Result $": added FakePlayers="$ Outer.FakePlayersInt $" to NumLivingPlayers="$ NumLivingPlayers, bLogControlledDifficulty);
-	}
-	else
-	{
-		Result = Outer.FakePlayersInt;
-		if ( 0 >= Result )
-		{
-			`cdlog("FakePlayers="$ Result $" is invalid in FakePlayersMode="$ FakePlayersMode $"; using 1", bLogControlledDifficulty);
-			Result = 1;
-		}
-		`cdlog("GetPlayerNumAIMaxModifier: using count "$ Result $": replaced NumLivingPlayers="$ NumLivingPlayers $" with FakePlayers="$ Outer.FakePlayersInt, bLogControlledDifficulty);
-	}
+	EffectivePlayerCount = GetEffectivePlayerCount( NumLivingPlayers );
 
-	return GetNumPlayersModifier( NumPlayers_WaveSize, Result );
+	return GetNumPlayersModifier( NumPlayers_WaveSize, EffectivePlayerCount );
 }
 
 /** Scales the health this Zed has by the difficulty level */
