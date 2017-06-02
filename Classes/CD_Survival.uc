@@ -28,6 +28,13 @@ enum EZTSpawnMode
 	ZTSM_CLOCKWORK
 };
 
+enum EBossChoice
+{
+	CDBOSS_RANDOM,
+	CDBOSS_VOLTER,
+	CDBOSS_PATRIARCH
+};
+
 enum CDAuthLevel
 {
 	CDAUTH_READ,
@@ -165,6 +172,7 @@ var array<CD_AIWaveInfo> ActiveWaveInfos;
 // "pat", "patty", "patriarch": forces the patriarch boss wave
 // else: choose a random boss wave (unmodded game behavior)
 var config string Boss;
+var EBossChoice BossEnum;
 
 // Time, in seconds, that dropped weapons remain on the ground before
 // disappearing.  This must be either a valid integer in string form,
@@ -567,28 +575,8 @@ private function ParseCDGameOptions( const out string Options )
 	}
 }
 
-protected function SetFakePlayersModeEnum()
-{
-	if ( FakePlayersMode == "add" )
-	{
-		FakePlayersModeEnum = FPM_ADD;
-	}
-	else
-	{
-		FakePlayersModeEnum = FPM_REPLACE;
-	}
-}
-
 protected function SetZTSpawnModeEnum()
 {
-	if ( ZTSpawnMode == "unmodded" )
-	{
-		ZTSpawnModeEnum = ZTSM_UNMODDED;
-	}
-	else
-	{
-		ZTSpawnModeEnum = ZTSM_CLOCKWORK;
-	}
 }
 
 private function DisplayBriefWaveStatsInChat()
@@ -685,21 +673,6 @@ private function string UnpauseTraderTime()
 	`cdlog("MyKFGRI.bStopCountDown: "$ MyKFGRI.bStopCountDown, bLogControlledDifficulty);
 
 	return "Unpaused Trader";
-}
-
-function bool IsValidZTSpawnModeString( const out string ztsm )
-{
-	return "unmodded" == ztsm || "clockwork" == ztsm;
-}
-
-function bool IsValidFakePlayersModeString( const out string fpm )
-{
-	return "add" == fpm || "replace" == fpm;
-}
-
-function bool IsValidBossString( const out string bs )
-{
-	return isRandomBossString(bs) || isPatriarchBossString(bs) || isVolterBossString(bs);
 }
 
 /* 
@@ -1105,7 +1078,7 @@ function CDAuthLevel GetAuthorizationLevelForUser( Actor Sender )
 
 	`cdlog("Beginning authorization check for UniqueId=" $ SteamIdHexString $ " (current nickname: "$ KFPRI.PlayerName $")", bLogControlledDifficulty);
 
-	HexStringToInt( Right( SteamIdHexString, 8 ), SteamIdAccountNumber );
+	class'CD_StringUtils'.static.HexStringToInt( Right( SteamIdHexString, 8 ), SteamIdAccountNumber );
 
 	if ( -1 == SteamIdAccountNumber )
 	{
@@ -1142,45 +1115,6 @@ function CDAuthLevel GetAuthorizationLevelForUser( Actor Sender )
 	return DefaultAuthLevel;
 }
 
-private function int HexStringToInt( string hexstr, out int value )
-{
-	local int i;
-	local int multiplier;
-
-	hexstr = Locs(hexstr);
-
-	multiplier = 1;
-	value = 0;
-
-	for ( i = Len(hexstr) - 1 ; 0 <= i ; i-- )
-	{
-		switch (Mid(hexstr, i, 1))
-		{
-		case "0": break;
-		case "1": value += multiplier; break;
-		case "2": value += (multiplier * 2);  break;
-		case "3": value += (multiplier * 3);  break;
-		case "4": value += (multiplier * 4);  break;
-		case "5": value += (multiplier * 5);  break;
-		case "6": value += (multiplier * 6);  break;
-		case "7": value += (multiplier * 7);  break;
-		case "8": value += (multiplier * 8);  break;
-		case "9": value += (multiplier * 9);  break;
-		case "a": value += (multiplier * 10); break;
-		case "b": value += (multiplier * 11); break;
-		case "c": value += (multiplier * 12); break;
-		case "d": value += (multiplier * 13); break;
-		case "e": value += (multiplier * 14); break;
-		case "f": value += (multiplier * 15); break;
-		default: return -1;
-		}
-
-		multiplier *= 16; 
-	}
-
-	return value;
-}
-
 private function MaybeLoadIniWaveInfos()
 {
 	if ( !AlreadyLoadedIniWaveInfos )
@@ -1215,7 +1149,6 @@ exec function CDChatHelp()
 {
 	ChatCommander.PrintCDChatHelp();
 }
-
 
 exec function CDSpawnSummaries( optional string CycleName, optional int AssumedPlayerCount = -255 )
 {
@@ -1408,36 +1341,6 @@ private function PrintScheduleSlug( string CycleName )
 	{
 		GameInfo_CDCP.Print("Considering SpawnCycle="$CycleName$" (if a preset with that name exists)", false);
 	}
-}
-
-function bool isRandomBoss()
-{
-	return isRandomBossString( Boss );
-}
-
-function bool isPatriarchBoss()
-{
-	return isPatriarchBossString( Boss );
-}
-
-function bool isVolterBoss()
-{
-	return isVolterBossString( Boss );
-}
-
-static function bool isRandomBossString( const out string s )
-{
-	return s == "" || s ~= "random" || s ~= "unmodded";
-}
-
-static function bool isPatriarchBossString( const out string s )
-{
-	return s ~= "patriarch" || s~= "patty" || s ~= "pat";
-}
-
-static function bool isVolterBossString( const out string s )
-{
-	return s ~= "hans" || s ~= "volter" || s ~= "moregas";
 }
 
 defaultproperties

@@ -745,19 +745,19 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 				AIType = SquadElements[i].Type;
 				if( AIType == AT_BossRandom )
 				{
-					if ( Outer.isVolterBoss() )
+					if ( BossEnum == CDBOSS_VOLTER )
 					{
-						`cdlog("Spawning Hans Volter (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						`cdlog("Spawning Hans Volter (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[0]);
 					}
-					else if ( Outer.isPatriarchBoss() )
+					else if ( BossEnum == CDBOSS_PATRIARCH  )
 					{
-						`cdlog("Spawning Patriarch (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						`cdlog("Spawning Patriarch (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[1]);
 					}
 					else
 					{
-						`cdlog("Spawning a random boss (config: Boss="$Outer.Boss$")", bLogControlledDifficulty);
+						`cdlog("Spawning a random boss (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
 						TempSpawnList.AddItem(AIBossClassList[Rand(AIBossClassList.Length)]);
 					}
 				}

@@ -9,7 +9,15 @@ protected function string ReadIndicator()
 protected function WriteIndicator( const out string Val )
 {
 	Outer.FakePlayersMode = Val; 
-	SetFakePlayersModeEnum();  // Update FakePlayersModeEnum
+
+	if ( Outer.FakePlayersMode == "add" )
+	{
+		FakePlayersModeEnum = FPM_ADD;
+	}
+	else
+	{
+		FakePlayersModeEnum = FPM_REPLACE;
+	}
 }
 
 protected function string SanitizeIndicator( const string Raw )
@@ -20,6 +28,11 @@ protected function string SanitizeIndicator( const string Raw )
 	}
 
 	return Raw;
+}
+
+private static function bool IsValidFakePlayersModeString( const out string fpm )
+{
+	return "add" == fpm || "replace" == fpm;
 }
 
 defaultproperties

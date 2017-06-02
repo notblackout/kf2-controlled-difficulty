@@ -9,7 +9,15 @@ protected function string ReadIndicator()
 protected function WriteIndicator( const out string Val )
 {
 	Outer.ZTSpawnMode = Val; 
-	SetZTSpawnModeEnum();  // Update ZTSpawnModeEnum
+
+	if ( Outer.ZTSpawnMode == "unmodded" )
+	{
+		ZTSpawnModeEnum = ZTSM_UNMODDED;
+	}
+	else
+	{
+		ZTSpawnModeEnum = ZTSM_CLOCKWORK;
+	}
 }
 
 protected function string SanitizeIndicator( const string Raw )
@@ -20,6 +28,11 @@ protected function string SanitizeIndicator( const string Raw )
 	}
 
 	return Raw;
+}
+
+private static function bool IsValidZTSpawnModeString( const out string ztsm )
+{
+	return "unmodded" == ztsm || "clockwork" == ztsm;
 }
 
 defaultproperties
