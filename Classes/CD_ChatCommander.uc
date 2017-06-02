@@ -13,7 +13,7 @@ struct StructChatCommand
 	var delegate<ChatCommandParamsImpl> ParamsImpl;
 	var CD_Setting CDSetting;
 	var string Description;
-	var CDAuthLevel AuthLevel;
+	var ECDAuthLevel AuthLevel;
 	var bool ModifiesConfig;
 };
 
@@ -68,7 +68,7 @@ function PrintCDChatHelp()
 
 function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 {
-	local CDAuthLevel AuthLevel;
+	local ECDAuthLevel AuthLevel;
 	local string ResponseMessage;
 	local array<string> CommandTokens;
 	local name GameStateName;
@@ -250,7 +250,7 @@ function SetupChatCommands()
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 }
 
-private function bool MatchChatCommand( const string CmdName, out StructChatCommand Cmd, const CDAuthLevel AuthLevel, const int ParamCount )
+private function bool MatchChatCommand( const string CmdName, out StructChatCommand Cmd, const ECDAuthLevel AuthLevel, const int ParamCount )
 {
 	local int CCIndex;
 	local int NameIndex;

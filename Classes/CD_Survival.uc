@@ -9,33 +9,33 @@ class CD_Survival extends KFGameInfo_Survival;
 `include(CD_BuildInfo.uci)
 `include(CD_Log.uci)
 
-enum EWaveInfoStatus
+enum ECDWaveInfoStatus
 {
 	WIS_OK,
 	WIS_PARSE_ERROR,
 	WIS_SPAWNCYCLE_NOT_MODDED
 };
 
-enum EFakePlayersMode
+enum ECDFakePlayersMode
 {
 	FPM_ADD,
 	FPM_REPLACE
 };
 
-enum EZTSpawnMode
+enum ECDZTSpawnMode
 {
 	ZTSM_UNMODDED,
 	ZTSM_CLOCKWORK
 };
 
-enum EBossChoice
+enum ECDBossChoice
 {
 	CDBOSS_RANDOM,
 	CDBOSS_VOLTER,
 	CDBOSS_PATRIARCH
 };
 
-enum CDAuthLevel
+enum ECDAuthLevel
 {
 	CDAUTH_READ,
 	CDAUTH_WRITE
@@ -182,7 +182,7 @@ var float ZTSpawnSlowdownFloat;
 // every time zed time starts.  "clockwork" also applies ZTSpawnSlowdown to the
 // spawn manager timer's dilation factor.  
 var config string ZTSpawnMode;
-var EZTSpawnMode ZTSpawnModeEnum;
+var ECDZTSpawnMode ZTSpawnModeEnum;
 
 // Controls the bright red particle effects that appear around zeds when an
 // albino alpha clot rallies them (and himself).
@@ -219,7 +219,7 @@ var bool AlphaGlitterBool;
 // option is set to zero, then that option is treated as though it had been set
 // to one instead.  
 var config string FakePlayersMode;
-var EFakePlayersMode FakePlayersModeEnum;
+var ECDFakePlayersMode FakePlayersModeEnum;
 
 // The maximum monsters allowed on the map at one time.  In the vanilla game,
 // this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1.   The
@@ -303,7 +303,7 @@ var array<CD_AIWaveInfo> ActiveWaveInfos;
 // "random" or "unmodded": choose a random boss when the time comes (unmodded
 // game behavior)
 var config string Boss;
-var EBossChoice BossEnum;
+var ECDBossChoice BossEnum;
 
 // Time, in seconds, that dropped weapons remain on the ground before
 // disappearing.  This must be either a valid integer in string form, or the
@@ -369,7 +369,7 @@ var config array<StructAuthorizedUsers> AuthorizedUsers;
 // CDAUTH_WRITE effectively makes AuthorizedUsers superfluous, since there is
 // no effective difference in chat command authority between AuthorizedUsers
 // and anonymous users with CDAUTH_WRITE.
-var config CDAuthLevel DefaultAuthLevel;
+var config ECDAuthLevel DefaultAuthLevel;
 
 ////////////////////////////////////////////////////////////////
 // Internal runtime state (no config options below this line) //
@@ -1257,7 +1257,7 @@ function bool EpsilonClose( const float a, const float b, const float epsilon )
 	return a == b || (a < b && b < (a + epsilon)) || (b < a && a < (b + epsilon));
 }
 
-function CDAuthLevel GetAuthorizationLevelForUser( Actor Sender )
+function ECDAuthLevel GetAuthorizationLevelForUser( Actor Sender )
 {
 	local KFPlayerReplicationInfo KFPRI;
 	local KFPlayerController SubjectPC;
@@ -1370,7 +1370,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 	local array<CD_AIWaveInfo> WaveInfosToSummarize;
 	local DifficultyWaveInfo DWS;
 	local class<CD_SpawnManager> cdsmClass;
-	local EWaveInfoStatus wis;
+	local ECDWaveInfoStatus wis;
 
 	wis = GetWaveInfosForConsoleCommand( CycleName, WaveInfosToSummarize );
 
@@ -1434,7 +1434,7 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 exec function CDSpawnDetails( optional string CycleName )
 {
 	local array<CD_AIWaveInfo> WaveInfosToSummarize;
-	local EWaveInfoStatus wis;
+	local ECDWaveInfoStatus wis;
 
 	wis = GetWaveInfosForConsoleCommand( CycleName, WaveInfosToSummarize );
 
@@ -1455,7 +1455,7 @@ exec function CDSpawnDetails( optional string CycleName )
 exec function CDSpawnDetailsVerbose( optional string CycleName )
 {
 	local array<CD_AIWaveInfo> WaveInfosToSummarize;
-	local EWaveInfoStatus wis;
+	local ECDWaveInfoStatus wis;
 
 	wis = GetWaveInfosForConsoleCommand( CycleName, WaveInfosToSummarize );
 
@@ -1479,7 +1479,7 @@ private function CDConsolePrintLogfileHint()
 	GameInfo_CDCP.Print("  <HOME>\\Documents\\My Games\\KillingFloor2\\KFGame\\Logs\\Launch.log", false);
 }
 
-function EWaveInfoStatus GetWaveInfosForConsoleCommand( string CycleName, out array<CD_AIWaveInfo> WaveInfos )
+function ECDWaveInfoStatus GetWaveInfosForConsoleCommand( string CycleName, out array<CD_AIWaveInfo> WaveInfos )
 {
 	WaveInfos.length = 0;
 
