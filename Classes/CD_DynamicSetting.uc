@@ -72,9 +72,11 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 		return false;
 	}
 
-	StagedIndicator = "";
-	StagedRegulator = None;
+	// If we fail to parse, use the default value
+	StatusMsg = "";
 	StagedValue = DefaultSettingValue;
+	StagedRegulator = None;
+	StagedIndicator = PrettyValue( StagedValue );
 
 	if ( Raw == "ini" )
 	{
@@ -87,11 +89,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 		}
 		else
 		{
-			StagedValue = DefaultSettingValue;
-			StagedIndicator = PrettyValue( StagedValue );
-			StatusMsg = "Unable to parse "$ OptionName $" definitions; defaulting to "$ StagedIndicator;
-			`cdlog(StatusMsg, bLogControlledDifficulty);
-			return false;
+			StatusMsg = "Parse error in "$ IniDefsArrayName $"; defaulting to "$ StagedIndicator;
 		}
 	}
 	else if ( Left(Raw, 9) ~= "bilinear:" )
@@ -105,25 +103,30 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 		}
 		else
 		{
-			StagedValue = DefaultSettingValue;
-			StagedIndicator = PrettyValue( StagedValue );
-			StatusMsg = "Unable to parse bilinear spec "$ Raw $"; defaulting to "$ StagedIndicator;
-			`cdlog(StatusMsg, bLogControlledDifficulty);
-			return false;
+			StatusMsg = "Invalid function spec: "$ Raw $"; defaulting to "$ StagedIndicator;
 		}
 	}
 	else
 	{
 		StagedValue = FClamp( float( Raw ), MinSettingValue, MaxSettingValue );
 		StagedIndicator = PrettyValue( StagedValue );
-		`cdlog("Converted raw string "$ Raw $" to staged float value "$ StagedValue 
-			$" (indicator: "$ StagedIndicator $")", bLogControlledDifficulty);
+		StagedRegulator = None;
+		`cdlog("Converted raw string "$ Raw $" to staged float value "$ StagedValue $
+		       " (indicator: "$ StagedIndicator $")", bLogControlledDifficulty);
+		if ( StagedIndicator == ReadIndicator() )
+		{
+			StatusMsg = OptionName $" is already "$ StagedIndicator;
+		}
 	}
 
-	StatusMsg = "Staged: "$ OptionName $"="$ StagedIndicator $
-		"\nEffective after current wave"; 
-
-	return true;
+	if ( StatusMsg == "" )
+	{
+		StatusMsg = "Staged: "$ OptionName $"="$ StagedIndicator $
+			"\nEffective after current wave"; 
+		return true;
+	}
+	
+	return false;
 }
 
 protected function string ReadIndicator()
