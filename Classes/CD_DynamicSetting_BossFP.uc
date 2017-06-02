@@ -1,24 +1,24 @@
-class CD_ProgrammableSetting_CohortSize extends CD_ProgrammableSetting
+class CD_DynamicSetting_BossFP extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.CohortSize;
+	return Outer.BossFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.CohortSize = Ind;
+	Outer.BossFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.CohortSizeInt);
+	return float(Outer.BossFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.CohortSizeInt = int(Val);
+	Outer.BossFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="CohortSizeDefs"
-	OptionName="CohortSize"
+	IniDefsArrayName="BossFPDefs"
+	OptionName="BossFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=10000
+	MaxSettingValue=32
 
-	ChatCommandNames=("!cdcohortsize","!cdcs")
-	ChatWriteParamHintFragment="int, 0 disables cohort mode"
+	ChatCommandNames=("!cdbossfp")
+	ChatWriteParamHintFragment="int"
 }

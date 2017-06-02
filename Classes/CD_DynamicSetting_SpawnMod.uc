@@ -1,4 +1,4 @@
-class CD_ProgrammableSetting_SpawnMod extends CD_ProgrammableSetting
+class CD_DynamicSetting_SpawnMod extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()

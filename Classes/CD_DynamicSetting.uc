@@ -1,4 +1,4 @@
-class CD_ProgrammableSetting extends Object
+class CD_DynamicSetting extends Object
 	within CD_Survival
 	implements (CD_Setting)
 	Abstract;

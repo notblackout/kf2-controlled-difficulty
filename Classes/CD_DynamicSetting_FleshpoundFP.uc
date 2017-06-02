@@ -1,24 +1,24 @@
-class CD_ProgrammableSetting_MaxMonsters extends CD_ProgrammableSetting
+class CD_DynamicSetting_FleshpoundFP extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.MaxMonsters;
+	return Outer.FleshpoundFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.MaxMonsters = Ind;
+	Outer.FleshpoundFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.MaxMonstersInt);
+	return float(Outer.FleshpoundFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.MaxMonstersInt = int(Val);
+	Outer.FleshpoundFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="MaxMonstersDefs"
-	OptionName="MaxMonsters"
+	IniDefsArrayName="FleshpoundFPDefs"
+	OptionName="FleshpoundFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=10000
+	MaxSettingValue=32
 
-	ChatCommandNames=("!cdmaxmonsters","!cdmm")
-	ChatWriteParamHintFragment="int, 0 to use unmodded default"
+	ChatCommandNames=("!cdfleshpoundfp")
+	ChatWriteParamHintFragment="int"
 }

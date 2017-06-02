@@ -1,24 +1,24 @@
-class CD_ProgrammableSetting_FakePlayers extends CD_ProgrammableSetting
+class CD_DynamicSetting_ScrakeFP extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.FakePlayers;
+	return Outer.ScrakeFP;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.FakePlayers = Ind;
+	Outer.ScrakeFP = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.FakePlayersInt);
+	return float(Outer.ScrakeFPInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.FakePlayersInt = int(Val);
+	Outer.ScrakeFPInt = int(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="FakePlayersDefs"
-	OptionName="FakePlayers"
+	IniDefsArrayName="ScrakeFPDefs"
+	OptionName="ScrakeFP"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32
 
-	ChatCommandNames=("!cdfakeplayers","!cdfp")
+	ChatCommandNames=("!cdscrakefp")
 	ChatWriteParamHintFragment="int"
 }

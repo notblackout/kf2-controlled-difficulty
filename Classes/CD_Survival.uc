@@ -375,18 +375,18 @@ var config ECDAuthLevel DefaultAuthLevel;
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
 
-var CD_ProgrammableSetting BossFPSetting;
-var CD_ProgrammableSetting CohortSizeSetting;
-var CD_ProgrammableSetting FakePlayersSetting;
-var CD_ProgrammableSetting FleshpoundFPSetting;
-var CD_ProgrammableSetting MaxMonstersSetting;
-var CD_ProgrammableSetting MinSpawnIntervalSetting;
-var CD_ProgrammableSetting ScrakeFPSetting;
-var CD_ProgrammableSetting SpawnModSetting;
-var CD_ProgrammableSetting TrashFPSetting;
-var CD_ProgrammableSetting ZTSpawnSlowdownSetting;
+var CD_DynamicSetting BossFPSetting;
+var CD_DynamicSetting CohortSizeSetting;
+var CD_DynamicSetting FakePlayersSetting;
+var CD_DynamicSetting FleshpoundFPSetting;
+var CD_DynamicSetting MaxMonstersSetting;
+var CD_DynamicSetting MinSpawnIntervalSetting;
+var CD_DynamicSetting ScrakeFPSetting;
+var CD_DynamicSetting SpawnModSetting;
+var CD_DynamicSetting TrashFPSetting;
+var CD_DynamicSetting ZTSpawnSlowdownSetting;
 
-var array<CD_ProgrammableSetting> DynamicSettings;
+var array<CD_DynamicSetting> DynamicSettings;
 
 var CD_BasicSetting AlbinoAlphasSetting;
 var CD_BasicSetting AlbinoCrawlersSetting;
@@ -456,7 +456,7 @@ event InitGame( string Options, out string ErrorMessage )
 	GameInfo_CDCP.Print( "Version " $ `CD_COMMIT_HASH $ " (" $ `CD_AUTHOR_TIMESTAMP $ ") loaded" );
 
 	SetupBasicSettings();
-	SetupProgrammableSettings();
+	SetupDynamicSettings();
 	SortAllSettingsByName();
 
 	ParseCDGameOptions( Options );
@@ -537,45 +537,45 @@ private function SetupBasicSettings()
 	RegisterBasicSetting( ZTSpawnModeSetting );
 }
 
-private function SetupProgrammableSettings()
+private function SetupDynamicSettings()
 {
-	BossFPSetting = new(self) class'CD_ProgrammableSetting_BossFP';
+	BossFPSetting = new(self) class'CD_DynamicSetting_BossFP';
 	BossFPSetting.IniDefsArray = BossFPDefs;
 	RegisterDynamicSetting( BossFPSetting );
 
-	CohortSizeSetting = new(self) class'CD_ProgrammableSetting_CohortSize';
+	CohortSizeSetting = new(self) class'CD_DynamicSetting_CohortSize';
 	CohortSizeSetting.IniDefsArray = CohortSizeDefs;
 	RegisterDynamicSetting( CohortSizeSetting );
 
-	FakePlayersSetting = new(self) class'CD_ProgrammableSetting_FakePlayers';
+	FakePlayersSetting = new(self) class'CD_DynamicSetting_FakePlayers';
 	FakePlayersSetting.IniDefsArray = FakePlayersDefs;
 	RegisterDynamicSetting( FakePlayersSetting );
 
-	MaxMonstersSetting = new(self) class'CD_ProgrammableSetting_MaxMonsters';
+	MaxMonstersSetting = new(self) class'CD_DynamicSetting_MaxMonsters';
 	MaxMonstersSetting.IniDefsArray = MaxMonstersDefs;
 	RegisterDynamicSetting( MaxMonstersSetting );
 
-	SpawnModSetting = new(self) class'CD_ProgrammableSetting_SpawnMod';
+	SpawnModSetting = new(self) class'CD_DynamicSetting_SpawnMod';
 	SpawnModSetting.IniDefsArray = SpawnModDefs;
 	RegisterDynamicSetting( SpawnModSetting );
 
-	MinSpawnIntervalSetting = new(self) class'CD_ProgrammableSetting_MinSpawnInterval';
+	MinSpawnIntervalSetting = new(self) class'CD_DynamicSetting_MinSpawnInterval';
 	MinSpawnIntervalSetting.IniDefsArray = MinSpawnIntervalDefs;
 	RegisterDynamicSetting( MinSpawnIntervalSetting );
 
-	ScrakeFPSetting = new(self) class'CD_ProgrammableSetting_ScrakeFP';
+	ScrakeFPSetting = new(self) class'CD_DynamicSetting_ScrakeFP';
 	ScrakeFPSetting.IniDefsArray = ScrakeFPDefs;
 	RegisterDynamicSetting( ScrakeFPSetting );
 
-	FleshpoundFPSetting = new(self) class'CD_ProgrammableSetting_FleshpoundFP';
+	FleshpoundFPSetting = new(self) class'CD_DynamicSetting_FleshpoundFP';
 	FleshpoundFPSetting.IniDefsArray = FleshpoundFPDefs;
 	RegisterDynamicSetting( FleshpoundFPSetting );
 
-	TrashFPSetting = new(self) class'CD_ProgrammableSetting_TrashFP';
+	TrashFPSetting = new(self) class'CD_DynamicSetting_TrashFP';
 	TrashFPSetting.IniDefsArray = TrashFPDefs;
 	RegisterDynamicSetting( TrashFPSetting );
 
-	ZTSpawnSlowdownSetting = new(self) class'CD_ProgrammableSetting_ZTSpawnSlowdown';
+	ZTSpawnSlowdownSetting = new(self) class'CD_DynamicSetting_ZTSpawnSlowdown';
 	ZTSpawnSlowdownSetting.IniDefsArray = ZTSpawnSlowdownDefs;
 	RegisterDynamicSetting( ZTSpawnSlowdownSetting );
 }
@@ -586,7 +586,7 @@ private function RegisterBasicSetting( const out CD_BasicSetting BasicSetting )
 	AllSettings.AddItem( BasicSetting );
 }
 
-private function RegisterDynamicSetting( const out CD_ProgrammableSetting DynamicSetting )
+private function RegisterDynamicSetting( const out CD_DynamicSetting DynamicSetting )
 {
 	DynamicSettings.AddItem( DynamicSetting );
 	AllSettings.AddItem( DynamicSetting );

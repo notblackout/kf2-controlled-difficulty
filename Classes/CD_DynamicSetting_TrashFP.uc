@@ -1,4 +1,4 @@
-class CD_ProgrammableSetting_TrashFP extends CD_ProgrammableSetting
+class CD_DynamicSetting_TrashFP extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()

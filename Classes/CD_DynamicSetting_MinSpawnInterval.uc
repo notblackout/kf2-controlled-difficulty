@@ -1,4 +1,4 @@
-class CD_ProgrammableSetting_MinSpawnInterval extends CD_ProgrammableSetting
+class CD_DynamicSetting_MinSpawnInterval extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
