@@ -472,13 +472,17 @@ private function SortAllSettingsByName()
 	AllSettings.sort(SettingNameComparator);
 }
 
-// DO NOT mark the parameters "const out"!  The compiler will accept
-// both modifiers without so much as a warning, but the entire engine
-// will crash to bugsplat when attempting to call this via a dynamic
-// array's sort(<comparator>) function.  Unrealscript should not 
-// generally be able to crash the entire engine in the first place,
-// so I'm guessing this is an engine, bytecode interpreter, or compiler
-// bug (so it's conceivable, though unlikely, that it could get fixed).
+/*
+ * Sorts CD_Settings alphabetically by name.
+ *
+ * DO NOT mark the parameters "const out"!  The compiler will accept both
+ * modifiers without so much as a warning, but the entire engine will crash to
+ * bugsplat when attempting to call this via a dynamic array's
+ * sort(<comparator>) function.  Unrealscript should not generally be able to
+ * crash the entire engine in the first place, so I'm guessing this is an
+ * engine, bytecode interpreter, or compiler bug (so it's conceivable, though
+ * unlikely, that it could get fixed).
+ */
 private function int SettingNameComparator( CD_Setting a, CD_Setting b )
 {
 	local string an, bn;
@@ -588,6 +592,12 @@ private function RegisterDynamicSetting( const out CD_ProgrammableSetting Dynami
 	AllSettings.AddItem( DynamicSetting );
 }
 
+/*
+ * We override CheckRelevance to do some mutator-style modifications to actors
+ * as they spawn into the game.  This is useful for actors that have important
+ * mutable state with defaults that are either immutable or inconvenient to
+ * modify.
+ */
 function bool CheckRelevance(Actor Other)
 {
 	local KFDroppedPickup Weap;
@@ -652,9 +662,11 @@ private function OverrideWeaponLifespan(KFDroppedPickup Weap)
 	// If negative, do nothing (TWI's standard lifespan prevails)
 }
 
-//
-// Set gameplay speed.
-//
+/*
+ * Set gameplay speed.  TWI's code calls this to implement zedtime.
+ *
+ * CD overrides it to apply MinSpawnInterval and ZTSpawnSlowdown.
+ */
 function SetGameSpeed( Float T )
 {
 	GameSpeed = FMax(T, 0.00001);
@@ -672,6 +684,12 @@ function SetGameSpeed( Float T )
 	}
 }
 
+/*
+ * Installs a timer that invokes SpawnManagerWakeup every MinSpawnInterval
+ * seconds.  If the timer already exists and ForceReset is true, it is
+ * destroyed and restarted from zero.  If the timer already exists and
+ * ForceReset is false, nothing happens.
+ */
 function SetSpawnManagerTimer( const optional bool ForceReset = true )
 {
 	if ( ForceReset || !IsTimerActive('SpawnManagerWakeup') )
@@ -682,6 +700,14 @@ function SetSpawnManagerTimer( const optional bool ForceReset = true )
 	}
 }
 
+/*
+ * During zedtime, modify the SpawnManager timer's TimeDilation factor so that
+ * it runs ZTSpawnSlowdown times slower than realtime.  At the extreme, when
+ * ZTSpawnSlowdown is 1, then this function calculates a TimeDilation factor
+ * that cancels out the effect of zed time on the SpawnManager.
+ *
+ * This is only called when ZTSpawnMode is CLOCKWORK.
+ */
 function TuneSpawnManagerTimer()
 {
 	local float LocalDilation;
@@ -716,7 +742,11 @@ function TuneSpawnManagerTimer()
 	ModifyTimerTimeDilation('SpawnManagerWakeup', LocalDilation);
 }
 
-/** Default timer, called from native */
+/*
+ * We override this function to keep it from calling SpawnManager.Update().  CD
+ * does that separately through the SpawnManagerWakeup() function.  This
+ * separation supports the MinSpawnInterval setting.
+ */
 event Timer()
 {
 	super(KFGameInfo).Timer();
@@ -745,10 +775,6 @@ private function ParseCDGameOptions( const out string Options )
 	}
 }
 
-protected function SetZTSpawnModeEnum()
-{
-}
-
 private function DisplayBriefWaveStatsInChat()
 {
 	local string s;
@@ -769,6 +795,11 @@ State TraderOpen
 	}
 }
 
+/*
+ * Extended from TWI.  Called when the entire game ends (wipe or bosskill).
+ *
+ * CD overrides it to echo the post-wave recap in chat on wipes.
+ */
 function EndOfMatch(bool bVictory)
 {
 	super.EndOfMatch(bVictory);
@@ -1068,6 +1099,9 @@ protected function LoadSpawnCycle( const out string OverrideSpawnCycle, out arra
 	}
 }
 
+/*
+ * Extended from engine/TWI.  CD overrides it to look for chat commands.
+ */
 event Broadcast(Actor Sender, coerce string Msg, optional name Type)
 {
 	super.Broadcast(Sender, Msg, Type);
@@ -1078,6 +1112,12 @@ event Broadcast(Actor Sender, coerce string Msg, optional name Type)
 	}
 }
 
+/*
+ * Send a CDEcho message to all players.  These messages are not
+ * length-restricted like ordinary chat messages, but they may be suppressed
+ * from the chat window and shown only in the client's console side, depending
+ * on that client's configuration.
+ */
 function BroadcastCDEcho( coerce string Msg )
 {
         local PlayerController P;
@@ -1090,6 +1130,12 @@ function BroadcastCDEcho( coerce string Msg )
         }
 }
 
+/*
+ * Extended from TWI.  Called on transition from wave to tradertime.
+ *
+ * CD overrides to apply any setting changes that might have been staged using
+ * chat commands during the wave.
+ */
 function WaveEnded( EWaveEndCondition WinCondition )
 {
 	local string CDSettingChangeMessage;
@@ -1101,7 +1147,6 @@ function WaveEnded( EWaveEndCondition WinCondition )
 		BroadcastCDEcho( CDSettingChangeMessage );
 	}
 }
-
 
 private function ProgramSettingsForNextWave()
 {
