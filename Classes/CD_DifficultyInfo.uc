@@ -48,7 +48,7 @@ function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte Num
 		// Global mod * character mod
 		if( bApplyDifficultyScaling )
 		{
-	    	HealthMod = GetGlobalHealthMod() * GetCharHealthModDifficulty(P, ForGameDifficulty);
+			HealthMod = GetGlobalHealthMod() * GetCharHealthModDifficulty(P, ForGameDifficulty);
 			HeadHealthMod = GetGlobalHealthMod() * GetCharHeadHealthModDifficulty(P, ForGameDifficulty);
 		}
 
@@ -58,8 +58,8 @@ function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte Num
 			HealthMod = 1.f;
 			if( HeadHealthMod <= 0 )
 			{
-                HeadHealthMod = 1.f;
-            }
+				HeadHealthMod = 1.f;
+			}
 			return;
 		}
 

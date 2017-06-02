@@ -36,10 +36,10 @@ function SetCustomWaves( array<CD_AIWaveInfo> inWaves )
 }
 
 /** We override this because of TimeUntilNextSpawn.
-    The standard implementation assumes that this
-    method is invoked on a 1-second timer.  It always
-    decrements TimeUntilNextSpawn by 1.  But CD makes
-    this timer a user-configurable setting. */
+	The standard implementation assumes that this
+	method is invoked on a 1-second timer.	It always
+	decrements TimeUntilNextSpawn by 1.  But CD makes
+	this timer a user-configurable setting. */
 function Update()
 {
 	local array<class<KFPawn_Monster> > SpawnList;
@@ -63,7 +63,7 @@ function Update()
 	// the eligible spawners/spawnvolumes are saturated
 	while ( ShouldAddAI() )
 	{
-    	SpawnList = GetNextSpawnList();
+		SpawnList = GetNextSpawnList();
 		SpawnSquadResult = SpawnSquad( SpawnList );
 		NumAISpawnsQueued += SpawnSquadResult;
 		CohortZedsSpawned += SpawnSquadResult;
@@ -73,7 +73,7 @@ function Update()
 			break;
 		}
 		CohortSquadsSpawned += 1;
-    }
+	}
 
 	// Log cohort composition (if cohorting is enabled)
 	if ( 0 < Outer.CohortSizeInt )
@@ -130,7 +130,7 @@ function bool ShouldAddAI()
 	{
 		ain = GetNumAINeeded();
 		`cdlog("GetNumAINeeded()=" $ ain, bLogControlledDifficulty);
-        return ain > 0;
+		return ain > 0;
 	}
 
 	return false;
@@ -154,7 +154,7 @@ function string GetWaveAverageSpawnrate()
 
 	// (c) if the cohort size is gigantic, or the wave size
 	// is absurdly tiny, then it is theoretically possible for
-	// the whole wave to spawn in a single cohort.  In this
+	// the whole wave to spawn in a single cohort.	In this
 	// case, FinalSpawnTimestamp and FirstSpawnTimestamp both
 	// have the same positive value.  Avoid div by zero.
 
@@ -251,7 +251,7 @@ function int GetMaxMonsters()
 	local int mm;
 
 	// We must be careful when accessing CD_Survival's MaxMonsters variable,
-	// because we inherited a MaxMonsters field from KFAISpawnManager.  We generally
+	// because we inherited a MaxMonsters field from KFAISpawnManager.	We generally
 	// want to ignore the KFAISpawnManager variable and consider only Outer.MaxMonsters,
 	// which is the user-specified CD_Survival setting.
 
@@ -287,61 +287,61 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
 	}
 }
 
-/*  I overrode this function to ensure that the leftover spawn squad list does
-    not get reordered during spawning.  In v<=1048, elements would be taken from
-    the head of the LSS for spawning.  If too many elements were taken (limited
-    by AINeeded/MaxMonsters), then surplus leftovers would be appended to the
-    tail of the LSS.  This is a problem.  Whenever leftovers partially spawned,
-    LSS is effectively partially reordered by this process.
+/*	I overrode this function to ensure that the leftover spawn squad list does
+	not get reordered during spawning.	In v<=1048, elements would be taken from
+	the head of the LSS for spawning.  If too many elements were taken (limited
+	by AINeeded/MaxMonsters), then surplus leftovers would be appended to the
+	tail of the LSS.  This is a problem.  Whenever leftovers partially spawned,
+	LSS is effectively partially reordered by this process.
 
-    It would be better if surplus leftovers were pushed back onto the head of
-    the list, where they were taken from, rather than the tail.
-    This can get really noticeable with a CD SpawnCycle, because LSS can get
-    into double digit length in normal solo play.
+	It would be better if surplus leftovers were pushed back onto the head of
+	the list, where they were taken from, rather than the tail.
+	This can get really noticeable with a CD SpawnCycle, because LSS can get
+	into double digit length in normal solo play.
 
-    Despite the fact that this function invokes KFSV.SpawnWave with the
-    parameter "bAllOrNothing" set to true, it still sometimes spawns only
-    part of the squad, or perhaps spawns the whole squad but then immediately
-    destroys some of its constituents, whining into the log thusly:
+	Despite the fact that this function invokes KFSV.SpawnWave with the
+	parameter "bAllOrNothing" set to true, it still sometimes spawns only
+	part of the squad, or perhaps spawns the whole squad but then immediately
+	destroys some of its constituents, whining into the log thusly:
 
-    [0698.07] ScriptLog: Monster List SpawnSquad Pre Spawning Length = 3
-    [0698.07] ScriptLog: MonsterList SpawnSquad Pre Spawning element 0 is KFPawn_ZedClot_Cyst
-    [0698.07] ScriptLog: MonsterList SpawnSquad Pre Spawning element 1 is KFPawn_ZedBloat
-    [0698.07] ScriptLog: MonsterList SpawnSquad Pre Spawning element 2 is KFPawn_ZedClot_Cyst
-    [0698.07] Warning: SpawnActor destroyed [KFPawn_ZedBloat_8] after spawning because it was encroaching on another Actor
-    [0698.07] Warning: Warning, Failed to spawn KFPawn_ZedBloat at X=1120.000 Y=800.000 Z=130.000 (Marker Index 1) in volume KFSpawnVolume_8
-    [0698.07] Warning: SpawnActor destroyed [KFPawn_ZedClot_Cyst_100] after spawning because it was encroaching on another Actor
-    [0698.07] Warning: Warning, Failed to spawn KFPawn_ZedClot_Cyst at X=1120.000 Y=800.000 Z=130.000 (Marker Index 2) in volume KFSpawnVolume_8
-    [0698.07] Warning: Warning, Not all AI spawned for volume KFSpawnVolume_8 with 1 markers
-    [0698.07] ScriptLog: KFAISpawnManager.SpawnAI() AIs spawned: 1 in Volume: KFSpawnVolume_8
-    [0698.07] ScriptLog: Monster List SpawnSquad Post Spawning Length = 2
-    [0698.07] ScriptLog: MonsterList SpawnSquad Post Spawning element 0 is KFPawn_ZedClot_Cyst
-    [0698.07] ScriptLog: MonsterList SpawnSquad Post Spawning element 1 is KFPawn_ZedBloat
+	[0698.07] ScriptLog: Monster List SpawnSquad Pre Spawning Length = 3
+	[0698.07] ScriptLog: MonsterList SpawnSquad Pre Spawning element 0 is KFPawn_ZedClot_Cyst
+	[0698.07] ScriptLog: MonsterList SpawnSquad Pre Spawning element 1 is KFPawn_ZedBloat
+	[0698.07] ScriptLog: MonsterList SpawnSquad Pre Spawning element 2 is KFPawn_ZedClot_Cyst
+	[0698.07] Warning: SpawnActor destroyed [KFPawn_ZedBloat_8] after spawning because it was encroaching on another Actor
+	[0698.07] Warning: Warning, Failed to spawn KFPawn_ZedBloat at X=1120.000 Y=800.000 Z=130.000 (Marker Index 1) in volume KFSpawnVolume_8
+	[0698.07] Warning: SpawnActor destroyed [KFPawn_ZedClot_Cyst_100] after spawning because it was encroaching on another Actor
+	[0698.07] Warning: Warning, Failed to spawn KFPawn_ZedClot_Cyst at X=1120.000 Y=800.000 Z=130.000 (Marker Index 2) in volume KFSpawnVolume_8
+	[0698.07] Warning: Warning, Not all AI spawned for volume KFSpawnVolume_8 with 1 markers
+	[0698.07] ScriptLog: KFAISpawnManager.SpawnAI() AIs spawned: 1 in Volume: KFSpawnVolume_8
+	[0698.07] ScriptLog: Monster List SpawnSquad Post Spawning Length = 2
+	[0698.07] ScriptLog: MonsterList SpawnSquad Post Spawning element 0 is KFPawn_ZedClot_Cyst
+	[0698.07] ScriptLog: MonsterList SpawnSquad Post Spawning element 1 is KFPawn_ZedBloat
 
-    I don't think I can fix bAllOrNothing=true, because the implementation
-    of KFSV.SpawnWave is native.  This wouldn't be a huge problem either
-    if KFAISpawnManager would just push the destroyed/encroaching zeds back
-    onto the head of the leftovers list.  But it does the opposite.  It
-    appends encroachers to the tail of the leftovers list.  The leftovers list
-    is processed from its head to its tail, and it can get quite long
-    (double digits) during ordinary play, so this can result in severely
-    out-of-order spawns.
+	I don't think I can fix bAllOrNothing=true, because the implementation
+	of KFSV.SpawnWave is native.  This wouldn't be a huge problem either
+	if KFAISpawnManager would just push the destroyed/encroaching zeds back
+	onto the head of the leftovers list.  But it does the opposite.  It
+	appends encroachers to the tail of the leftovers list.	The leftovers list
+	is processed from its head to its tail, and it can get quite long
+	(double digits) during ordinary play, so this can result in severely
+	out-of-order spawns.
 
-    It seems possible to avoid copyping most of this method.  I could just
-    invoke super.SpawnSquad and do some pre/post checks on LeftoverSpawnSquad's
-    size, moving elements from the beginning to the end according to the change
-    in size.  That would be way more elegant an involve no copy-pasting, but I
-    worried that the underlying assumption -- that all additional elements on the
-    end of LSS are failed spawn elements -- could be violated if TWI changes
-    SpawnSquad() upstream in a future patch.  For instance, TWI could decide that
-    SpawnSquad's LSS append is a good point for additional entropy injection and
-    do that by randomly shuffling the list every time elements are added.  That
-    would silently break the assumptions necessary for the override strategy, and
-    without causing a compiler or runtime error.  The spawnlist would just be
-    quietly randomized.  That's pretty much the worst failure mode because it is
-    the likeliest to get through testing, so even though
-    this is an unlikely scenario, I'm willing to put up with some ugly copy-paste
-    to preclude it.
+	It seems possible to avoid copyping most of this method.  I could just
+	invoke super.SpawnSquad and do some pre/post checks on LeftoverSpawnSquad's
+	size, moving elements from the beginning to the end according to the change
+	in size.  That would be way more elegant an involve no copy-pasting, but I
+	worried that the underlying assumption -- that all additional elements on the
+	end of LSS are failed spawn elements -- could be violated if TWI changes
+	SpawnSquad() upstream in a future patch.  For instance, TWI could decide that
+	SpawnSquad's LSS append is a good point for additional entropy injection and
+	do that by randomly shuffling the list every time elements are added.  That
+	would silently break the assumptions necessary for the override strategy, and
+	without causing a compiler or runtime error.  The spawnlist would just be
+	quietly randomized.  That's pretty much the worst failure mode because it is
+	the likeliest to get through testing, so even though
+	this is an unlikely scenario, I'm willing to put up with some ugly copy-paste
+	to preclude it.
 */
 function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional bool bSkipHumanZedSpawning=false )
 {
@@ -426,7 +426,7 @@ function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional 
 
 	FinalAmount = VolumeAmount + SpawnerAmount;
 
-   	RefreshMonsterAliveCount();
+	RefreshMonsterAliveCount();
 
 	if( AIToSpawn.Length > 0 )
 	{
@@ -485,45 +485,45 @@ function int GetBestSpawnVolumeIndex( optional array< class<KFPawn_Monster> > AI
 	local int ControllerIndex;
 	local Controller RateController;
 
-    if( OverrideController != none )
-    {
-        RateController = OverrideController;
-    }
-    else
-    {
-        // Get the Controller list ready for spawn selection
-        InitControllerList();
+	if( OverrideController != none )
+	{
+		RateController = OverrideController;
+	}
+	else
+	{
+		// Get the Controller list ready for spawn selection
+		InitControllerList();
 
-        if( RecentSpawnSelectedHumanControllerList.Length > 0 )
-        {
-            // Randomly grab a Human PRI from the list to use for rating zed spawning
-            ControllerIndex = Rand(RecentSpawnSelectedHumanControllerList.Length);
-            RateController = RecentSpawnSelectedHumanControllerList[ControllerIndex];
-            RecentSpawnSelectedHumanControllerList.Remove( ControllerIndex, 1 );
-            `Log( GetFuncName()$" Rating with Controller "$RateController.PlayerReplicationInfo.PlayerName$" From RecentSpawnSelectedHumanControllerList", bLogAISpawning );
-        }
-    }
+		if( RecentSpawnSelectedHumanControllerList.Length > 0 )
+		{
+			// Randomly grab a Human PRI from the list to use for rating zed spawning
+			ControllerIndex = Rand(RecentSpawnSelectedHumanControllerList.Length);
+			RateController = RecentSpawnSelectedHumanControllerList[ControllerIndex];
+			RecentSpawnSelectedHumanControllerList.Remove( ControllerIndex, 1 );
+			`Log( GetFuncName()$" Rating with Controller "$RateController.PlayerReplicationInfo.PlayerName$" From RecentSpawnSelectedHumanControllerList", bLogAISpawning );
+		}
+	}
 
-    // If there were no controllers to rate against, return none
-    if( RateController == none )
-    {
-        `warn( GetFuncName()$" no controllers to rate spawning with!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", bLogAISpawning);
-        return SpawnVolumes.Length;
-    }
+	// If there were no controllers to rate against, return none
+	if( RateController == none )
+	{
+		`warn( GetFuncName()$" no controllers to rate spawning with!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", bLogAISpawning);
+		return SpawnVolumes.Length;
+	}
 
-    if( (OtherController == none || !OtherController.bIsPlayer) && NeedPlayerSpawnVolume() )
-    {
-    	// Grab the first player controller
-    	foreach WorldInfo.AllControllers( class'Controller', OtherController )
-    	{
-    		if( OtherController.bIsPlayer )
-    		{
-		    	break;
-		    }
-	    }
-    }
+	if( (OtherController == none || !OtherController.bIsPlayer) && NeedPlayerSpawnVolume() )
+	{
+		// Grab the first player controller
+		foreach WorldInfo.AllControllers( class'Controller', OtherController )
+		{
+			if( OtherController.bIsPlayer )
+			{
+				break;
+			}
+		}
+	}
 
-    // pre-sort the list to reduce the number of line checks performed by IsValidForSpawn
+	// pre-sort the list to reduce the number of line checks performed by IsValidForSpawn
 	SortSpawnVolumes(RateController, bTeleporting, MinDistSquared);
 
 	while ( CohortVolumeIndex < SpawnVolumes.Length )
@@ -550,47 +550,47 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	local array< class<KFPawn_Monster> >  NewSquad, RequiredSquad;
 	local int RandNum, AINeeded;
 
-    if( DesiredSquadType == EST_Boss && LeftoverSpawnSquad.Length > 0 )
-    {
-    	LeftoverSpawnSquad.Length = 0;
-    }
+	if( DesiredSquadType == EST_Boss && LeftoverSpawnSquad.Length > 0 )
+	{
+		LeftoverSpawnSquad.Length = 0;
+	}
 	
 	if( LeftoverSpawnSquad.Length > 0 )
-    {
-        if( bLogAISpawning )
-        {
-            LogMonsterList(LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad");
-        }
-        NewSquad = LeftoverSpawnSquad;
+	{
+		if( bLogAISpawning )
+		{
+			LogMonsterList(LeftoverSpawnSquad, "Leftover LeftoverSpawnSquad");
+		}
+		NewSquad = LeftoverSpawnSquad;
 
-        // Make sure we properly initialize the DesiredSquadType for the leftover squads, otherwise they will just use whatever size data was left in the system
-        SetDesiredSquadTypeForZedList( NewSquad );
-    }
-    else
-    {
-    	// Get a new monster list
+		// Make sure we properly initialize the DesiredSquadType for the leftover squads, otherwise they will just use whatever size data was left in the system
+		SetDesiredSquadTypeForZedList( NewSquad );
+	}
+	else
+	{
+		// Get a new monster list
 		if( !IsAISquadAvailable() )
 		{
 			if( !bSummoningBossMinions )
 			{
-	            // WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
-	            if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
-	            {
-	                //`log("Recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
-	                GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
-	                ++NumSpecialSquadRecycles;
-	            }
-	            else
-	            {
-	                //`log("Not recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
-	                GetAvailableSquads(MyKFGRI.WaveNum - 1);
-	            }
-	        }
-	        else
-	        {
-	            // Replace the regular squads with boss minions
-	            AvailableSquads = BossMinionsSpawnSquads;
-	        }
+				// WaveNum Displays 1 - Length, Squads are ordered 0 - (Length - 1)
+				if( bRecycleSpecialSquad && NumSpawnListCycles % 2 == 1 && (MaxSpecialSquadRecycles == -1 || NumSpecialSquadRecycles < MaxSpecialSquadRecycles) )
+				{
+					//`log("Recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
+					GetAvailableSquads(MyKFGRI.WaveNum - 1, true);
+					++NumSpecialSquadRecycles;
+				}
+				else
+				{
+					//`log("Not recycling special squad!!! NumSpawnListCycles: "$NumSpawnListCycles);
+					GetAvailableSquads(MyKFGRI.WaveNum - 1);
+				}
+			}
+			else
+			{
+				// Replace the regular squads with boss minions
+				AvailableSquads = BossMinionsSpawnSquads;
+			}
 		}
 
 		//////////////////////////////
@@ -613,14 +613,14 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 		// If we're forcing the required squad, and it already got picked, clear the flag
 		if( bForceRequiredSquad && RandNum == (AvailableSquads.Length - 1) )
 		{
-	       //`log("We spawned the required squad!");
+		   //`log("We spawned the required squad!");
 		   bForceRequiredSquad=false;
 		}
 
-	    if( bLogAISpawning )
-	    {
-	        LogAvailableSquads();
-	    }
+		if( bLogAISpawning )
+		{
+			LogAvailableSquads();
+		}
 
 		`log("KFAISpawnManager.GetNextAIGroup() Wave:"@MyKFGRI.WaveNum@"Squad:"@AvailableSquads[RandNum]@"Index:"@RandNum, bLogAISpawning);
 
@@ -631,26 +631,26 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 		// if we're about to run out of zeds we can spawn, and the special squad hasn't spawned yet
 		if( bForceRequiredSquad )
 		{
-	    	// generate list of classes to spawn
-	    	GetSpawnListFromSquad((AvailableSquads.Length - 1), AvailableSquads, RequiredSquad);
+			// generate list of classes to spawn
+			GetSpawnListFromSquad((AvailableSquads.Length - 1), AvailableSquads, RequiredSquad);
 
-	        if( (NumAISpawnsQueued + NewSquad.Length + RequiredSquad.Length) > WaveTotalAI )
-	        {
-	            NewSquad = RequiredSquad;
-	            RandNum = (AvailableSquads.Length - 1);
-	            //LogMonsterList(NewSquad, "RequiredSquad");
-	            //`log("Spawning required squad NumAISpawnsQueued: "$NumAISpawnsQueued$" NewSquad.Length: "$NewSquad.Length$" RequiredSquad.Length: "$RequiredSquad.Length$" WaveTotalAI: "$WaveTotalAI);
-	            bForceRequiredSquad=false;
-	        }
+			if( (NumAISpawnsQueued + NewSquad.Length + RequiredSquad.Length) > WaveTotalAI )
+			{
+				NewSquad = RequiredSquad;
+				RandNum = (AvailableSquads.Length - 1);
+				//LogMonsterList(NewSquad, "RequiredSquad");
+				//`log("Spawning required squad NumAISpawnsQueued: "$NumAISpawnsQueued$" NewSquad.Length: "$NewSquad.Length$" RequiredSquad.Length: "$RequiredSquad.Length$" WaveTotalAI: "$WaveTotalAI);
+				bForceRequiredSquad=false;
+			}
 		}
 
 		// remove selected squad from the list of available squads
 		AvailableSquads.Remove(RandNum, 1);
 
-	    if( bLogAISpawning )
-	    {
-	        LogAvailableSquads();
-	    }
+		if( bLogAISpawning )
+		{
+			LogAvailableSquads();
+		}
 	}
 
 	// Clamp list by NumAINeeded()
@@ -659,22 +659,22 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 	{
 		LeftoverSpawnSquad = NewSquad;
 		// Clear out the monsters we're about to spawn from the leftover list
-        LeftoverSpawnSquad.Remove( 0, AINeeded );
+		LeftoverSpawnSquad.Remove( 0, AINeeded );
 
-        // Cut off the leftovers from the new monster list
-        NewSquad.Length = AINeeded;
+		// Cut off the leftovers from the new monster list
+		NewSquad.Length = AINeeded;
 	}
 	else
 	{
-        // If we're spawning all the monsters in the list, there are no leftovers
-        LeftoverSpawnSquad.Length = 0;
+		// If we're spawning all the monsters in the list, there are no leftovers
+		LeftoverSpawnSquad.Length = 0;
 	}
 
-    if( bLogAISpawning )
-    {
-    	LogMonsterList( NewSquad, "NewSquad" );
-    	LogMonsterList( LeftoverSpawnSquad, "LeftoverSpawnSquad" );
-    }
+	if( bLogAISpawning )
+	{
+		LogMonsterList( NewSquad, "NewSquad" );
+		LogMonsterList( LeftoverSpawnSquad, "LeftoverSpawnSquad" );
+	}
 
 	return NewSquad;
 }
@@ -696,11 +696,11 @@ function int GetNumAINeeded()
 /* This function is overridden for a couple reasons:
 
    - if a boss preference is set and we're spawning a boss,
-     then bypass random boss selection and apply the preference
+	 then bypass random boss selection and apply the preference
 
    - if AlbinoAlphas=false/AlbinoCrawlers=false/AlbinoGorefasts=false,
-     then we replace all of the standard alpha/crawler/gorefast classes
-     with subclasses that forcibly disable special behavior and appearance
+	 then we replace all of the standard alpha/crawler/gorefast classes
+	 with subclasses that forcibly disable special behavior and appearance
 */
 function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > SquadsList, out array< class<KFPawn_Monster> >  AISpawnList)
 {
@@ -843,8 +843,8 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 }
 
 function ReplaceZedClass( const array< class< KFPawn_Monster > > MatchClasses,
-                          const class< KFPawn_Monster > ReplacementClass,
-                          out array< class<KFPawn_Monster> >  AISpawnList )
+						  const class< KFPawn_Monster > ReplacementClass,
+						  out array< class<KFPawn_Monster> >  AISpawnList )
 {
 	local int conversions;
 	local int i;

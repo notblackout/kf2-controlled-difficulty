@@ -81,27 +81,27 @@ reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, n
 		}
 
 		// Attempt to append it to the PartyWidget or PostGameMenu (if active)
-    	if (MyGFxManager != none)
-    	{
+		if (MyGFxManager != none)
+		{
 			`cdlog( "chatdebug: PartyWidget instance is " $ MyGFxManager.PartyWidget, ClientLogging );
 
-    		if ( None != MyGFxManager.PartyWidget )
-    		{
+			if ( None != MyGFxManager.PartyWidget )
+			{
 				b = MyGFxManager.PartyWidget.ReceiveMessage( S, CDEchoMessageColor );
 				`cdlog( "chatdebug: PartyWidget.ReceiveMessage returned " $ b, ClientLogging );
-    		}
+			}
 
 			`cdlog( "chatdebug: PostGameMenu is " $ MyGFxManager.PostGameMenu, ClientLogging );
 
-    		if( None != MyGFxManager.PostGameMenu )
-    		{
-    			MyGFxManager.PostGameMenu.ReceiveMessage( S, CDEchoMessageColor );
-    		}
+			if( None != MyGFxManager.PostGameMenu )
+			{
+				MyGFxManager.PostGameMenu.ReceiveMessage( S, CDEchoMessageColor );
+			}
 		}
 
 		// Attempt to append it to GFxHUD.HudChatBox (this is at the lower-left 
 		// of the player's screen after the game starts)
-	    if( None != MyGFxHUD && None != MyGFxHUD.HudChatBox )
+		if( None != MyGFxHUD && None != MyGFxHUD.HudChatBox )
 		{
 			MyGFxHUD.HudChatBox.AddChatMessage(S, CDEchoMessageColor);
 		}
