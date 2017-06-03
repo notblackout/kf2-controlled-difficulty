@@ -333,12 +333,16 @@ var int TrashFPInt;
 //
 // These two values are organized in a struct with the following form:
 //
+// ```
 //   (SteamID="STEAM_0:0:1234567",Comment="Mr Elusive Jan 31 2017")
+// ```
 //
 // There are many ways to find out a steamid.  Here's one tool that takes the
 // name or URL of a steam account, then gives the ID for that account:
 //
+// ```
 //   http://steamidfinder.com (not my website or affiliated with CD)
+// ```
 //
 // On steamidfinder.com, you want to copy the field called "SteamID" into
 // AuthorizedUsers.
@@ -346,10 +350,12 @@ var int TrashFPInt;
 // Here's an example that would authorize CD's author, blackout, and Gabe
 // Newell.
 //
-// [ControlledDifficulty.CD_Survival]
-// DefaultAuthLevel=CDAUTH_READ
-// AuthorizedUsers=(SteamID="STEAM_0:0:3691909",Comment="blackout")
-// AuthorizedUsers=(SteamID="STEAM_0:0:11101",Comment="gabe newell")
+// ```
+//   [ControlledDifficulty.CD_Survival]
+//   DefaultAuthLevel=CDAUTH_READ
+//   AuthorizedUsers=(SteamID="STEAM_0:0:3691909",Comment="blackout")
+//   AuthorizedUsers=(SteamID="STEAM_0:0:11101",Comment="gabe newell")
+// ```
 var config array<StructAuthorizedUsers> AuthorizedUsers;
 
 // #### DefaultAuthLevel
@@ -430,10 +436,10 @@ var int WeaponTimeoutInt;
 // move them closer to human players.  This teleporting is unconditionally
 // enabled in the vanilla game.
 //
-// "true" allows zeds to teleport in exactly the same way they do in the
+// true allows zeds to teleport in exactly the same way they do in the
 // vanilla game.
 //
-// "false" prevents zeds from teleporting closer to players.  A zed can still
+// false prevents zeds from teleporting closer to players.  A zed can still
 // teleport if it becomes convinced that it is stuck.  Furthermore, this option
 // does not affect the way incoming zed squads or cohorts choose spawnpoints,
 // which means that brand new zeds can still spawn around corners, surrounding

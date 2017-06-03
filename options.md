@@ -1,4 +1,61 @@
-# Controlled Difficulty Settings
+# Option Reference
+
+CD can be configured three ways.
+
+* Parameters to the `open` command in the client or server console
+* Editing KFGame.ini on the client or PCServer-KFGame.ini on the server
+* Chat commands (only a subset of settings can be modified this way)
+
+*Configuring CD via `open`*
+
+Whenever you invoke `open <map>?game=ControlledDifficulty.CD_Survival`,
+you may append additional "?"-separated key-value pairs of CD setting
+names and their values.
+
+For example, to set CohortSize to 6 and SpawnPoll to 0.75 on Outpost:
+
+`open KF-Outpost?game=ControlledDifficulty.CD_Survival?SpawnPoll=0.75?CohortSize=6` 
+
+*Configuring CD through INI files*
+
+Controlled Difficulty automatically saves its settings every time they
+are modified.
+
+On the client or in standalone solo mode, this file is usually
+
+```
+<My Documents>\My Games\KillingFloor2\KFGame\KFGame\Config\KFGame.ini
+```
+
+The exact path is subject to change from one Windows version to the next.
+
+On the server, this file is usually
+
+```
+<Server Root>\KFGame\Config\PCServer-KFGame.ini
+```
+
+If these files are not writable, then CD cannot and will not write any
+of its settings to them.
+
+*Configuring CD through Chat Commands*
+
+Most CD configuration settings may be viewed and changed at runtime by
+typing a special string into the game's public chat.  For example,
+to show the current value of MaxMonsters, type `!cdmaxmonsters` in chat.
+To set it to 24, type `!cdmaxmonsters 24` in chat.
+
+CD can automatically generate a list of every chat commands name,
+accepted parameters (if any), and a short description of what it does.
+Type `CDChatHelp` in the console (not in the chat window!) to see this
+information.
+
+CD's chat commands are controlled by an authentication and authorization
+system when CD is running on a dedicated server.  These options are 
+listed in this file under the
+[Chat Command Authorization](#chat-command-authorization) subsection.
+
+For details about available Chat Commands and how they work, see [chat.md].
 
 ### Spawn Intensity Settings
 
@@ -229,23 +286,28 @@ field that you want.  CD does not read the comment.
 
 These two values are organized in a struct with the following form:
 
+```
   (SteamID="STEAM_0:0:1234567",Comment="Mr Elusive Jan 31 2017")
+```
 
 There are many ways to find out a steamid.  Here's one tool that takes the
 name or URL of a steam account, then gives the ID for that account:
 
+```
   http://steamidfinder.com (not my website or affiliated with CD)
+```
 
 On steamidfinder.com, you want to copy the field called "SteamID" into
 AuthorizedUsers.
 
-Here's an example that would authorize CD's author, blackout, and Gabe
-Newell.
+Here's a sample INI snippet would authorize CD's author and Gabe Newell.
 
-[ControlledDifficulty.CD_Survival]
-DefaultAuthLevel=CDAUTH_READ
-AuthorizedUsers=(SteamID="STEAM_0:0:3691909",Comment="blackout")
-AuthorizedUsers=(SteamID="STEAM_0:0:11101",Comment="gabe newell")
+```
+  [ControlledDifficulty.CD_Survival]
+  DefaultAuthLevel=CDAUTH_READ
+  AuthorizedUsers=(SteamID="STEAM_0:0:3691909",Comment="blackout")
+  AuthorizedUsers=(SteamID="STEAM_0:0:11101",Comment="gabe newell")
+```
 
 #### DefaultAuthLevel
 
@@ -317,10 +379,10 @@ Controls whether zeds are allowed to teleport around the map in an effort to
 move them closer to human players.  This teleporting is unconditionally
 enabled in the vanilla game.
 
-"true" allows zeds to teleport in exactly the same way they do in the
+true allows zeds to teleport in exactly the same way they do in the
 vanilla game.
 
-"false" prevents zeds from teleporting closer to players.  A zed can still
+false prevents zeds from teleporting closer to players.  A zed can still
 teleport if it becomes convinced that it is stuck.  Furthermore, this option
 does not affect the way incoming zed squads or cohorts choose spawnpoints,
 which means that brand new zeds can still spawn around corners, surrounding
