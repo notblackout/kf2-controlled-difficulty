@@ -26,6 +26,8 @@
 
    To modify CD settings in your server's saved configuration files, edit `<KF2 Server Root>\KFGame\Config\PCServer-KFGame.ini`.  That file's `[ControlledDifficulty.CD_Survival]` section contains all of CD's settings.  This is not required to run CD.
    
+   For a full list of settings, consult [options.md](options.md).
+   
    ## Known Problems
    
    Changing maps through the web admin interface disables CD.  Changing maps through voting works fine.
