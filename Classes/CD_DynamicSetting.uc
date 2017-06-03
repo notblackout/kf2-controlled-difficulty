@@ -187,22 +187,22 @@ function string GetChatLine()
 		if ( GameStateName == 'PendingMatch' )
 		{
 			// Before the match starts, show the value that would be used on wave 1
-			TempValue = ActualRegulator.GetValue( 1, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
+			TempValue = ClampedGetValue( 1, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
 			Result $= PrettyValue( TempValue ) $"@W01";
 		}
 		else if ( GameStateName == 'TraderOpen' )
 		{
 			// During trader, show the current/last wave value and next wave values
-			TempValue = ActualRegulator.GetValue( WaveNum + 1, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
+			TempValue = ClampedGetValue( WaveNum + 1, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum + 1 ) $",";
-			TempValue = ActualRegulator.GetValue( WaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
+			TempValue = ClampedGetValue( WaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );	
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( WaveNum );
 		}
 		else
 		{
 			// During or after the game, show the current/last wave value
 			TempWaveNum = 1 > WaveNum ? 1 : WaveNum;
-			TempValue = ActualRegulator.GetValue( TempWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
+			TempValue = ClampedGetValue( TempWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( TempWaveNum );
 		}
 		Result $= "]";
@@ -297,7 +297,7 @@ function string RegulateValue( const int OverrideWaveNum )
 	if ( None != ActualRegulator )
 	{
 		OldValue = ReadValue();
-		NewValue = ActualRegulator.GetValue( OverrideWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
+		NewValue = ClampedGetValue( OverrideWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
 		WriteValue( NewValue );
 		if ( OldValue != NewValue )
 		{
@@ -316,6 +316,21 @@ function string RegulateValue( const int OverrideWaveNum )
 	}
 
 	return StatusMsg;
+}
+
+final private function float ClampedGetValue( const int OverrideWaveNum, const int MaxWaveNum, const int HumanPlayers, const int MaxHumanPlayers )
+{
+	local float ResultValue;
+
+	ResultValue = ActualRegulator.GetValue( OverrideWaveNum, MaxWaveNum, HumanPlayers, MaxHumanPlayers );
+
+	`cdlog("DynamicSetting: ClampedGetValue, before clamping: "$ResultValue, bLogControlledDifficulty);
+
+	ResultValue = FClamp( ResultValue, MinSettingValue, MaxSettingValue );
+
+	`cdlog("DynamicSetting: ClampedGetValue, after clamping: "$ResultValue, bLogControlledDifficulty);
+
+	return ResultValue;
 }
 
 function string GetOptionName()
