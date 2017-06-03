@@ -1,3 +1,10 @@
+//=============================================================================
+// CD_WaveSummary
+//=============================================================================
+// Stores zed counts by type.  This supports the CDSpawnSummaries command that
+// prints how many of each zed would spawn on each wave of a SpawnCycle.
+//=============================================================================
+
 class CD_WaveSummary extends Object;
 
 var int Crawlers;

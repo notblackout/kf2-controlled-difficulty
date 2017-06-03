@@ -1,3 +1,10 @@
+//=============================================================================
+// CD_ChatCommander
+//=============================================================================
+// Manages the ChatCommand datastructures; matches incoming !cd... command
+// chat strings and dispatches to the appropriate function.
+//=============================================================================
+
 class CD_ChatCommander extends Object
 	within CD_Survival
 	DependsOn(CD_Survival);

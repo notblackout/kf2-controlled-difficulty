@@ -1,3 +1,12 @@
+//=============================================================================
+// CD_ValueProgram_IniDefs
+//=============================================================================
+// Reads values from a possibly ragged matrix represented by an array<string>.
+// Waves on rows, human player count on columns.
+// The bottommost and/or rightmost value is used wherever the input parameters
+// exceed the dimension of the matrix.
+//=============================================================================
+
 class CD_ValueProgram_IniDefs
 	extends Object
 	implements (CD_ValueProgram);
@@ -115,6 +124,9 @@ private function bool PrintPlayerParseError( const string DefsName, const string
 	return false;
 }
 
+/*
+ * This implementation completely ignores MaxWaveNum and MaxHumanPlayers.
+ */
 function float GetValue( const int WaveNum, const int MaxWaveNum, const int HumanPlayers, const int MaxHumanPlayers )
 {
 	local int ClampedWaveIndex;

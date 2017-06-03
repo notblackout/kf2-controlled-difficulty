@@ -3,7 +3,7 @@
 //=============================================================================
 // Implements a product of two linear interpolations:
 //
-//  (a) player count, lerp 0 to server's max players, inclusive
+//  (a) human player count, lerp 0 to server's max players, inclusive
 //
 //  (b) wave number, lerp 0 to final non-boss wave, inclusive
 //=============================================================================
