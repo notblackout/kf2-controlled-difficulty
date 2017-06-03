@@ -328,30 +328,51 @@ private function string GetCDInfoChatStringCommand( const out array<string> para
 function string GetCDInfoChatString( const string Verbosity )
 {
 	local int i;
-	local string s;
+	local string s, t, Result;
 
 	if ( Verbosity == "full" )
 	{
-		s = "";
+		Result = "";
 
 		for ( i = 0; i < AllSettings.Length; i++ )
 		{
 			if ( 0 < i )
 			{
-				s $= "\n";
+				Result $= "\n";
 			}
-			s $= AllSettings[i].GetChatLine();
+			Result $= AllSettings[i].GetChatLine();
 		}
-
-		return s;
 	}
 	else
 	{
-		return FakePlayersSetting.GetChatLine() $ "\n" $
-		       MaxMonstersSetting.GetChatLine() $ "\n" $
-		       SpawnModSetting.GetChatLine() $ "\n" $
-		       CohortSizeSetting.GetChatLine() $ "\n" $
-		       SpawnCycleSetting.GetChatLine();
+		Result = "";
+
+		s = MaxMonstersSetting.GetChatLine();
+		t = FakePlayersSetting.GetChatLine();
+
+		DumbLineWrapper( s, t, Result );
+
+		s = MinSpawnIntervalSetting.GetChatLine();
+		t = SpawnModSetting.GetChatLine();
+
+		DumbLineWrapper( s, t, Result );
+
+		Result $= CohortSizeSetting.GetChatLine() $ "\n" $
+		          SpawnCycleSetting.GetChatLine();
+	}
+
+	return Result;
+}
+
+private final function DumbLineWrapper( const out string s, const out string t, out string AppendTo )
+{
+	if ( 38 >= Len(s) + Len(t) )
+	{
+		AppendTo $= s $ " " $ t $ "\n";
+	}
+	else
+	{
+		AppendTo $= s $ "\n" $ t $ "\n";
 	}
 }
 
