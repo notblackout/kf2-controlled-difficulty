@@ -6,7 +6,7 @@ A modification for Tripwire interactive's "Killing Floor 2" to increase difficul
 
 ## Documentation
 
-[chat.md - Chat Commands](chat.md)
-[options.md - Option Reference](options.md)
-[server.md - Basic Server Setup](server.md)
-[spawn.md - SpawnCycle Reference](spawn.md)
+* [chat.md - Chat Commands](chat.md)
+* [options.md - Option Reference](options.md)
+* [server.md - Basic Server Setup](server.md)
+* [spawn.md - SpawnCycle Reference](spawn.md)
