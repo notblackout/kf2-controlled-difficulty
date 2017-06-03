@@ -9,7 +9,7 @@ including configurations much harder than Tripwire's top-end Hell on Earth diffi
 ## Quick Start
 
 * [getting_started.md - Getting Started Quickly](getting_started.md)
-* [suggested_cfg.md - Advice on CD Configuration Tuning](suggested_cfg.md)
+* [recommended_cfg.md - Advice on CD Configuration Tuning](recommended_cfg.md)
 
 ## Reference Documentation
 
