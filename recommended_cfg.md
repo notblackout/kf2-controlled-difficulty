@@ -38,7 +38,7 @@ SpawnCycle=nam_pro_v3 ; change if desired
 ; Leave SpawnMod=0 and tune the other settings below
 SpawnMod=0 ; Leave this alone
 ;
-; SAMPLE SETTINGS: HOE STARTING POINT
+; HOE STARTING-POINT SAMPLE SETTINGS
 ;
 ; Play with the following settings.  The values below approximate
 ; vanilla HOE.  Adjust as you play and see how it feels.
@@ -87,7 +87,7 @@ SpawnCycle=nam_pro_v3 ; change if desired
 ; Leave SpawnMod=0 and tune the other settings below
 SpawnMod=0 ; Leave this alone
 ;
-; HIGH INTENSITY -- DIFFICULT 6-MAN CONFIG
+; HIGH-INTENSITY 6-MAN SAMPLE SETTINGS
 ;
 ; Play with the following settings.  The values below approximate
 ; vanilla HOE.  Adjust as you play and see how it feels.
