@@ -51,8 +51,8 @@ function Update()
 		return;
 	}
 
-	TotalWavesActiveTime += MinSpawnIntervalFloat;
-	TimeUntilNextSpawn -= MinSpawnIntervalFloat;
+	TotalWavesActiveTime += SpawnPollFloat;
+	TimeUntilNextSpawn -= SpawnPollFloat;
 
 	CohortZedsSpawned = 0;
 	CohortSquadsSpawned = 0;

@@ -352,7 +352,7 @@ function string GetCDInfoChatString( const string Verbosity )
 
 		DumbLineWrapper( s, t, Result );
 
-		s = MinSpawnIntervalSetting.GetChatLine();
+		s = SpawnPollSetting.GetChatLine();
 		t = SpawnModSetting.GetChatLine();
 
 		DumbLineWrapper( s, t, Result );

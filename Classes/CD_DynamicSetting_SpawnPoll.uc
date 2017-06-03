@@ -1,30 +1,30 @@
-class CD_DynamicSetting_MinSpawnInterval extends CD_DynamicSetting
+class CD_DynamicSetting_SpawnPoll extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.MinSpawnInterval;
+	return Outer.SpawnPoll;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.MinSpawnInterval = Ind;
+	Outer.SpawnPoll = Ind;
 }
 
 protected function float ReadValue()
 {
-	return Outer.MinSpawnIntervalFloat;
+	return Outer.SpawnPollFloat;
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.MinSpawnIntervalFloat = Val;
+	Outer.SpawnPollFloat = Val;
 }
 
 defaultproperties
 {
-	IniDefsArrayName="MinSpawnIntervalDefs"
-	OptionName="MinSpawnInterval"
+	IniDefsArrayName="SpawnPollDefs"
+	OptionName="SpawnPoll"
 	DefaultSettingValue=1.f
 	MinSettingValue=0.05f
 	MaxSettingValue=60.f

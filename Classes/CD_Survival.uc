@@ -73,9 +73,9 @@ var int TraderTimeInt;
 // spawn zeds, the function then starts placing squads on spawner and/or
 // spawnvolume entities.  In the unmodded game, this is hardcoded to one
 // second.
-var config string MinSpawnInterval;
-var config const array<string> MinSpawnIntervalDefs; 
-var float MinSpawnIntervalFloat;
+var config string SpawnPoll;
+var config const array<string> SpawnPollDefs; 
+var float SpawnPollFloat;
 
 // The maximum number of zeds that CD's SpawnManager may spawn simultaneously
 // (i.e. on one invocation of the SpawnManager's update function).
@@ -98,13 +98,13 @@ var int CohortSizeInt;
 // Below 0.75 is spawn intensity unseen in the vanilla game.
 //
 // Setting zero means the SpawnManager will try to spawn zeds every single time
-// it is awoken (MinSpawnInterval controls how often it is awoken).  It will
+// it is awoken (SpawnPoll controls how often it is awoken).  It will
 // only fail to spawn zeds if either the MaxMonsters limit is reached, if the
 // entire wave's worth of zeds has already spawned, or if the map's spawn
 // volumes are so congested that new zeds physically cannot be spawned without
 // failing a collision check (zeds inside other zeds).
 //
-// This does not affect MinSpawnInterval.  MSI controls how often the
+// This does not affect SpawnPoll.  SP controls how often the
 // SpawnManager wakes up.  This setting influences whether the SpawnManager
 // does or does not attempt to spawn zeds when it wakes up (along with some
 // other factors, like early wave modifiers, the presence of a leftover spawn
@@ -153,14 +153,14 @@ var config const array<string> BossFPDefs;
 var int BossFPInt;
 
 // If ZTSpawnSlowdown is 1.0, then the timer is not dilated, which means that
-// the spawn manager continues to wakeup every MinSpawnInterval (in real
+// the spawn manager continues to wakeup every SpawnPoll (in real
 // seconds).  This means zed time does not slow down or speed up spawns in real
 // terms at all.
 //
 // When ZTSpawnSlowdown is greater than 1, the spawn manager wakeup timer is
 // dilated to make it run that many times slower.
 //
-// For example, say ZTSpawnSlowdown is set to 2.0, MinSpawnInterval is set to
+// For example, say ZTSpawnSlowdown is set to 2.0, SpawnPoll is set to
 // 5.0, and SpawnMode is set to 0.  The spawn manager wakes up, spawns some
 // zeds, and Zed Time starts one millisecond later.  Zed Time lasts 4 seconds.
 // The spawn manager's next wakeup will occur about 9 seconds after its last:
@@ -176,7 +176,7 @@ var float ZTSpawnSlowdownFloat;
 // "unmodded" makes it run as it does in the vanilla game.  This means that the
 // spawn manager wakeup timer is destroyed every time zed time starts or is
 // extended.  This can result in extremely long spawn lulls after zed time if
-// MinSpawnInterval is long (e.g. 20 seconds).
+// SpawnPoll is long (e.g. 20 seconds).
 //
 // "clockwork" prevents the spawn manager wakeup timer from being destroyed
 // every time zed time starts.  "clockwork" also applies ZTSpawnSlowdown to the
@@ -380,7 +380,7 @@ var CD_DynamicSetting CohortSizeSetting;
 var CD_DynamicSetting FakePlayersSetting;
 var CD_DynamicSetting FleshpoundFPSetting;
 var CD_DynamicSetting MaxMonstersSetting;
-var CD_DynamicSetting MinSpawnIntervalSetting;
+var CD_DynamicSetting SpawnPollSetting;
 var CD_DynamicSetting ScrakeFPSetting;
 var CD_DynamicSetting SpawnModSetting;
 var CD_DynamicSetting TrashFPSetting;
@@ -425,7 +425,7 @@ var CD_SpawnCycleCatalog SpawnCycleCatalog;
 // This is effectively the maximum precision of SpawnMod
 var const float SpawnModEpsilon;
 
-var const float MinSpawnIntervalEpsilon;
+var const float SpawnPollEpsilon;
 
 var const float ZTSpawnSlowdownEpsilon;
 
@@ -559,9 +559,9 @@ private function SetupDynamicSettings()
 	SpawnModSetting.IniDefsArray = SpawnModDefs;
 	RegisterDynamicSetting( SpawnModSetting );
 
-	MinSpawnIntervalSetting = new(self) class'CD_DynamicSetting_MinSpawnInterval';
-	MinSpawnIntervalSetting.IniDefsArray = MinSpawnIntervalDefs;
-	RegisterDynamicSetting( MinSpawnIntervalSetting );
+	SpawnPollSetting = new(self) class'CD_DynamicSetting_SpawnPoll';
+	SpawnPollSetting.IniDefsArray = SpawnPollDefs;
+	RegisterDynamicSetting( SpawnPollSetting );
 
 	ScrakeFPSetting = new(self) class'CD_DynamicSetting_ScrakeFP';
 	ScrakeFPSetting.IniDefsArray = ScrakeFPDefs;
@@ -665,7 +665,7 @@ private function OverrideWeaponLifespan(KFDroppedPickup Weap)
 /*
  * Set gameplay speed.  TWI's code calls this to implement zedtime.
  *
- * CD overrides it to apply MinSpawnInterval and ZTSpawnSlowdown.
+ * CD overrides it to apply SpawnPoll and ZTSpawnSlowdown.
  */
 function SetGameSpeed( Float T )
 {
@@ -685,7 +685,7 @@ function SetGameSpeed( Float T )
 }
 
 /*
- * Installs a timer that invokes SpawnManagerWakeup every MinSpawnInterval
+ * Installs a timer that invokes SpawnManagerWakeup every SpawnPoll
  * seconds.  If the timer already exists and ForceReset is true, it is
  * destroyed and restarted from zero.  If the timer already exists and
  * ForceReset is false, nothing happens.
@@ -695,8 +695,8 @@ function SetSpawnManagerTimer( const optional bool ForceReset = true )
 	if ( ForceReset || !IsTimerActive('SpawnManagerWakeup') )
 	{
 		// Timer does not exist, set it
-		`cdlog("Setting independent SpawnManagerWakeup timer (" $ MinSpawnIntervalFloat $")");
-		SetTimer(MinSpawnIntervalFloat, true, 'SpawnManagerWakeup');
+		`cdlog("Setting independent SpawnManagerWakeup timer (" $ SpawnPollFloat $")");
+		SetTimer(SpawnPollFloat, true, 'SpawnManagerWakeup');
 	}
 }
 
@@ -745,7 +745,7 @@ function TuneSpawnManagerTimer()
 /*
  * We override this function to keep it from calling SpawnManager.Update().  CD
  * does that separately through the SpawnManagerWakeup() function.  This
- * separation supports the MinSpawnInterval setting.
+ * separation supports the SpawnPoll setting.
  */
 event Timer()
 {
@@ -1195,7 +1195,7 @@ function StartWave()
 	ProgramSettingsForNextWave();
 
 	// Restart the SpawnManager's wakeup timer.
-	// This synchronizing effect is virtually unnoticeable when MinSpawnInterval is
+	// This synchronizing effect is virtually unnoticeable when SpawnPoll is
 	// low (say 1s), but very noticable when it is long (say 30s)
 	SetSpawnManagerTimer();
 	SetGameSpeed( WorldInfo.TimeDilation );
@@ -1586,6 +1586,6 @@ defaultproperties
 	GameInfo_CDCP=Default_CDCP
 
 	SpawnModEpsilon=0.0001
-	MinSpawnIntervalEpsilon=0.0001
+	SpawnPollEpsilon=0.0001
 	ZTSpawnSlowdownEpsilon=0.0001
 }
