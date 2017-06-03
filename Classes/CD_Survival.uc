@@ -51,32 +51,13 @@ struct StructAuthorizedUsers
 // Config options //
 ////////////////////
 
-// Increase zed count (but not hp) as though this many additional players were
-// present.  The game normally increases dosh rewards for each zed at
-// numplayers >= 3, and faking players this way does the same.  You can always
-// refrain from buying if you want an extra challenge, but if the mod denied
-// you that bonus dosh, it could end up being gamebreaking for some runs.  In
-// short, FakePlayers increases both your budget and the zed count in each
-// wave.
-var config string FakePlayers; 
-var config const array<string> FakePlayersDefs; 
-var int FakePlayersInt;
 
-// The trader time, in seconds.  if this is zero or negative, its value is
-// totally ignored, and the difficulty's standard trader time is used instead.
-var config string TraderTime;
-var int TraderTimeInt;
+//
+// ### Spawn Intensity Settings
+//
 
-// The timer interval, in seconds, for CD's SpawnManager's update function.
-// The update function first checks several state variables to determine
-// whether to attempt to spawn more zeds.  If it determines that it should
-// spawn zeds, the function then starts placing squads on spawner and/or
-// spawnvolume entities.  In the unmodded game, this is hardcoded to one
-// second.
-var config string SpawnPoll;
-var config const array<string> SpawnPollDefs; 
-var float SpawnPollFloat;
-
+// #### CohortSize
+//
 // The maximum number of zeds that CD's SpawnManager may spawn simultaneously
 // (i.e. on one invocation of the SpawnManager's update function).
 //
@@ -90,6 +71,23 @@ var config string CohortSize;
 var config const array<string> CohortSizeDefs;
 var int CohortSizeInt;
 
+// #### MaxMonsters
+//
+// The maximum monsters allowed on the map at one time.  In the vanilla game,
+// this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1.   The
+// vanilla game's default is 32 in any other case (such as when playing alone
+// on a dedicated server).
+//
+// If this is set to a nonpositive value, then the vanilla behavior prevails.
+//
+// If this is set to a positive value, then it is the number of maximum
+// monsters allowed on the map at one time.
+var config string MaxMonsters;
+var config const array<string> MaxMonstersDefs;
+var int MaxMonstersInt;
+
+// #### SpawnMod
+//
 // The forced spawn modifier, expressed as a float between 0 and 1.
 // 
 // 1.0 is KFGameConductor's player-friendliest state.  0.75 is
@@ -117,41 +115,35 @@ var config string SpawnMod;
 var config const array<string> SpawnModDefs;
 var float SpawnModFloat;
 
-// The FakePlayers modifier applied when scaling trash zed head and body
-// health.  The trash HP scaling algorithm is a bit screwy compared to the
-// other zed HP scaling algorithms, and this parameter only generally matters
-// when the net count exceeds 6.
+// #### SpawnPoll
 //
-// "Trash" in this context means any zed that is not a boss, a scrake, or a
-// fleshpound.
-//
-// This is affected by FakePlayersMode.
-var config string TrashFP;
-var config const array<string> TrashFPDefs;
-var int TrashFPInt;
+// The timer interval, in seconds, for CD's SpawnManager's update function.
+// The update function first checks several state variables to determine
+// whether to attempt to spawn more zeds.  If it determines that it should
+// spawn zeds, the function then starts placing squads on spawner and/or
+// spawnvolume entities.  In the unmodded game, this is hardcoded to one
+// second.
+var config string SpawnPoll;
+var config const array<string> SpawnPollDefs; 
+var float SpawnPollFloat;
 
-// The FakePlayers modifier applied when scaling fleshpound head and body
-// health.
+// #### ZTSpawnMode
 //
-// This is affected by FakePlayersMode.
-var config string FleshpoundFP;
-var config const array<string> FleshpoundFPDefs;
-var int FleshpoundFPInt;
-
-// The FakePlayers modifier applied when scaling scrake head and body health.
+// Controls how the spawn manager does (or doesn't) react to zed time.
 //
-// This is affected by FakePlayersMode.
-var config string ScrakeFP;
-var config const array<string> ScrakeFPDefs;
-var int ScrakeFPInt;
-
-// The FakePlayers modifier applied when scaling boss head and body health.
+// "unmodded" makes it run as it does in the vanilla game.  This means that the
+// spawn manager wakeup timer is destroyed every time zed time starts or is
+// extended.  This can result in extremely long spawn lulls after zed time if
+// SpawnPoll is long (e.g. 20 seconds).
 //
-// This is affected by FakePlayersMode.
-var config string BossFP;
-var config const array<string> BossFPDefs;
-var int BossFPInt;
+// "clockwork" prevents the spawn manager wakeup timer from being destroyed
+// every time zed time starts.  "clockwork" also applies ZTSpawnSlowdown to the
+// spawn manager timer's dilation factor.  
+var config string ZTSpawnMode;
+var ECDZTSpawnMode ZTSpawnModeEnum;
 
+// #### ZTSpawnSlowdown
+//
 // If ZTSpawnSlowdown is 1.0, then the timer is not dilated, which means that
 // the spawn manager continues to wakeup every SpawnPoll (in real
 // seconds).  This means zed time does not slow down or speed up spawns in real
@@ -171,41 +163,97 @@ var config string ZTSpawnSlowdown;
 var config const array<string> ZTSpawnSlowdownDefs;
 var float ZTSpawnSlowdownFloat;
 
-// Controls how the spawn manager does (or doesn't) react to zed time.
-//
-// "unmodded" makes it run as it does in the vanilla game.  This means that the
-// spawn manager wakeup timer is destroyed every time zed time starts or is
-// extended.  This can result in extremely long spawn lulls after zed time if
-// SpawnPoll is long (e.g. 20 seconds).
-//
-// "clockwork" prevents the spawn manager wakeup timer from being destroyed
-// every time zed time starts.  "clockwork" also applies ZTSpawnSlowdown to the
-// spawn manager timer's dilation factor.  
-var config string ZTSpawnMode;
-var ECDZTSpawnMode ZTSpawnModeEnum;
 
-// Controls the bright red particle effects that appear around zeds when an
-// albino alpha clot rallies them (and himself).
 //
-// true to play the particle effects normally.  This makes alpha rallies look
-// the same as in the vanilla game.
+// ### Zed Type and Spawn-Ordering Control
 //
-// false to disable the particle effects.  An albino alpha clot performing a
-// rally will still play his little stomp animation, and a small distortion
-// bubble will still appear around his body for a fraction of a second, but
-// there will be no bright red particles.  This sometimes aids visibility.
-//
-// This option is strictly cosmetic.  It does not affect any of the behavior
-// aspects of rallies (like damage multiplier, cooldown, movespeed multiplier,
-// etc.).  So, even when this is set to false, rallies still happen as usual,
-// it's just that it's easier to see them.
-//
-// This might become a client-side option one day if I can figure out how to do
-// that nondisruptively.
-var config string AlphaGlitter;
-var bool AlphaGlitterBool;
 
-// Controls how the values of the FakePlayers and BossFP, FleshpoundFP,
+// #### AlbinoCrawlers
+//
+// Controls whether albino crawlers can spawn.
+//
+// See AlbinoAlphas for details about exactly how this works.
+var config string AlbinoCrawlers;
+var bool AlbinoCrawlersBool;
+
+// #### AlbinoAlphas
+//
+// Controls whether albino alphas can spawn.
+//
+// true allows albino alphas to spawn normally. The meaning of "normally"
+// depends on the SpawnCycle.  If SpawnCycle=unmodded, the albino alphas spawn
+// by pure chance, the way TWI does it in vanilla KF2.  If SpawnCycle is not
+// unmodded, then albino alphas will spawn according to the SpawnCycle.  If the
+// configured SpawnCycle has no albino alphas, then none will spawn even if
+// this option is set to true.
+//
+// false prevents albino alphas from spawning at all.  Even if the SpawnCycle
+// mandates albino alphas, they will not spawn when this is false.
+var config string AlbinoAlphas;
+var bool AlbinoAlphasBool;
+
+// #### AlbinoGorefasts
+//
+// Controls whether albino gorefasts can spawn.
+//
+// See AlbinoAlphas for details about exactly how this works.
+var config string AlbinoGorefasts;
+var bool AlbinoGorefastsBool;
+
+// #### Boss
+//
+// Optionally controls which boss spawns, if and when the boss wave arrives.
+//
+// "hans" or "volter": forces the hans boss to spawn if/when the boss wave
+// comes
+//
+// "pat", "patty", "patriarch": forces the patriarch boss to spawn if/when the
+// boss wave comes
+//
+// "random" or "unmodded": choose a random boss when the time comes (unmodded
+// game behavior)
+var config string Boss;
+var ECDBossChoice BossEnum;
+
+// #### SpawnCycle
+//
+// Says whether to use a SpawnCycle (and if so, which one).
+//
+// "ini": read info about squads from config and use it to set spawn squads
+//
+// "unmodded": unmodded game behavior
+//
+// All other values are reserved for current and future preset names.  Type
+// CDSpawnPresets to see available preset names.
+var config string SpawnCycle;
+var config array<string> SpawnCycleDefs;
+var array<CD_AIWaveInfo> SpawnCycleWaveInfos;
+
+
+//
+// ### FakePlayers Settings
+//
+
+// #### FakePlayers
+//
+// Increase zed count (but not hp) as though this many additional players were
+// present.  The game normally increases dosh rewards for each zed at
+// numplayers >= 3, and faking players this way does the same.  You can always
+// refrain from buying if you want an extra challenge, but if the mod denied
+// you that bonus dosh, it could end up being gamebreaking for some runs.  In
+// short, FakePlayers increases both your budget and the zed count in each
+// wave.
+//
+// The name "FakePlayers" is something of a historical artifact at this point.
+// This option might better be called "ExtraWaveSize" where the units are
+// phantom players.
+var config string FakePlayers; 
+var config const array<string> FakePlayersDefs; 
+var int FakePlayersInt;
+
+// #### FakePlayersMode
+//
+// Controls how the values of the FakePlayers, BossFP, FleshpoundFP,
 // ScrakeFP, and TrashFP settings interact with the human player count.
 //
 // If set to "add", then the values of various fake options are added to the
@@ -221,109 +269,56 @@ var bool AlphaGlitterBool;
 var config string FakePlayersMode;
 var ECDFakePlayersMode FakePlayersModeEnum;
 
-// The maximum monsters allowed on the map at one time.  In the vanilla game,
-// this is 16 when in NM_StandAlone and GetLivingPlayerCount() == 1.   The
-// vanilla game's default is 32 in any other case (such as when playing alone
-// on a dedicated server).
+// #### BossFP
 //
-// If this is set to a nonpositive value, then the vanilla behavior prevails.
+// The FakePlayers modifier applied when scaling boss head and body health.
 //
-// If this is set to a positive value, then it is the number of maximum
-// monsters allowed on the map at one time.
-var config string MaxMonsters;
-var config const array<string> MaxMonstersDefs;
-var int MaxMonstersInt;
+// This is affected by FakePlayersMode.
+var config string BossFP;
+var config const array<string> BossFPDefs;
+var int BossFPInt;
 
-// Controls whether albino crawlers can spawn.
+// #### FleshpoundFP
 //
-// See AlbinoAlphas for details about exactly how this works.
-var config string AlbinoCrawlers;
-var bool AlbinoCrawlersBool;
+// The FakePlayers modifier applied when scaling fleshpound head and body
+// health.
+//
+// This is affected by FakePlayersMode.
+var config string FleshpoundFP;
+var config const array<string> FleshpoundFPDefs;
+var int FleshpoundFPInt;
 
-// Controls whether albino alphas can spawn.
+// #### ScrakeFP
 //
-// true allows albino alphas to spawn normally. The meaning of "normally"
-// depends on the SpawnCycle.  If SpawnCycle=unmodded, the albino alphas spawn
-// by pure chance, the way TWI does it in vanilla KF2.  If SpawnCycle is not
-// unmodded, then albino alphas will spawn according to the SpawnCycle.  If the
-// configured SpawnCycle has no albino alphas, then none will spawn even if
-// this option is set to true.
+// The FakePlayers modifier applied when scaling scrake head and body health.
 //
-// false prevents albino alphas from spawning at all.  Even if the SpawnCycle
-// mandates albino alphas, they will not spawn when this is false.
-var config string AlbinoAlphas;
-var bool AlbinoAlphasBool;
+// This is affected by FakePlayersMode.
+var config string ScrakeFP;
+var config const array<string> ScrakeFPDefs;
+var int ScrakeFPInt;
 
-// Controls whether albino gorefasts can spawn.
+// #### TrashFP
 //
-// See AlbinoAlphas for details about exactly how this works.
-var config string AlbinoGorefasts;
-var bool AlbinoGorefastsBool;
+// The FakePlayers modifier applied when scaling trash zed head and body
+// health.  The trash HP scaling algorithm is a bit screwy compared to the
+// other zed HP scaling algorithms, and this parameter only generally matters
+// when the net count exceeds 6.
+//
+// "Trash" in this context means any zed that is not a boss, a scrake, or a
+// fleshpound.
+//
+// This is affected by FakePlayersMode.
+var config string TrashFP;
+var config const array<string> TrashFPDefs;
+var int TrashFPInt;
 
-// Controls whether zeds are allowed to teleport around the map in an effort to
-// move them closer to human players.  This teleporting is unconditionally
-// enabled in the vanilla game.
-//
-// "true" allows zeds to teleport in exactly the same way they do in the
-// vanilla game.
-//
-// "false" prevents zeds from teleporting closer to players.  A zed can still
-// teleport if it becomes convinced that it is stuck.  Furthermore, this option
-// does not affect the way incoming zed squads or cohorts choose spawnpoints,
-// which means that brand new zeds can still spawn around corners, surrounding
-// doorways, etc as the team kites.  These "in-your-face" spawns can look quite
-// a bit like zeds teleporting.  CD has no way to alter that "in-your-face"
-// spawn behavior (yet).
-var config string ZedsTeleportCloser;
-var bool ZedsTeleportCloserBool;
 
-// true to log some internal state specific to this mod
-var config bool bLogControlledDifficulty;
+//
+// ### Chat Command Authorization
+//
 
-// Says whether to use a SpawnCycle (and if so, which one).
+// #### AuthorizedUsers
 //
-// "ini": read info about squads from config and use it to set spawn squads
-//
-// "unmodded": unmodded game behavior
-//
-// All other values are reserved for current and future preset names.  Type
-// CDSpawnPresets to see available preset names.
-var config string SpawnCycle;
-var config array<string> SpawnCycleDefs;
-var array<CD_AIWaveInfo> SpawnCycleWaveInfos;
-
-// Optionally controls which boss spawns, if and when the boss wave arrives.
-//
-// "hans" or "volter": forces the hans boss to spawn if/when the boss wave
-// comes
-//
-// "pat", "patty", "patriarch": forces the patriarch boss to spawn if/when the
-// boss wave comes
-//
-// "random" or "unmodded": choose a random boss when the time comes (unmodded
-// game behavior)
-var config string Boss;
-var ECDBossChoice BossEnum;
-
-// Time, in seconds, that dropped weapons remain on the ground before
-// disappearing.  This must be either a valid integer in string form, or the
-// string "max".
-//
-// If set to a negative value, then the game's builtin default value is not
-// modified.  At the time I wrote this comment, the game's default was 300
-// seconds (5 minutes), but that could change; setting this to -1 will use
-// whatever TWI chose as the default, even if they change the default in future
-// patches.  If set to a positive value, it overrides the TWI default.  All
-// dropped weapons will remain on the ground for as many seconds as this
-// variable's value, regardless of whether the weapon was dropped by a dying
-// player or a live player who pressed his dropweapon key.
-//
-// If set to zero, CD behaves as though it had been set to 1.
-//
-// If set to "max", the value 2^31 - 1 is used.
-var config string WeaponTimeout;
-var int WeaponTimeoutInt;
-
 // Defines users always allowed to run any chat command.  This is an array
 // option.  It can appear on as many lines as you wish.  This is only consulted
 // when the game is running in server mode.  If the game is running in
@@ -357,6 +352,8 @@ var int WeaponTimeoutInt;
 // AuthorizedUsers=(SteamID="STEAM_0:0:11101",Comment="gabe newell")
 var config array<StructAuthorizedUsers> AuthorizedUsers;
 
+// #### DefaultAuthLevel
+//
 // Controls the chat command authorization given to users who are connected to
 // a server and whose SteamID is not in the AuthorizedUsers array.  For the
 // rest of this section, we will call these users "anonymous users".
@@ -370,6 +367,89 @@ var config array<StructAuthorizedUsers> AuthorizedUsers;
 // no effective difference in chat command authority between AuthorizedUsers
 // and anonymous users with CDAUTH_WRITE.
 var config ECDAuthLevel DefaultAuthLevel;
+
+
+//
+// ### Miscellaneous Settings
+//
+
+// #### AlphaGlitter
+//
+// Controls the bright red particle effects that appear around zeds when an
+// albino alpha clot rallies them (and himself).
+//
+// true to play the particle effects normally.  This makes alpha rallies look
+// the same as in the vanilla game.
+//
+// false to disable the particle effects.  An albino alpha clot performing a
+// rally will still play his little stomp animation, and a small distortion
+// bubble will still appear around his body for a fraction of a second, but
+// there will be no bright red particles.  This sometimes aids visibility.
+//
+// This option is strictly cosmetic.  It does not affect any of the behavior
+// aspects of rallies (like damage multiplier, cooldown, movespeed multiplier,
+// etc.).  So, even when this is set to false, rallies still happen as usual,
+// it's just that it's easier to see them.
+//
+// This might become a client-side option one day if I can figure out how to do
+// that nondisruptively.
+var config string AlphaGlitter;
+var bool AlphaGlitterBool;
+
+// #### TraderTime
+//
+// The trader time, in seconds.  if this is zero or negative, its value is
+// totally ignored, and the difficulty's standard trader time is used instead.
+var config string TraderTime;
+var int TraderTimeInt;
+
+// #### WeaponTimeout
+//
+// Time, in seconds, that dropped weapons remain on the ground before
+// disappearing.  This must be either a valid integer in string form, or the
+// string "max".
+//
+// If set to a negative value, then the game's builtin default value is not
+// modified.  At the time I wrote this comment, the game's default was 300
+// seconds (5 minutes), but that could change; setting this to -1 will use
+// whatever TWI chose as the default, even if they change the default in future
+// patches.  If set to a positive value, it overrides the TWI default.  All
+// dropped weapons will remain on the ground for as many seconds as this
+// variable's value, regardless of whether the weapon was dropped by a dying
+// player or a live player who pressed his dropweapon key.
+//
+// If set to zero, CD behaves as though it had been set to 1.
+//
+// If set to "max", the value 2^31 - 1 is used.
+var config string WeaponTimeout;
+var int WeaponTimeoutInt;
+
+// #### ZedsTeleportCloser
+//
+// Controls whether zeds are allowed to teleport around the map in an effort to
+// move them closer to human players.  This teleporting is unconditionally
+// enabled in the vanilla game.
+//
+// "true" allows zeds to teleport in exactly the same way they do in the
+// vanilla game.
+//
+// "false" prevents zeds from teleporting closer to players.  A zed can still
+// teleport if it becomes convinced that it is stuck.  Furthermore, this option
+// does not affect the way incoming zed squads or cohorts choose spawnpoints,
+// which means that brand new zeds can still spawn around corners, surrounding
+// doorways, etc as the team kites.  These "in-your-face" spawns can look quite
+// a bit like zeds teleporting.  CD has no way to alter that "in-your-face"
+// spawn behavior (yet).
+var config string ZedsTeleportCloser;
+var bool ZedsTeleportCloserBool;
+
+// #### bLogControlledDifficulty
+//
+// true enables additional CD-specific logging output at runtime.  This option
+// is one of the earliest added to CD, before a naming convention was established,
+// and its unusual name is retained today for backwards-compatibility.
+var config bool bLogControlledDifficulty;
+
 
 ////////////////////////////////////////////////////////////////
 // Internal runtime state (no config options below this line) //
