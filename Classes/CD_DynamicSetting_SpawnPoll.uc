@@ -29,6 +29,6 @@ defaultproperties
 	MinSettingValue=0.05f
 	MaxSettingValue=60.f
 
-	ChatCommandNames=("!cdminspawninterval","!cdmsi")
+	ChatCommandNames=("!cdspawnpoll","!cdsp")
 	ChatWriteParamHintFragment="float, default is 1.0"
 }
