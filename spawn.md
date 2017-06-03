@@ -11,6 +11,9 @@ To turn it off, set `SpawnCycle=unmodded`.  It is off by default.
 
 Because the `SpawnCycle` system spawns zeds in a fixed order, it avoids a significant aspect of luck when comparing challenge runs.  The only aspect of spawning it does not control is spawnpoint selection.
 
+## What can `SpawnCycle` do?
+
+`SpawnCycle` is lets you decide what zeds you want to spawn each wave, and in what order.  You can use this to create elaborate waves with custom squads and predictable difficulty, or you can use it to just spawn a parade of scrakes to practice decapitating them.  If you can imagine a particular series of zeds, you can make it happen with `SpawnCycle`.
 
 ## Background: Details about KF2's Spawn System
 
