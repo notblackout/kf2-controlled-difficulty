@@ -1,4 +1,4 @@
-# Setting up a Dedicated CD Server
+# Dedicated Server Setup
 
 1. **Setup a standard KF2 Dedicated Server**
 
