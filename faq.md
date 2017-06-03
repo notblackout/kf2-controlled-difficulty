@@ -29,4 +29,4 @@ While playing CD, your perks will not persistently gain or lose XP.
 
 CD doesn't work with https://steamcommunity.com/sharedfiles/filedetails/?id=679113913. At a minimum, that mutator appears to break CD's chat commands. For all I know, it breaks other things too; I haven't checked.
 
-That mutator's description says that it 'is not compatible with mods that replace the pawn or controller such as ServerExt,' and CD does indeed subclass the player controller. I can only speculate as to what's going on here, because that mutator's source is, as best I can tell, closed. CD is open source for all.
+That mutator's description says that it 'is not compatible with mods that replace the pawn or controller such as ServerExt,' and CD does indeed subclass the player controller. I can only speculate as to what's going on here, because that mutator's source is, as best I can tell, closed. CD is open source.
