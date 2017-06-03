@@ -357,7 +357,7 @@ function string GetCDInfoChatString( const string Verbosity )
 
 private function string GetCDVersionChatString()
 {
-	return "Ver=" $ `CD_COMMIT_HASH $ "\nDate=" $ `CD_AUTHOR_TIMESTAMP;
+	return "Commit=" $ `CD_COMMIT_HASH $ "\nDate=" $ `CD_AUTHOR_TIMESTAMP;
 }
 
 

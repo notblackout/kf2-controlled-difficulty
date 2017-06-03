@@ -6,10 +6,11 @@ include local_paths.mk
 #
 
 KF2BIN_ABS_WIN     := $(shell cygpath --windows --absolute "$(KF2BIN)")
-GIT_HASH_ABBREV    := $(shell git rev-parse --short=8 HEAD)
+GIT_HASH_ABBREV    := $(shell git rev-parse --short=6 HEAD)
 GIT_AUTHOR         := $(shell git log -n 1 --pretty=format:%an)
 GIT_RAW_TIMESTAMP  := $(shell git log -n 1 --pretty=format:%ai)
 GIT_UTC_TIMESTAMP  := $(shell date -d "$(GIT_RAW_TIMESTAMP)" -u --iso-8601=seconds)
+GIT_UTC_DATE       := $(shell echo $(GIT_UTC_TIMESTAMP) | sed 's/T.*//')
 FRIENDLY_DATE      := $(shell date -u '+%b %e %Y')
 
 IS_DEV               := false
@@ -46,12 +47,14 @@ ifeq ($(IS_WORKING_DIR_DIRTY),0)
 	WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
 	GIT_HASH_ABBREV         := DEV-$(GIT_HASH_ABBREV)
 	GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
+	GIT_UTC_DATE            := $(shell echo $(GIT_UTC_TIMESTAMP) | sed 's/T.*//')
 endif
 
 # Multiline variable for the contents of CD_BuildInfo.uci
 define BUILDINFO_UCI
 `define CD_COMMIT_HASH "$(GIT_HASH_ABBREV)"
 `define CD_AUTHOR_TIMESTAMP "$(GIT_UTC_TIMESTAMP)"
+`define CD_AUTHOR_DATE "$(GIT_UTC_DATE)"
 `define CD_AUTHOR "$(GIT_AUTHOR)"
 endef
 
