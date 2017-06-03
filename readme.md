@@ -8,7 +8,7 @@ including configurations much harder than Tripwire's top-end Hell on Earth diffi
 
 ## Quick Start
 
-* [gettingstarted.md - Getting Started Quickly](gettingstarted.md)
+* [getting_started.md - Getting Started Quickly](getting_started.md)
 
 ## Reference Documentation
 
