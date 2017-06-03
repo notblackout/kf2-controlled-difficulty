@@ -6,9 +6,13 @@ including configurations much harder than Tripwire's top-end Hell on Earth diffi
 
 **Steam Workshop:** http://steamcommunity.com/sharedfiles/filedetails/?id=738484519
 
-## Documentation
+## Quick Start
+
 * [gettingstarted.md - Getting Started Quickly](gettingstarted.md)
+
+## Reference Documentation
+
 * [chat.md - Chat Commands](chat.md)
-* [options.md - Option Reference](options.md)
+* [options.md - Configuration Options](options.md)
 * [server.md - Basic Server Setup](server.md)
 * [spawn.md - SpawnCycle Reference](spawn.md)
