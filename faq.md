@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-### How does CD relate to [Skell's Faked Suite](https://steamcommunity.com/sharedfiles/filedetails/?id=768190709) and Project One mods?
+### How does CD relate to Skell's Faked Suite and Project One mods?
 
 I made this mod after P1 went unmaintained, but before Skell returned to make his [Faked Suite](https://steamcommunity.com/sharedfiles/filedetails/?id=768190709).
 There is significant feature overlap, though some things are unique on each side. Both mods are good.
