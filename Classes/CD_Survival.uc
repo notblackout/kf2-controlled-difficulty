@@ -290,7 +290,7 @@ var config bool bLogControlledDifficulty;
 // CDSpawnPresets to see available preset names.
 var config string SpawnCycle;
 var config array<string> SpawnCycleDefs;
-var array<CD_AIWaveInfo> ActiveWaveInfos;
+var array<CD_AIWaveInfo> SpawnCycleWaveInfos;
 
 // Optionally controls which boss spawns, if and when the boss wave arrives.
 //
@@ -1068,22 +1068,16 @@ final function int GetEffectivePlayerCount( int HumanPlayers )
  */ 
 function InitSpawnManager()
 {
-	local CD_SpawnManager cdsm;
-
 	super.InitSpawnManager();
 
 	if ( SpawnManager.IsA( 'CD_SpawnManager' ) )
 	{
 		`cdlog("Checked that SpawnManager "$SpawnManager$" is an instance of CD_SpawnManager (OK)", bLogControlledDifficulty);
-		cdsm = CD_SpawnManager( SpawnManager );
 	}
 	else
 	{
 		GameInfo_CDCP.Print("WARNING: SpawnManager "$SpawnManager$" appears to be misconfigured! CD might not work correctly.");
-		return;
 	}
-
-	cdsm.SetCustomWaves( ActiveWaveInfos );
 }
 
 protected function LoadSpawnCycle( const out string OverrideSpawnCycle, out array<CD_AIWaveInfo> OutWaveInfos )
@@ -1098,6 +1092,7 @@ protected function LoadSpawnCycle( const out string OverrideSpawnCycle, out arra
 	else if ( OverrideSpawnCycle == "unmodded" )
 	{
 		`cdlog("LoadSpawnCycle: found "$OverrideSpawnCycle$", treating as noop", bLogControlledDifficulty);
+
 		OutWaveInfos.Length = 0;
 	}
 	else

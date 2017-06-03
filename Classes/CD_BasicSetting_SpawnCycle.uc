@@ -1,6 +1,8 @@
 class CD_BasicSetting_SpawnCycle extends CD_BasicSetting
 	within CD_Survival;
 
+`include(CD_Log.uci)
+
 var array<string> WriteMessages;
 var array<CD_AIWaveInfo> StagedWaveInfos;
 
@@ -11,14 +13,8 @@ protected function string ReadIndicator()
 
 protected function WriteIndicator( const out string Val )
 {
-	local CD_SpawnManager CDSM;
-
 	Outer.SpawnCycle = Val;
-	CDSM = CD_SpawnManager( SpawnManager );
-	if ( None != CDSM )
-	{
-		CDSM.SetCustomWaves( StagedWaveInfos );
-	}
+	Outer.SpawnCycleWaveInfos = StagedWaveInfos;
 }
 
 protected function string SanitizeIndicator( const string Raw )

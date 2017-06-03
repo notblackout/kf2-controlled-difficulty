@@ -16,8 +16,6 @@ class CD_SpawnManager extends KFAISpawnManager
 
 `include(CD_Log.uci)
 
-var array<CD_AIWaveInfo> CustomWaves;
-
 var int CohortZedsSpawned;
 var int CohortSquadsSpawned;
 var int CohortVolumeIndex;
@@ -29,11 +27,6 @@ var float FirstSpawnTimestamp;
 var float FinalSpawnTimestamp;
 var float LatestSpawnTimestamp;
 var float WaveEndTimestamp;
-
-function SetCustomWaves( array<CD_AIWaveInfo> inWaves )
-{
-	CustomWaves = inWaves;
-}
 
 /** We override this because of TimeUntilNextSpawn.
 	The standard implementation assumes that this
@@ -274,9 +267,9 @@ function GetAvailableSquads(byte MyWaveIndex, optional bool bNeedsSpecialSquad=f
 {
 	local CD_AIWaveInfo wi;
 
-	if ( 0 < CustomWaves.length && MyWaveIndex < CustomWaves.length )
+	if ( 0 < Outer.SpawnCycleWaveInfos.length && MyWaveIndex < Outer.SpawnCycleWaveInfos.length )
 	{
-		wi = CustomWaves[MyWaveIndex];
+		wi = Outer.SpawnCycleWaveInfos[MyWaveIndex];
 		wi.CopySquads( AvailableSquads );
 		`cdlog("Copying squads from custom wave info", bLogControlledDifficulty);
 	}
@@ -596,7 +589,7 @@ function array< class<KFPawn_Monster> > GetNextSpawnList()
 		//////////////////////////////
 		// Start of CD customization
 		//////////////////////////////
-		if (0 < CustomWaves.length && MyKFGRI.WaveNum - 1 < CustomWaves.length )
+		if (0 < Outer.SpawnCycleWaveInfos.length && MyKFGRI.WaveNum - 1 < Outer.SpawnCycleWaveInfos.length )
 		{
 			// CD behavior: use available squads in first-to-last order
 			RandNum = 0;
@@ -720,7 +713,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	LargestMonsterSquadType = EST_Crawler;
 
 	waveIndex = MyKFGRI.WaveNum - 1;
-	UsingCustomSquads = 0 < CustomWaves.length && waveIndex < CustomWaves.length;
+	UsingCustomSquads = 0 < Outer.SpawnCycleWaveInfos.length && waveIndex < Outer.SpawnCycleWaveInfos.length;
 
 	if ( UsingCustomSquads )
 	{
