@@ -16,10 +16,15 @@ class CD_DifficultyInfo extends KFGameDifficulty_Survival
 function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 {
 	local int EffectivePlayerCount;
+	local float Result;
 
 	EffectivePlayerCount = GetEffectivePlayerCount( NumLivingPlayers );
 
-	return GetNumPlayersModifier( NumPlayers_WaveSize, EffectivePlayerCount );
+	Result = GetNumPlayersModifier( NumPlayers_WaveSize, EffectivePlayerCount );
+
+	`cdlog("GetPlayerNumMaxAIModifier: Result="$ Result $" EffectivePlayerCount="$ EffectivePlayerCount, bLogControlledDifficulty);
+
+	return Result;
 }
 
 /** Scales the health this Zed has by the difficulty level */

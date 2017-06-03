@@ -32,7 +32,7 @@ defaultproperties
 	OptionName="FakePlayers"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=32
+	MaxSettingValue=160
 
 	ChatCommandNames=("!cdfakeplayers","!cdfp")
 	ChatWriteParamHintFragment="int"
