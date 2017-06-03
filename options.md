@@ -55,7 +55,8 @@ system when CD is running on a dedicated server.  These options are
 listed in this file under the
 [Chat Command Authorization](#chat-command-authorization) subsection.
 
-For details about available Chat Commands and how they work, see [chat.md].
+For details about available Chat Commands and how they work, see 
+[chat.md](chat.md).
 
 ### Spawn Intensity Settings
 
