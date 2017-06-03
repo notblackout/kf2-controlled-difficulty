@@ -48,7 +48,7 @@ SpawnMod=0 ; Leave this alone
 SpawnPoll=1.0
 ; CohortSize controls how many zeds spawn every SpawnPoll seconds
 ; smaller=less intensity, bigger=more intensity
-CohortSize=4
+CohortSize=5
 ; MaxMonsters is the hardcap on live zeds.  Once MaxMonsters zeds
 ; are alive, no more can spawn until some die.
 MaxMonsters=32 ; 32 is TWI's standard multiplayer cap
