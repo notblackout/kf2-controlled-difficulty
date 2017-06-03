@@ -164,3 +164,102 @@ CohortSize=4
 ; are alive, no more can spawn until some die.
 MaxMonsters=16
 ```
+
+### Tuning Wave Size with `FakePlayers`
+
+FakePlayers only affects the number of zeds in a wave.
+Basically, when it is time for the game to calculate the
+size of a wave, it pretends these FakePlayers were present.
+
+This setting is mostly a matter of taste, but it has a
+substantial impact on difficulty, particularly in solo.
+
+Wave size scales nonlinearly for net player (fake + real)
+count less than or equal to 6.  Simple Cat's spreadsheet has
+a table of values showing the exact multipliers for each
+value in 1..6.  They are handpicked values that don't
+conform to a specific function.
+
+At values of 7 and greater, wave size begins to scale
+linearly with net player count.
+
+Larger waves tend to revert the player or team's kill rate
+to mean for a variety of reasons: fatigue, grenades,
+weapon swaps, long reloads, etc.  Both large and small
+waves can be difficult dependin on the settings, but all
+else equal, a longer wave tends to be harder than an a
+smaller one.
+
+Whether FakePlayers is added to the actual player count or
+whether it replaces the actual player counnt is controlled
+by FakePlayersMode.  For configurations between and including
+solo and 6-man, the default value `add` is usually
+preferable.  The other mode -- `replace` -- is aimed mainly
+at modded servers with huge MaxPlayers and at scaling zed
+health.
+
+### Scaling Zed Health
+
+BossFP, FleshpoundFP, ScrakeFP, and TrashFP affect zed body
+and head health.  They do *not* affect the number of these
+types of zeds that spawn -- that's affected only by `SpawnCycle`.
+These options just affect HP.
+
+This is a matter of taste.  The discussion about spawn intensity
+at the top of this document assumed all of these parameters
+were set to 0 (that is, zed health scales only with real human
+players, just like in the unmodded game).
+
+The FleshpoundFP and ScrakeFP options are particularly useful
+to solo players who want to practice decapitation techniques on
+zeds with 6-player head and body health.  However, increasing
+these options is going to make waves that contain SC/FP more
+dangerous (all else equal), so other settings may have to be
+made easier to keep the configuration neutral.
+
+### Convenience, Cosmetics, and Annoyances
+
+Recommended:
+
+```
+[ControlledDifficulty.CD_Survival]
+WeaponTimeout=max ; weapons dropped on the ground won't disappear
+AlphaGlitter=false ; disable the red particle spam on alpha clot rallies
+ZedsTeleportCloser=false ; zeds don't teleport closer to players
+```
+
+`WeaponTimeout` controls how long weapons can sit on the ground
+before they disappear.  It takes a value in seconds, or the special
+value `max`.
+
+`AlphaGlitter` controls whether albino alpha clots' AOE rally
+ability spews red particle effects.  Setting it to false disables
+the particles but nothing else -- zeds can still be speed and
+damage boosted by rallies like usual, and the rallying zed still
+emits a little distortion air bubble when playing his rally
+animation.
+
+`ZedsTeleportCloser` is the most controversial one in this section.
+It controls whether zeds can teleport around the map in an attempt
+to get closer to human players.  However, even when this is false,
+it does not remove the impression of zeds hiding around corners and
+behind doors, since the spawnpoint selection algorithm for brand new
+zeds sometimes places those zeds where others might have teleported.
+This option has no effect on whether zeds can teleport when they
+think they've become stuck.  That's always allowed.
+
+`TraderTime` is configurable in CD.  In solo on a small challenge
+map, 15 tends to be more than enough, and there's always `!cdpt`
+to pause trader time if more is needed.  The HOE default of 60 is
+probably good for teamplay though.
+
+### Albino/Special Zed Control
+
+Don't like a certain albino zed?  You can disable it, even if it is
+part of a SpawnCycle.  Any instances of that albino zed that would
+have spawned will be replaced by its non-albino equivalent.
+Related options:
+
+* AlbinoAlphas
+* AlbinoCrawlers
+* AlbinoGorefasts (double-blade)
