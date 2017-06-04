@@ -328,7 +328,7 @@ private function string GetCDInfoChatStringCommand( const out array<string> para
 function string GetCDInfoChatString( const string Verbosity )
 {
 	local int i;
-	local string s, t, Result;
+	local string Result;
 
 	if ( Verbosity == "full" )
 	{
@@ -345,35 +345,16 @@ function string GetCDInfoChatString( const string Verbosity )
 	}
 	else
 	{
-		Result = "";
-
-		s = MaxMonstersSetting.GetChatLine();
-		t = FakePlayersSetting.GetChatLine();
-
-		DumbLineWrapper( s, t, Result );
-
-		s = SpawnPollSetting.GetChatLine();
-		t = SpawnModSetting.GetChatLine();
-
-		DumbLineWrapper( s, t, Result );
-
-		Result $= CohortSizeSetting.GetChatLine() $ "\n" $
-		          SpawnCycleSetting.GetChatLine();
+		Result =
+			MaxMonstersSetting.GetBriefChatLine() $ "\n" $
+			FakePlayersSetting.GetBriefChatLine() $ "\n" $
+			SpawnPollSetting.GetBriefChatLine() $ "\n" $
+			SpawnModSetting.GetBriefChatLine() $ "\n" $
+			CohortSizeSetting.GetBriefChatLine() $ "\n" $
+			SpawnCycleSetting.GetBriefChatLine();
 	}
 
 	return Result;
-}
-
-private final function DumbLineWrapper( const out string s, const out string t, out string AppendTo )
-{
-	if ( 38 >= Len(s) + Len(t) )
-	{
-		AppendTo $= s $ " " $ t $ "\n";
-	}
-	else
-	{
-		AppendTo $= s $ "\n" $ t $ "\n";
-	}
 }
 
 private function string GetCDVersionChatString()

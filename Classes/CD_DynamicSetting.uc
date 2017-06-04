@@ -161,6 +161,16 @@ function bool HasStagedChanges()
 
 function string GetChatLine()
 {
+	return GetChatLineInternal( false );
+}
+
+function string GetBriefChatLine()
+{
+	return GetChatLineInternal( true );
+}
+
+private final function string GetChatLineInternal( bool BriefFormat )
+{
 	local string Result;
 	local string CurIndicator;
 	local float TempValue, TempWaveNum;
@@ -173,15 +183,18 @@ function string GetChatLine()
 
 	CurIndicator = ReadIndicator();
 
-	Result $= CurIndicator;
+	// midwave
+	// MaxMonsters=20@W02 [ini] (staged: 24)
+
+	// TT
+	// MaxMonsters=20@W02, 18@W01 [ini]
+	// MaxMonsters=20@W02, 18@W01 [bilinear:x_yP*s_tW;777max]
 
 	if ( ActualRegulator != None )
 	{
 		GameStateName = Outer.GetStateName();
 
 		`cdlog("StateName: "$ GameStateName, bLogControlledDifficulty);
-
-		Result $= " [";
 
 		// Now append a little string in square brackets showing the regulated values
 		if ( GameStateName == 'PendingMatch' )
@@ -205,9 +218,23 @@ function string GetChatLine()
 			TempValue = ClampedGetValue( TempWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
 			Result $= PrettyValue( TempValue ) $"@"$ class'CD_StringUtils'.static.GetShortWaveNameByNum( TempWaveNum );
 		}
-		Result $= "]";
+	}
+	else
+	{
+		Result $= CurIndicator;
 	}
 
+	// Append information about the dynamic setting regulator/program in square brackets, if applicable
+	if ( Left(CurIndicator, 9) ~= "bilinear:" )
+	{
+		Result $= " [" $ ( BriefFormat ? "bilinear" : CurIndicator ) $ "]";
+	}
+	else if ( CurIndicator ~= "ini" )
+	{
+		Result $= " [ini]";
+	}
+
+	// Append the staged value, if any
 	if ( HasStagedChanges() )
 	{
 		Result $= " (staged: " $ StagedIndicator $ ")";

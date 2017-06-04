@@ -56,3 +56,9 @@ function bool GetChatWriteCommand( out StructChatCommand scc );
  * parethesis.
  */
 function string GetChatLine();
+
+/*
+ * Like GetChatLine, but attempts to return a more concise but still human
+ * readable string.  The format is unspecified (the implementation decides).
+ */
+function string GetBriefChatLine();

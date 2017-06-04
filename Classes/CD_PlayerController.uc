@@ -37,7 +37,7 @@ simulated event PostBeginPlay()
 
 	if ( 0 >= ChatCharThreshold )
 	{
-		ChatCharThreshold = 260;
+		ChatCharThreshold = 340;
 	}
 }
 

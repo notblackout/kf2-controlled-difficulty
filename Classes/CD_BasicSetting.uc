@@ -68,6 +68,16 @@ function bool HasStagedChanges()
 
 function string GetChatLine()
 {
+	return GetChatLineInternal();
+}
+
+function string GetBriefChatLine()
+{
+	return GetChatLineInternal();
+}
+
+private final function string GetChatLineInternal()
+{
 	local string Result, CurIndicator;
 
 	Result = OptionName $"=";
