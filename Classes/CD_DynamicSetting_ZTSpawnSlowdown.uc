@@ -25,7 +25,7 @@ defaultproperties
 {
 	IniDefsArrayName="ZTSpawnSlowdownDefs"
 	OptionName="ZTSpawnSlowdown"
-	DefaultSettingValue=1.f
+	DefaultSettingValue=1.5f
 	MinSettingValue=1.f
 	MaxSettingValue=10.f
 
