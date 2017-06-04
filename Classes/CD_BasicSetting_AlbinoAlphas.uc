@@ -22,6 +22,6 @@ defaultproperties
 	OptionName="AlbinoAlphas"
 	DefaultSettingIndicator="true"
 
-	ChatCommandNames=("!cdalbinoalphas","!cdaa")
+	ChatCommandNames=("!cdalbinoalphas")
 	ChatWriteParamHints=("true|false")
 }

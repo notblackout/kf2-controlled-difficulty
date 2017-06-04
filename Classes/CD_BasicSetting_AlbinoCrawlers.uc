@@ -22,6 +22,6 @@ defaultproperties
 	OptionName="AlbinoCrawlers"
 	DefaultSettingIndicator="true"
 
-	ChatCommandNames=("!cdalbinocrawlers","!cdac")
+	ChatCommandNames=("!cdalbinocrawlers")
 	ChatWriteParamHints=("true|false")
 }

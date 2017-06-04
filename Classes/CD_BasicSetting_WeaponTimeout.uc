@@ -32,7 +32,7 @@ defaultproperties
 	OptionName="WeaponTimeout"
 	DefaultSettingIndicator="-1"
 
-	ChatCommandNames=("!cdweapontimeout","!cdwt")
+	ChatCommandNames=("!cdweapontimeout")
 	ChatWriteParamHints=("int seconds, \"max\", or \"unmodded\"/-1")
 }
 

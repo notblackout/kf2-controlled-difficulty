@@ -22,6 +22,6 @@ defaultproperties
 	OptionName="AlbinoGorefasts"
 	DefaultSettingIndicator="true"
 
-	ChatCommandNames=("!cdalbinogorefasts","!cdag")
+	ChatCommandNames=("!cdalbinogorefasts")
 	ChatWriteParamHints=("true|false")
 }

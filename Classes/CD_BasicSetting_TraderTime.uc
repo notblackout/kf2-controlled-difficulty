@@ -37,6 +37,6 @@ defaultproperties
 	OptionName="TraderTime"
 	DefaultSettingIndicator="0"
 
-	ChatCommandNames=("!cdtradertime","!cdtt")
+	ChatCommandNames=("!cdtradertime")
 }
 

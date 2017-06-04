@@ -40,15 +40,11 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 ### !cdalbinoalphas 
 
-*Alternate name(s):* !cdaa
-
 *Description:* Get AlbinoAlphas
 
 *Auth level:* [CDAUTH_READ]
 
 ### !cdalbinoalphas <true|false> 
-
-*Alternate name(s):* !cdaa
 
 *Description:* Set AlbinoAlphas
 
@@ -56,15 +52,11 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 ### !cdalbinocrawlers 
 
-*Alternate name(s):* !cdac
-
 *Description:* Get AlbinoCrawlers
 
 *Auth level:* [CDAUTH_READ]
 
 ### !cdalbinocrawlers <true|false> 
-
-*Alternate name(s):* !cdac
 
 *Description:* Set AlbinoCrawlers
 
@@ -72,15 +64,11 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 ### !cdalbinogorefasts 
 
-*Alternate name(s):* !cdag
-
 *Description:* Get AlbinoGorefasts
 
 *Auth level:* [CDAUTH_READ]
 
 ### !cdalbinogorefasts <true|false> 
-
-*Alternate name(s):* !cdag
 
 *Description:* Set AlbinoGorefasts
 
@@ -252,8 +240,6 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 ### !cdtradertime 
 
-*Alternate name(s):* !cdtt
-
 *Description:* Get TraderTime
 
 *Auth level:* [CDAUTH_READ]
@@ -272,15 +258,11 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 ### !cdweapontimeout 
 
-*Alternate name(s):* !cdwt
-
 *Description:* Get WeaponTimeout
 
 *Auth level:* [CDAUTH_READ]
 
 ### !cdweapontimeout <int seconds, "max", or "unmodded"/-1> 
-
-*Alternate name(s):* !cdwt
 
 *Description:* Set WeaponTimeout
 
