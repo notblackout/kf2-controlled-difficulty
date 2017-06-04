@@ -87,11 +87,10 @@ function bool ParseComposite( const out string Composite, const bool ShouldLog )
 			return false;
 		}
 	}
-
-	// We don't enforce CoefficientMin < CoefficientMax.  Lerp can handle inversion
-	// of that inequality.  It's not clear that it's useful, but it is allowed.
-
-	// I thought about rejecting negative values, but I'm ignoring that for now.
+	else
+	{
+		OMax = -1.f;
+	}
 
 	PlayerCoefficientMin = PCMin;
 	PlayerCoefficientMax = PCMax;
@@ -137,12 +136,12 @@ function bool ParseCoefficients( const out string CS, out float PCMin, out float
 		return false;
 	}
 
-	if ( Right(Tokens[0], 1) == "P" )
+	if ( Right(Tokens[0], 1) == "p" )
 	{
 		Tokens[0] = Left( Tokens[0], Len(Tokens[0]) - 1 );
 	}
 
-	if ( Right(Tokens[1], 1) == "W" )
+	if ( Right(Tokens[1], 1) == "w" )
 	{
 		Tokens[1] = Left( Tokens[1], Len(Tokens[1]) - 1 );
 	}
@@ -199,8 +198,8 @@ function bool ParseLerpRangeString( const out string S, out float Min, out float
 
 function float GetValue( const int WaveNum, const int MaxWaveNum, const int HumanPlayers, const int MaxHumanPlayers )
 {
-	local float PlayerAlpha, WaveAlpha, HumanFactor, WaveFactor, FinalResult;
-	local int ClampedWaveIndex, ClampedHumanIndex, MaxWaveIndex, MaxHumanIndex, Result;
+	local float PlayerAlpha, WaveAlpha, HumanFactor, WaveFactor, Result;
+	local int ClampedWaveIndex, ClampedHumanIndex, MaxWaveIndex, MaxHumanIndex;
 
 	MaxHumanIndex = MaxHumanPlayers - 1;
 	ClampedHumanIndex = Clamp( HumanPlayers - 1, 0, MaxHumanIndex );
@@ -226,16 +225,7 @@ function float GetValue( const int WaveNum, const int MaxWaveNum, const int Huma
 		`cdlog( "Bilinear: applied max "$ OverallMax $": capped result="$ Result );
 	}
 
-	if ( 0 <= Result )
-	{
-		FinalResult = int(Result + 0.5f);
-	}
-	else
-	{
-		FinalResult = int(Result - 0.5f);
-	}
+	`cdlog( "Bilinear: final result="$ Result );
 
-	`cdlog( "Bilinear: rounded final result="$ FinalResult );
-
-	return FinalResult;
+	return Result;
 }
