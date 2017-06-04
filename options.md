@@ -100,6 +100,12 @@ entire wave's worth of zeds has already spawned, or if the map's spawn
 volumes are so congested that new zeds physically cannot be spawned without
 failing a collision check (zeds inside other zeds).
 
+Setting zero nullifies any spawn interval multiplier built into the map.
+It also nullifies the sine-wave delay system TWI built into vanilla KF2,
+and any early wave or difficulty-related delays.  When this is zero, the
+only timing variables that matter are SpawnMod, and, to a limited extent
+during zed time, ZTSpawnSlowdown.
+
 This does not affect SpawnPoll.  SP controls how often the
 SpawnManager wakes up.  This setting influences whether the SpawnManager
 does or does not attempt to spawn zeds when it wakes up (along with some
