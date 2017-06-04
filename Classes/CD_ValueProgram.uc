@@ -15,8 +15,8 @@ interface CD_ValueProgram;
  * extends to MaxWaveNum.
  *
  * MaxWaveNum includes the boss wave.  For example, in the initial
- * wave of a long game, the WaveNum parameter would be 0 and the
- * MaxWaveNum parameter would be 10.
+ * wave of a long game, the WaveNum parameter would be 1 and the
+ * MaxWaveNum parameter would be 11.
  *
  * HumanPlayers must exclude fakes.  MaxHumanPlayers should
  * generally be the active player limit on the server exclusive

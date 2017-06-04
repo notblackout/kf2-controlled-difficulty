@@ -59,9 +59,9 @@ above is used in a long game with 6 people.  MaxMonsters would progress from 26 
 wave 2, to 32 on wave 3, to 36 on waves 4 through the rest of the game.
 
 Technically, this system even applies to boss waves, although most settings are not meaningful in
-boss waves.  This is mostly so that one `BossFP` line is sufficient to control Boss HP no matter the
-gamelength, and to keep the system with potential future options that might influence both boss and
-non-boss waves.
+boss waves.  This system applies to boss waves mainly so that one `BossFP` line is sufficient to
+control Boss HP no matter the gamelength, and to keep the system with potential future options that
+might influence both boss and non-boss waves.
 
 The `-Defs` configuration suffix convention may seem a bit odd.  It was chosen for its resemblance to
 the `SpawnCycleDefs` which came first (more info on that in [spawn.md](spawn.md)).  The conceptual
@@ -96,8 +96,10 @@ first argument to the second as the third argument varies from 0 to 1.
 
 `PlayerAlpha` and `WaveAlpha` are computed by subtracting one from the actual player count or wave number,
 then dividing by `(MaxPlayers - 1)` or the `(total number of waves - 1)`.  The "total number of
-waves" includes the boss wave.  For example, in a short game, that evaluates to 5.  In a long game,
-that evaluates to 11.
+waves" excludes the boss wave.  For example, in a long game, the "total number of waves" is 10,
+and `(total number of waves - 1) = 9`.  On wave one of this long game, `WaveAlpha=0`.  On the second
+wave of this game, `WaveAlpha=.1111`.  On the third wave, `WaveAlpha=.2222`.  And so on to wave 10,
+where `WaveAlpha=1.0`.  This the following boss wave also has `WaveAlpha=1.0`.
 
 If the optional maximum *Z* was omitted, then the `Min` function above is not executed.  The product
 of linear interpolations is used directly.
@@ -110,7 +112,7 @@ single-precision errors when converting to integers.
 ##### Bilinear Dynamic Setting Examples
 
 ```
-   MaxMonsters=bilinear:16_32*1_1.55;44max
+   MaxMonsters=bilinear:16_32*1_1.5;44max
 ```
 
 Scales MaxMonsters from 16 to 32 with player count on wave 1.
@@ -124,4 +126,10 @@ by the max clause).
 ```
 
 This gradually decreases SpawnPoll as the player count and 
-wave index increase.
+wave index increase.  In a solo short game, we would get:
+
+* Wave 1: SP = 1.5
+* Wave 2: SP = 1.25
+* Wave 3: SP = 1.0
+* Wave 4: SP = 0.75
+* Boss Wave: SP = 0.75
