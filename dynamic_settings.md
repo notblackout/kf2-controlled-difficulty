@@ -6,6 +6,10 @@ These are called "dynamic settings".
 This is useful on CD dedicated servers.  The admin can use this feature to make CD automatically tailor its difficulty
 settings to the number of players present and how far they are in the current game (wave-wise).
 
+It's also useful solo for ratcheting difficulty wave-by-wave.  Want spawn frequency and maxmonsters to gradually
+increase from one wave to the next, slowly turning the screws?  Dynamic Settings help you do this automatically
+with precision and repeatability.
+
 ### Supported Options
 
 The following CD options support dynamism:
