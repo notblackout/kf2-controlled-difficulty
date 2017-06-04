@@ -120,8 +120,8 @@ to 44 (it would be slightly higher by the end, but is limited
 by the max clause).
 
 ```
-   MinSpawnInterval=bilinear:1_0.75P*1.5_0.75W
+   SpawnPoll=bilinear:1_0.75P*1.5_0.75W
 ```
 
-This gradually decreases MinSpawnInterval as the player count and 
+This gradually decreases SpawnPoll as the player count and 
 wave index increase.
