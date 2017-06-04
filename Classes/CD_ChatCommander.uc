@@ -378,7 +378,7 @@ private final function DumbLineWrapper( const out string s, const out string t, 
 
 private function string GetCDVersionChatString()
 {
-	return "Commit=" $ `CD_COMMIT_HASH $ "\nDate=" $ `CD_AUTHOR_TIMESTAMP;
+	return "Type="$ `CD_BUILD_TYPE $"\nCommit=" $ `CD_COMMIT_HASH $"\nDate=" $ `CD_AUTHOR_TIMESTAMP;
 }
 
 

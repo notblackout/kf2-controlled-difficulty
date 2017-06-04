@@ -1297,7 +1297,7 @@ function StartWave()
 
 private function DisplayWaveStartMessageInChat()
 {
-	BroadcastCDEcho( "[Controlled Difficulty - Hash \""$ `CD_COMMIT_HASH $"\"]\n" $ ChatCommander.GetCDInfoChatString( "brief" ) );
+	BroadcastCDEcho( "[Controlled Difficulty - "$ `CD_BUILD_TYPE $" \""$ `CD_COMMIT_HASH $"\"]\n" $ ChatCommander.GetCDInfoChatString( "brief" ) );
 }
 
 private function DisplayDynamicSettingSummaryInChat()
