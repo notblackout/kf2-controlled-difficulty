@@ -211,7 +211,7 @@ function float GetValue( const int WaveNum, const int MaxWaveNum, const int Huma
 
 	PlayerAlpha = float(ClampedHumanIndex) / float(MaxHumanIndex);
 	WaveAlpha = float(ClampedWaveIndex) / float(MaxWaveIndex);
-	WaveAlpha = Min( 1.f, WaveAlpha ); // scaling stops on the penultimate (last non-boss) wave
+	WaveAlpha = FMin( 1.f, WaveAlpha ); // scaling stops on the penultimate (last non-boss) wave
 
 	HumanFactor = Lerp( PlayerCoefficientMin, PlayerCoefficientMax, PlayerAlpha );
 	WaveFactor = Lerp( WaveCoefficientMin, WaveCoefficientMax, WaveAlpha );
