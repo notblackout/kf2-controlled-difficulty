@@ -26,7 +26,7 @@ defaultproperties
 	IniDefsArrayName="SpawnPollDefs"
 	OptionName="SpawnPoll"
 	DefaultSettingValue=1.f
-	MinSettingValue=0.05f
+	MinSettingValue=0.1f
 	MaxSettingValue=60.f
 
 	ChatCommandNames=("!cdspawnpoll","!cdsp")
