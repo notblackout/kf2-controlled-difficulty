@@ -136,7 +136,7 @@ function float GetValue( const int WaveNum, const int MaxWaveNum, const int Huma
 
 	ClampedHumanIndex = Clamp( HumanPlayers - 1, 0, Defs[ClampedWaveIndex].fs.Length - 1 );
 
-	`cdlog("Returning "$ Defs[ClampedWaveIndex].fs[ClampedHumanIndex] $
+	`cdlog("Ini: Returning "$ Defs[ClampedWaveIndex].fs[ClampedHumanIndex] $
 	       " (ClampedWaveIndex="$ ClampedWaveIndex $" ClampedHumanIndex="$ ClampedHumanIndex $
 	       " WaveNum="$ WaveNum $ " HumanPlayers=" $ HumanPlayers $ ")");
 

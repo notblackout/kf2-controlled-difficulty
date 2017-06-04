@@ -104,11 +104,9 @@ function RunCDChatCommandIfAuthorized( Actor Sender, string CommandString )
 
 	ResponseMessage = "";
 
-	`cdlog("CommandTokens.Length: "$ CommandTokens.Length);
-
 	if ( MatchChatCommand( CommandTokens[0], Cmd, AuthLevel, CommandTokens.Length - 1 ) )
 	{
-		`cdlog("Invoking chat command via table match");
+		`cdlog("ChatCommander: Invoking chat command via table match", bLogControlledDifficulty);
 		CNDeleg = Cmd.NullaryImpl;
 		CPDeleg = Cmd.ParamsImpl;
 		if ( Cmd.ParamHints.Length == 0 )

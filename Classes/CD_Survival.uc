@@ -781,7 +781,7 @@ function SetSpawnManagerTimer( const optional bool ForceReset = true )
 	if ( ForceReset || !IsTimerActive('SpawnManagerWakeup') )
 	{
 		// Timer does not exist, set it
-		`cdlog("Setting independent SpawnManagerWakeup timer (" $ SpawnPollFloat $")");
+		`cdlog("Setting independent SpawnManagerWakeup timer (" $ SpawnPollFloat $")", bLogControlledDifficulty);
 		SetTimer(SpawnPollFloat, true, 'SpawnManagerWakeup');
 	}
 }
@@ -818,11 +818,11 @@ function TuneSpawnManagerTimer()
 
 		LocalDilation = LocalDilation / SlowDivisor;
 
-		`cdlog("SpawnManagerWakeup's slowed clockwork timedilation: " $ LocalDilation $ " (ZTSS=" $ SlowDivisor $ ")");
+		`cdlog("SpawnManagerWakeup's slowed clockwork timedilation: " $ LocalDilation $ " (ZTSS=" $ SlowDivisor $ ")", bLogControlledDifficulty);
 	}
 	else
 	{
-		`cdlog("SpawnManagerWakeup's realtime clockwork timedilation: " $ LocalDilation);
+		`cdlog("SpawnManagerWakeup's realtime clockwork timedilation: " $ LocalDilation, bLogControlledDifficulty);
 	}
 
 	ModifyTimerTimeDilation('SpawnManagerWakeup', LocalDilation);

@@ -329,17 +329,17 @@ function string RegulateValue( const int OverrideWaveNum )
 		if ( OldValue != NewValue )
 		{
 			StatusMsg = OptionName $"="$ PrettyValue( NewValue ) $" (old: "$ PrettyValue( OldValue ) $ ")";
-			`cdlog( "Regulated "$ StatusMsg ); 
+			`cdlog( "Regulated "$ StatusMsg, bLogControlledDifficulty ); 
 		}
 		else
 		{
 			StatusMsg = OptionName $"="$ PrettyValue( NewValue ) $" (no change)";
-			`cdlog( "Regulated "$ StatusMsg );
+			`cdlog( "Regulated "$ StatusMsg, bLogControlledDifficulty );
 		}
 	}
 	else
 	{
-		`cdlog( "No regulator configured for "$ OptionName );
+		`cdlog( "No regulator configured for "$ OptionName, bLogControlledDifficulty );
 	}
 
 	return StatusMsg;
