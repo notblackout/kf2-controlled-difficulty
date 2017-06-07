@@ -503,7 +503,7 @@ var array<CD_AIWaveInfo> IniWaveInfos;
 var bool AlreadyLoadedIniWaveInfos;
 
 // Reference to CD_DifficultyInfo
-var CD_DifficultyInfo CustomDifficultyInfo;
+var CD_DifficultyInfo CDDI;
 
 // Console/log text output facility
 var CD_ConsolePrinter GameInfo_CDCP;
@@ -1110,10 +1110,10 @@ function CreateDifficultyInfo(string Options)
 	super.CreateDifficultyInfo(Options);
 
 	// the preceding call should have initialized DifficultyInfo
-	CustomDifficultyInfo = CD_DifficultyInfo(DifficultyInfo);
+	CDDI = CD_DifficultyInfo(DifficultyInfo);
 
 	// log that we're done with the DI (note that CD_DifficultyInfo logs param values in its setters)
-	`cdlog("CD_DifficultyInfo ready: " $ CustomDifficultyInfo, bLogControlledDifficulty);
+	`cdlog("CD_DifficultyInfo ready: " $ CDDI, bLogControlledDifficulty);
 }
 
 /*
@@ -1153,6 +1153,44 @@ final function int GetEffectivePlayerCount( int HumanPlayers )
 	{
 		return 0 < FakePlayersInt ? FakePlayersInt : 1;
 	}
+}
+
+final function int GetEffectivePlayerCountForZedType( KFPawn_Monster P, int HumanPlayers )
+{
+	local int FakeValue, EffectiveNumPlayers;
+
+	if ( None != KFPawn_MonsterBoss( P ) )
+	{
+		FakeValue = BossFPInt;
+	}
+	else if ( None != KFPawn_ZedFleshpound( P ) )
+	{
+		FakeValue = FleshpoundFPInt;
+	}
+	else if ( None != KFPawn_ZedScrake( P ) )
+	{
+		FakeValue = ScrakeFPInt;
+	}
+	else
+	{
+		FakeValue = TrashFPInt;
+	}
+
+	if ( FakePlayersModeEnum == FPM_ADD )
+	{
+		EffectiveNumPlayers = HumanPlayers + FakeValue;
+	}
+	else
+	{
+		EffectiveNumPlayers = FakeValue;
+		if ( 0 >= EffectiveNumPlayers )
+		{
+			`cdlog("GetEffectivePlayerCount: Floored EffectivePlayerCount=1 for "$ P, bLogControlledDifficulty);
+			EffectiveNumPlayers = 1;
+		}
+	}
+
+	return EffectiveNumPlayers;
 }
 
 /*
@@ -1244,6 +1282,105 @@ function WaveEnded( EWaveEndCondition WinCondition )
 		BroadcastCDEcho( CDSettingChangeMessage );
 	}
 }
+
+/*
+ * Extended from TWI.  We have to copy-paste most of this function
+ * because it calls a problematic function:
+ *
+ *    function float GetDamageResistanceModifier( byte NumLivingPlayers )
+ *
+ * This function is inherently incompatible with zed-type-specific HP
+ * scaling (e.g. FleshpoundFP).  It's being asked to calculate
+ * KFPawn_Monster.GameResistancePct without knowing the zed type.
+ * This calculation is sensitive to zed-type HP-fakeplayers values,
+ * but there's no way for the function to know which zed-type
+ * HP-fakeplayers value to apply.
+ *
+ * SetMonsterDefaults is the only callsite for that function.  So, we
+ * override SetMonsterDefaults and make it instead call a modified
+ * function specific to CD:
+ *
+ *    function float GetDamageResistanceModifierForZedType( KFPawn_Monster P, byte NumLivingPlayers )
+ *
+ */  
+function SetMonsterDefaults( KFPawn_Monster P )
+{
+	local float HealthMod;
+	local float HeadHealthMod;
+	local float TotalSpeedMod, StartingSpeedMod;
+	local float DamageMod;
+	local int LivingPlayerCount;
+
+	LivingPlayerCount = GetLivingPlayerCount();
+
+	DamageMod = 1.0;
+	HealthMod = 1.0;
+	HeadHealthMod = 1.0;
+
+	// Scale health and damage by game conductor values for versus zeds
+	if( P.bVersusZed )
+	{
+		DifficultyInfo.GetVersusHealthModifier(P, LivingPlayerCount, HealthMod, HeadHealthMod);
+
+		HealthMod *= GameConductor.CurrentVersusZedHealthMod;
+		HeadHealthMod *= GameConductor.CurrentVersusZedHealthMod;
+
+		// scale damage
+		P.DifficultyDamageMod = DamageMod * GameConductor.CurrentVersusZedDamageMod;
+
+		StartingSpeedMod = 1.f;
+		TotalSpeedMod = 1.f;
+	}
+	else
+	{
+		DifficultyInfo.GetAIHealthModifier(P, GameDifficulty, LivingPlayerCount, HealthMod, HeadHealthMod);
+		DamageMod = DifficultyInfo.GetAIDamageModifier(P, GameDifficulty, bOnePlayerAtStart);
+
+		// scale damage
+		P.DifficultyDamageMod = DamageMod;
+
+		StartingSpeedMod = DifficultyInfo.GetAISpeedMod(P, GameDifficulty);
+		TotalSpeedMod = GameConductor.CurrentAIMovementSpeedMod * StartingSpeedMod;
+	}
+
+	//`log("Start P.GroundSpeed = "$P.GroundSpeed$" GroundSpeedMod = "$GroundSpeedMod$" percent of default = "$(P.default.GroundSpeed * GroundSpeedMod)/P.default.GroundSpeed$" RandomSpeedMod= "$RandomSpeedMod);
+
+	// scale movement speed
+	P.GroundSpeed = P.default.GroundSpeed * TotalSpeedMod;
+	P.SprintSpeed = P.default.SprintSpeed * TotalSpeedMod;
+
+	// Store the difficulty adjusted ground speed to restore if we change it elsewhere
+	P.NormalGroundSpeed = P.GroundSpeed;
+	P.NormalSprintSpeed = P.SprintSpeed;
+	P.InitialGroundSpeedModifier = StartingSpeedMod;
+
+	//`log(P$" GroundSpeed = "$P.GroundSpeed$" P.NormalGroundSpeed = "$P.NormalGroundSpeed);
+
+	// Scale health by difficulty
+	P.Health = P.default.Health * HealthMod;
+	if( P.default.HealthMax == 0 )
+	{
+	   	P.HealthMax = P.default.Health * HealthMod;
+	}
+	else
+	{
+	   	P.HealthMax = P.default.HealthMax * HealthMod;
+	}
+
+	P.ApplySpecialZoneHealthMod(HeadHealthMod);
+	P.GameResistancePct = CDDI.GetDamageResistanceModifierForZedType( P, LivingPlayerCount );
+
+	// debug logging
+   	`log("==== SetMonsterDefaults for pawn: " @P @"====",bLogAIDefaults);
+	`log("HealthMod: " @HealthMod @ "Original Health: " @P.default.Health @" Final Health = " @P.Health, bLogAIDefaults);
+	`log("HeadHealthMod: " @HeadHealthMod @ "Original Head Health: " @P.default.HitZones[HZI_HEAD].GoreHealth @" Final Head Health = " @P.HitZones[HZI_HEAD].GoreHealth, bLogAIDefaults);
+	`log("GroundSpeedMod: " @TotalSpeedMod @" Final Ground Speed = " @P.GroundSpeed, bLogAIDefaults);
+	//`log("HiddenSpeedMod: " @HiddenSpeedMod @" Final Hidden Speed = " @P.HiddenGroundSpeed, bLogAIDefaults);
+	`log("SprintSpeedMod: " @TotalSpeedMod @" Final Sprint Speed = " @P.SprintSpeed, bLogAIDefaults);
+	`log("DamageMod: " @DamageMod @" Final Melee Damage = " @P.MeleeAttackHelper.BaseDamage * DamageMod, bLogAIDefaults);
+	//`log("bCanSprint: " @P.bCanSprint @ " from SprintChance: " @SprintChance, bLogAIDefaults);
+}
+
 
 private function ProgramSettingsForNextWave()
 {
@@ -1519,11 +1656,11 @@ exec function CDSpawnSummaries( optional string CycleName, optional int AssumedP
 
 	cdsmClass = class<CD_SpawnManager>( SpawnManagerClasses[GameLength] );
 	// No need to instantiate; we just want to check its default 
-        // values for about Wave MaxAI 
+	// values for about Wave MaxAI 
 	DWS = cdsmClass.default.DifficultyWaveSettings[ Min(GameDifficulty, cdsmClass.default.DifficultyWaveSettings.Length-1) ];
 
 	class'CD_WaveInfoUtils'.static.PrintSpawnSummaries( WaveInfosToSummarize, AssumedPlayerCount,
-		GameInfo_CDCP, GameLength, CustomDifficultyInfo, DWS );
+		GameInfo_CDCP, GameLength, CDDI, DWS );
 
 	CDConsolePrintLogfileHint();
 }

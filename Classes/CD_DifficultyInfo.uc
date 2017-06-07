@@ -11,28 +11,60 @@ class CD_DifficultyInfo extends KFGameDifficulty_Survival
 
 `include(CD_Log.uci)
 
-/** Returns adjusted total num AI modifier for this wave's player num */
-// This is invoked by the base game.
 function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
 {
 	local int EffectivePlayerCount;
-	local float Result;
 
 	EffectivePlayerCount = GetEffectivePlayerCount( NumLivingPlayers );
 
-	Result = GetNumPlayersModifier( NumPlayers_WaveSize, EffectivePlayerCount );
-
-	`cdlog("GetPlayerNumMaxAIModifier: Result="$ Result $" EffectivePlayerCount="$ EffectivePlayerCount, bLogControlledDifficulty);
-
-	return Result;
+	return GetNumPlayersModifier( NumPlayers_WaveSize, EffectivePlayerCount );
 }
 
-/** Scales the health this Zed has by the difficulty level */
-// This is invoked by the base game.
+/*
+ * Extended from TWI.  The only callsite for this is in KFGameInfo.SetMonsterDefaults,
+ * and CD_Survival replaces that call with an equivalent one to
+ * GetDamageResistanceModifierForZedType (a CD-specific extension).
+ *
+ * Nothing should ever call this function.  It's intrinsically unsafe because it
+ * can't tell which of BossFP/FleshpoundFP/ScrakeFP/TrashFP/etc to apply to its
+ * return value.
+ */
+function float GetDamageResistanceModifier( byte NumLivingPlayers )
+{
+	`cdlog("ERROR: GetDamageResistanceModifier should never be called.  Zed HP scaling may be broken!");
+
+	return super.GetDamageResistanceModifier( NumLivingPlayers );
+}
+
+function float GetDamageResistanceModifierForZedType( KFPawn_Monster P, byte NumLivingPlayers )
+{
+	local int EffectiveNumPlayers;
+
+	EffectiveNumPlayers = GetEffectivePlayerCountForZedType( P, NumLivingPlayers );
+
+	return GetNumPlayersModifier( NumPlayers_ZedDamageResistance, EffectiveNumPlayers );
+}
+
+function GetVersusHealthModifier(KFPawn_Monster P, byte NumLivingPlayers, out float HealthMod, out float HeadHealthMod)
+{
+	local byte EffectiveNumPlayers;
+
+	if ( P != none )
+	{
+		HealthMod = GetGlobalHealthMod();
+		HeadHealthMod = GetGlobalHealthMod();
+
+		EffectiveNumPlayers = GetEffectivePlayerCountForZedType( P, NumLivingPlayers );
+
+		// Add another multiplier based on the number of players and the zeds character info scalers
+		HealthMod *= 1.0 + (GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_BodyHealth_Versus ));
+		HeadHealthMod *= 1.0 + (GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_HeadHealth_Versus ));
+	}
+}
+
 function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte NumLivingPlayers, out float HealthMod, out float HeadHealthMod, optional bool bApplyDifficultyScaling=true)
 {
 	local byte EffectiveNumPlayers;
-	local int FakeValue;
 
 	if ( P != none )
 	{
@@ -54,42 +86,13 @@ function GetAIHealthModifier(KFPawn_Monster P, float ForGameDifficulty, byte Num
 			return;
 		}
 
-		if ( None != KFPawn_MonsterBoss( P ) )
-		{
-			FakeValue = Outer.BossFPInt;
-		}
-		else if ( None != KFPawn_ZedFleshpound( P ) )
-		{
-			FakeValue = Outer.FleshpoundFPInt;
-		}
-		else if ( None != KFPawn_ZedScrake( P ) )
-		{
-			FakeValue = Outer.ScrakeFPInt;
-		}
-		else
-		{
-			FakeValue = Outer.TrashFPInt;
-		}
-
-		if ( FakePlayersModeEnum == FPM_ADD )
-		{
-			EffectiveNumPlayers = NumLivingPlayers + FakeValue;
-		}
-		else
-		{
-			EffectiveNumPlayers = FakeValue;
-			if ( 0 >= EffectiveNumPlayers )
-			{
-				`cdlog("HealthFP="$ FakeValue $" is invalid in FakePlayersMode="$ FakePlayersMode $"; using 1", bLogControlledDifficulty);
-				EffectiveNumPlayers = 1;
-			}
-		}
+		EffectiveNumPlayers = GetEffectivePlayerCountForZedType( P, NumLivingPlayers );
 
 		HealthMod *= 1.0 + GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_BodyHealth );
 		HeadHealthMod *= 1.0 + GetNumPlayersHealthMod( EffectiveNumPlayers, P.DifficultySettings.default.NumPlayersScale_HeadHealth );
 
-		`cdlog("GetAIHealthModifier: Monster="$ P $": HealthMod="$ HealthMod $" EffNumPlayers="$ EffectiveNumPlayers $
-		       " NumLivingPlayers="$ NumLivingPlayers $" FPMode="$ FakePlayersMode $" FakeValue="$ FakeValue $")", bLogControlledDifficulty);
+		`cdlog("GetAIHealthModifier: Monster="$ P $": HealthMod="$ HealthMod $" EffectiveNumPlayers="$ EffectiveNumPlayers $
+		       " NumLivingPlayers="$ NumLivingPlayers, bLogControlledDifficulty);
 	}
 }
 
