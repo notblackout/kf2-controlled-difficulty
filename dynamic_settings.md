@@ -27,7 +27,7 @@ The following CD options support dynamism:
 
 Dynamic settings is an optional feature that must be deliberately configured on an option-by-option basis.
 It's never required.  So, if you prefer that your settings never change without manual intervention, just
-don't use the special dynamic setting value syntaxes described in this document ("ini" and "bilinear:...").
+don't use the special dynamic setting value syntaxes described in this document ("ini" and "bilinear;...").
 
 ### Dynamic Setting Modes
 
@@ -35,7 +35,7 @@ Dynamic settings currently support two modes.  In the source code, these are cal
 just an implementation detail right now.
 
 * `ini`
-* `bilinear:<function specifier>`
+* `bilinear;<function specifier>`
 
 #### `ini` Dynamic Setting Configuration
 
@@ -73,12 +73,12 @@ model is similar but not identical.
 
 ### Bilinear Dynamic Setting Configuration
 
-The special value "bilinear:<function specifier >" makes a dynamic setting compute its value according to
+The special value "bilinear;<function specifier>" makes a dynamic setting compute its value according to
 the function you specified.
 
 The function spec is an extremely restricted syntax.  CD does not have a general formula parser.
 
-**Function specification syntax:**  *A*\_*B*[P]\**X*\_*Y*[W][;*Z*max]
+**Function specification syntax:**  *A*\_*B*[P]\**X*\_*Y*[W][,*Z*max]
 
 Parameters *A*, *B*, *X*, *Y*, and *Z* may assume any floating point number value.  Floats should be
 written using only numerals, up to one decimal point, and up to one leading minus sign.  Do not use
@@ -108,15 +108,16 @@ where `WaveAlpha=1.0`.  This the following boss wave also has `WaveAlpha=1.0`.
 If the optional maximum *Z* was omitted, then the `Min` function above is not executed.  The product
 of linear interpolations is used directly.
 
-This function works on floating point numbers internally, but casts to integers where the option
-requires (e.g. MaxMonsters, FakePlayers, etc.). As long as absolute values remain less than 2^24
-(just over 16 million) this will not cause precision errors.  Larger values may cause IEEE 754
-single-precision errors when converting to integers.
+Bilinear functions always compute dynamic setting values at 32-bit float precision internally.
+If the controlled setting is integer-valued (e.g. MaxMonsters or FakePlayers), then the bilinear
+function is still computed using floating point arithmetic, then rounded at the last moment,
+right before assignment.  The implementation uses the engine's native Round( float ) function
+to round floats to ints.
 
 ##### Bilinear Dynamic Setting Examples
 
 ```
-   MaxMonsters=bilinear:16_32*1_1.5;44max
+   MaxMonsters=bilinear;16_32*1_1.5,44max
 ```
 
 Scales MaxMonsters from 16 to 32 with player count on wave 1.
@@ -126,7 +127,7 @@ to 44 (it would be slightly higher by the end, but is limited
 by the max clause).
 
 ```
-   SpawnPoll=bilinear:1_0.75P*1.5_0.75W
+   SpawnPoll=bilinear;1_0.75P*1.5_0.75W
 ```
 
 This gradually decreases SpawnPoll as the player count and 

@@ -18,8 +18,7 @@ class CD_DynamicSetting extends Object
 
     - "indicator", a string.  This essentially says whether
       and how to regulate the option value at runtime.  The
-      parser looks for some known values related to regulation
-      (just "ini" for now, but maybe "bilinear:..." later),
+      parser looks for some known values related to regulation,
       then falls back on trying to convert the string using a
       float(...) cast in every other case.
 
@@ -92,7 +91,7 @@ function bool StageIndicator( const out string Raw, out string StatusMsg, const 
 			StatusMsg = "Parse error in "$ IniDefsArrayName $"; defaulting to "$ StagedIndicator;
 		}
 	}
-	else if ( Left(Raw, 9) ~= "bilinear:" )
+	else if ( Left(Raw, 9) ~= "bilinear;" )
 	{
 		BilinearRegulator = new class'CD_ValueProgram_Bilinear';
 		BilinearRegulator.SetConsolePrinter( GameInfo_CDCP );
@@ -188,7 +187,7 @@ private final function string GetChatLineInternal( bool BriefFormat )
 
 	// TT
 	// MaxMonsters=20@W02, 18@W01 [ini]
-	// MaxMonsters=20@W02, 18@W01 [bilinear:x_yP*s_tW;777max]
+	// MaxMonsters=20@W02, 18@W01 [bilinear;x_yP*s_tW,777max]
 
 	if ( ActualRegulator != None )
 	{
@@ -225,7 +224,7 @@ private final function string GetChatLineInternal( bool BriefFormat )
 	}
 
 	// Append information about the dynamic setting regulator/program in square brackets, if applicable
-	if ( Left(CurIndicator, 9) ~= "bilinear:" )
+	if ( Left(CurIndicator, 9) ~= "bilinear;" )
 	{
 		Result $= " [" $ ( BriefFormat ? "bilinear" : CurIndicator ) $ "]";
 	}
@@ -410,7 +409,7 @@ function bool GetChatWriteCommand( out StructChatCommand scc )
 		desc = "Set " $ OptionName;
 	}
 
-	hint = "ini|" $ ChatWriteParamHintFragment;
+	hint = "ini|bilinear;<func>|" $ ChatWriteParamHintFragment;
 	hints.length = 1;
 	hints[0] = hint;
 

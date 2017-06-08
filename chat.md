@@ -92,7 +92,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdbossfp <ini|int> 
+### !cdbossfp <ini|bilinear;<func>|int> 
 
 *Description:* Set BossFP
 
@@ -106,7 +106,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdcohortsize <ini|int, 0 disables cohort mode> 
+### !cdcohortsize <ini|bilinear;<func>|int, 0 disables cohort mode> 
 
 *Alternate name(s):* !cdcs
 
@@ -122,7 +122,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdfakeplayers <ini|int> 
+### !cdfakeplayers <ini|bilinear;<func>|int> 
 
 *Alternate name(s):* !cdfp
 
@@ -148,7 +148,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdfleshpoundfp <ini|int> 
+### !cdfleshpoundfp <ini|bilinear;<func>|int> 
 
 *Description:* Set FleshpoundFP
 
@@ -162,7 +162,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdmaxmonsters <ini|int, 0 to use unmodded default> 
+### !cdmaxmonsters <ini|bilinear;<func>|int, 0 to use unmodded default> 
 
 *Alternate name(s):* !cdmm
 
@@ -176,7 +176,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdscrakefp <ini|int> 
+### !cdscrakefp <ini|bilinear;<func>|int> 
 
 *Description:* Set ScrakeFP
 
@@ -188,7 +188,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdspawncycle <ini|name_of_spawn_cycle|unmodded> 
+### !cdspawncycle <ini|bilinear;<func>|name_of_spawn_cycle|unmodded> 
 
 *Description:* Set SpawnCycle
 
@@ -202,7 +202,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdspawnmod <ini|float, default is 1.0> 
+### !cdspawnmod <ini|bilinear;<func>|float, default is 1.0> 
 
 *Alternate name(s):* !cdsm
 
@@ -218,7 +218,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdspawnpoll <ini|float, default is 1.0> 
+### !cdspawnpoll <ini|bilinear;<func>|float, default is 1.0> 
 
 *Alternate name(s):* !cdsp
 
@@ -238,7 +238,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdtrashfp <ini|int> 
+### !cdtrashfp <ini|bilinear;<func>|int> 
 
 *Description:* Set TrashFP
 
@@ -274,7 +274,7 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdztspawnslowdown <ini|float, default is 1.0> 
+### !cdztspawnslowdown <ini|bilinear;<func>|float, default is 1.0> 
 
 *Description:* Set ZTSpawnSlowdown
 

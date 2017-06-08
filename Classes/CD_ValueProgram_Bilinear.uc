@@ -14,7 +14,7 @@ class CD_ValueProgram_Bilinear
 
 /*
 
-  bilinear:1_1.25P*1_1.5W;1.75max
+  bilinear;1_1.25P*1_1.5W,1.75max
 
  */
 
@@ -47,7 +47,7 @@ function bool ParseComposite( const out string Composite, const bool ShouldLog )
 		return false;
 	}
 
-	if ( Left( Composite, 9 ) != "bilinear:" )
+	if ( Left( Composite, 9 ) != "bilinear;" )
 	{
 		`cdlog( "Bilinear: Unrecognized prefix (expected \"bilinear\"): " $ Composite, ShouldLog );
 		return false;
@@ -61,7 +61,7 @@ function bool ParseComposite( const out string Composite, const bool ShouldLog )
 		return false;
 	}
 
-	ParseStringIntoArray( Body, Tokens, ";", true );
+	ParseStringIntoArray( Body, Tokens, ",", true );
 
 	if ( 0 == Tokens.Length )
 	{
