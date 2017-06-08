@@ -251,7 +251,7 @@ function SetupChatCommands()
 		}
 	}
 
-	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
+//	SetupSimpleReadCommand( scc, "!cdhelp", "Information about CD's chat commands", GetCDChatHelpReferralString );
 	SetupSimpleReadCommand( scc, "!cdversion", "Display mod version", GetCDVersionChatString );
 }
 
