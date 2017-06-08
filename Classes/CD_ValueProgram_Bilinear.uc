@@ -205,12 +205,34 @@ function float GetValue( const int WaveNum, const int MaxWaveNum, const int Huma
 	ClampedHumanIndex = Clamp( HumanPlayers - 1, 0, MaxHumanIndex );
 
 	MaxWaveIndex = MaxWaveNum - 2; // subtract 1 for num-to-index conversion, subtract 1 to ignore bosswave
+	MaxWaveIndex = 0 > MaxWaveIndex ? 0 : MaxWaveIndex; // this can be negative in pregame warmup
 	ClampedWaveIndex = Clamp( WaveNum - 1, 0, MaxWaveIndex );
 
 	`cdlog( "Bilinear: WaveNum="$ WaveNum $" MaxWaveNum="$ MaxWaveNum $" ClampedWaveindex="$ ClampedWaveIndex $" MaxWaveIndex="$ MaxWaveIndex );
 
-	PlayerAlpha = float(ClampedHumanIndex) / float(MaxHumanIndex);
-	WaveAlpha = float(ClampedWaveIndex) / float(MaxWaveIndex);
+	if ( 0 == MaxHumanIndex )
+	{
+		// This block is probably dead code, but if there are no humans allowed,
+		// setting PlayerAlpha to zero seems less wrong than setting it to one
+		PlayerAlpha = 0; 
+	}
+	else
+	{
+		PlayerAlpha = float(ClampedHumanIndex) / float(MaxHumanIndex);
+	}
+
+
+	if ( 0 == MaxWaveIndex )
+	{
+		// This block is entered during pregame warmup.  I think setting zero
+		// is sensible here.
+		WaveAlpha = 0;
+	}
+	else
+	{
+		WaveAlpha = float(ClampedWaveIndex) / float(MaxWaveIndex);
+	}
+	
 	WaveAlpha = FMin( 1.f, WaveAlpha ); // scaling stops on the penultimate (last non-boss) wave
 
 	HumanFactor = Lerp( PlayerCoefficientMin, PlayerCoefficientMax, PlayerAlpha );
