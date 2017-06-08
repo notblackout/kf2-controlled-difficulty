@@ -18,12 +18,12 @@ protected function float ReadValue()
 
 protected function WriteValue( const out float Val )
 {
-	Outer.TrashFPInt = int(Val);
+	Outer.TrashFPInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
 {
-	return string(int(RawValue));
+	return string(Round(RawValue));
 }
 
 defaultproperties

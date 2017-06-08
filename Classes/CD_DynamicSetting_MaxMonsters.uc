@@ -18,12 +18,12 @@ protected function float ReadValue()
 
 protected function WriteValue( const out float Val )
 {
-	Outer.MaxMonstersInt = int(Val);
+	Outer.MaxMonstersInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
 {
-	return string(int(RawValue));
+	return string(Round(RawValue));
 }
 
 defaultproperties

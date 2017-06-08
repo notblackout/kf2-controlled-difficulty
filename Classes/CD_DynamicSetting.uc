@@ -312,6 +312,7 @@ function string CommitStagedChanges( const int OverrideWaveNum, const optional b
 function string RegulateValue( const int OverrideWaveNum )
 {
 	local float OldValue, NewValue;
+	local string PrettyOldValue, PrettyNewValue;
 	local int NumPlayersPlusDebug;
 	local string StatusMsg;
 
@@ -326,14 +327,16 @@ function string RegulateValue( const int OverrideWaveNum )
 		OldValue = ReadValue();
 		NewValue = ClampedGetValue( OverrideWaveNum, Outer.WaveMax, NumPlayersPlusDebug, Outer.MaxPlayers );
 		WriteValue( NewValue );
-		if ( OldValue != NewValue )
+		PrettyOldValue = PrettyValue( OldValue );
+		PrettyNewValue = PrettyValue( NewValue );
+		if ( PrettyOldValue != PrettyNewValue )
 		{
-			StatusMsg = OptionName $"="$ PrettyValue( NewValue ) $" (old: "$ PrettyValue( OldValue ) $ ")";
+			StatusMsg = OptionName $"="$ PrettyNewValue $" (old: "$ PrettyOldValue $ ")";
 			`cdlog( "Regulated "$ StatusMsg, bLogControlledDifficulty ); 
 		}
 		else
 		{
-			StatusMsg = OptionName $"="$ PrettyValue( NewValue ) $" (no change)";
+			StatusMsg = OptionName $"="$ PrettyNewValue $" (no change)";
 			`cdlog( "Regulated "$ StatusMsg, bLogControlledDifficulty );
 		}
 	}

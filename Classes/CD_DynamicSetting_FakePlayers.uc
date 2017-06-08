@@ -18,12 +18,12 @@ protected function float ReadValue()
 
 protected function WriteValue( const out float Val )
 {
-	Outer.FakePlayersInt = int(Val);
+	Outer.FakePlayersInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
 {
-	return string(int(RawValue));
+	return string(Round(RawValue));
 }
 
 defaultproperties
