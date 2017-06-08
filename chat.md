@@ -74,18 +74,6 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_WRITE]
 
-### !cdalphaglitter 
-
-*Description:* Get AlphaGlitter
-
-*Auth level:* [CDAUTH_READ]
-
-### !cdalphaglitter <true|false> 
-
-*Description:* Set AlphaGlitter
-
-*Auth level:* [CDAUTH_WRITE]
-
 ### !cdboss 
 
 *Description:* Get Boss

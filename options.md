@@ -335,27 +335,6 @@ and anonymous users with CDAUTH_WRITE.
 ### Miscellaneous Settings
 
 
-#### AlphaGlitter
-
-Controls the bright red particle effects that appear around zeds when an
-albino alpha clot rallies them (and himself).
-
-true to play the particle effects normally.  This makes alpha rallies look
-the same as in the vanilla game.
-
-false to disable the particle effects.  An albino alpha clot performing a
-rally will still play his little stomp animation, and a small distortion
-bubble will still appear around his body for a fraction of a second, but
-there will be no bright red particles.  This sometimes aids visibility.
-
-This option is strictly cosmetic.  It does not affect any of the behavior
-aspects of rallies (like damage multiplier, cooldown, movespeed multiplier,
-etc.).  So, even when this is set to false, rallies still happen as usual,
-it's just that it's easier to see them.
-
-This might become a client-side option one day if I can figure out how to do
-that nondisruptively.
-
 #### TraderTime
 
 The trader time, in seconds.  if this is zero or negative, its value is

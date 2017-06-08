@@ -385,29 +385,6 @@ var config ECDAuthLevel DefaultAuthLevel;
 // ### Miscellaneous Settings
 //
 
-// #### AlphaGlitter
-//
-// Controls the bright red particle effects that appear around zeds when an
-// albino alpha clot rallies them (and himself).
-//
-// true to play the particle effects normally.  This makes alpha rallies look
-// the same as in the vanilla game.
-//
-// false to disable the particle effects.  An albino alpha clot performing a
-// rally will still play his little stomp animation, and a small distortion
-// bubble will still appear around his body for a fraction of a second, but
-// there will be no bright red particles.  This sometimes aids visibility.
-//
-// This option is strictly cosmetic.  It does not affect any of the behavior
-// aspects of rallies (like damage multiplier, cooldown, movespeed multiplier,
-// etc.).  So, even when this is set to false, rallies still happen as usual,
-// it's just that it's easier to see them.
-//
-// This might become a client-side option one day if I can figure out how to do
-// that nondisruptively.
-var config string AlphaGlitter;
-var bool AlphaGlitterBool;
-
 // #### TraderTime
 //
 // The trader time, in seconds.  if this is zero or negative, its value is
@@ -483,7 +460,6 @@ var array<CD_DynamicSetting> DynamicSettings;
 var CD_BasicSetting AlbinoAlphasSetting;
 var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
-var CD_BasicSetting AlphaGlitterSetting;
 var CD_BasicSetting BossSetting;
 var CD_BasicSetting FakePlayersModeSetting;
 var CD_BasicSetting SpawnCycleSetting;
@@ -604,9 +580,6 @@ private function SetupBasicSettings()
 	AlbinoGorefastsSetting = new(self) class'CD_BasicSetting_AlbinoGorefasts';
 	RegisterBasicSetting( AlbinoGorefastsSetting );
 
-	AlphaGlitterSetting = new(self) class'CD_BasicSetting_AlphaGlitter';
-	RegisterBasicSetting( AlphaGlitterSetting );
-
 	BossSetting = new(self) class'CD_BasicSetting_Boss';
 	RegisterBasicSetting( BossSetting );
 
@@ -694,7 +667,6 @@ function bool CheckRelevance(Actor Other)
 {
 	local KFDroppedPickup Weap;
 	local KFAIController KFAIC;
-	local KFPawn_ZedClot_Alpha Alpha;
 	local bool SuperRelevant;
 
 	SuperRelevant = super.CheckRelevance(Other);
@@ -720,18 +692,6 @@ function bool CheckRelevance(Actor Other)
 	{
 		KFAIC.bCanTeleportCloser = ZedsTeleportCloserBool;
 		`cdlog("Set bCanTeleportCloser="$ ZedsTeleportCloserBool $" on "$ KFAIC, bLogControlledDifficulty);
-		// might have more checks on zeds, can't return yet
-	}
-
-	if ( !AlphaGlitterBool )
-	{
-		Alpha = KFPawn_ZedClot_Alpha(Other);
-		if ( None != Alpha )
-		{
-			Alpha.SpecialMoveHandler.SpecialMoveClasses[SM_Rally] =
-				class'CD_AlphaRally_NoGlitter';
-			`cdlog( "Disabled glitter on alpha "$ Alpha, bLogControlledDifficulty );
-		}
 	}
 
 	// Should always be true, due to the early return when false

@@ -811,13 +811,25 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	if ( !AlbinoAlphasBool )
 	{
 		`cdlog("AlbinoAlphas="$AlbinoAlphasBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
-
 		// Replace all standard alpha classes with forced-regular alphas
 		MatchClasses.Length = 2;
 		MatchClasses[0] = AIClassList[AT_AlphaClot];
 		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Special';
 		ReplaceZedClass( MatchClasses,
 		                 class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha_Regular',
+		                 AISpawnList );
+	}
+	else
+	{
+		`cdlog("AlbinoAlphas="$AlbinoAlphasBool$": convertingy any KFPawn_ZedClot_Alpha instances to "$
+		       "CD_Pawn_ZedClot_Alpha instances (for AlphaGlitter awareness) at squadidx "$SquadIdx, bLogControlledDifficulty);
+		// Replace KFPawn_ZedClot_Alpha with CD_Pawn_ZedClot_Alpha
+		// Those classes behave identically (including randomly deciding whether to spawn albino or not),
+		// except that the latter respects a client's glitter preference and the former does not
+		MatchClasses.Length = 1;
+		MatchClasses[0] = AIClassList[AT_AlphaClot];
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedClot_Alpha',
 		                 AISpawnList );
 	}
 

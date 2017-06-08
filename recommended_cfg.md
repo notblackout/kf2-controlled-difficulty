@@ -224,20 +224,12 @@ Recommended:
 ```
 [ControlledDifficulty.CD_Survival]
 WeaponTimeout=max ; weapons dropped on the ground won't disappear
-AlphaGlitter=false ; disable the red particle spam on alpha clot rallies
 ZedsTeleportCloser=false ; zeds don't teleport closer to players
 ```
 
 `WeaponTimeout` controls how long weapons can sit on the ground
 before they disappear.  It takes a value in seconds, or the special
 value `max`.
-
-`AlphaGlitter` controls whether albino alpha clots' AOE rally
-ability spews red particle effects.  Setting it to false disables
-the particles but nothing else -- zeds can still be speed and
-damage boosted by rallies like usual, and the rallying zed still
-emits a little distortion air bubble when playing his rally
-animation.
 
 `ZedsTeleportCloser` is the most controversial one in this section.
 It controls whether zeds can teleport around the map in an attempt

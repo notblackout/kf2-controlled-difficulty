@@ -4,6 +4,8 @@ class CD_PlayerController extends KFPlayerController;
 
 var config int ChatCharThreshold;
 var config int ChatLineThreshold;
+var config string AlphaGlitter;
+var bool AlphaGlitterBool;
 
 var CD_ConsolePrinter Client_CDCP;
 var bool ClientLogging;
@@ -38,6 +40,12 @@ simulated event PostBeginPlay()
 	if ( 0 >= ChatCharThreshold )
 	{
 		ChatCharThreshold = 340;
+	}
+
+	if ( "" == AlphaGlitter )
+	{
+		AlphaGlitterBool = true;
+		AlphaGlitter = string( AlphaGlitterBool );
 	}
 }
 
@@ -152,6 +160,21 @@ exec function CDChatLineThreshold( optional int i = -2147483648 )
 		ChatLineThreshold = Clamp(i, 1, 2147483647);
 		SaveConfig();
 		Client_CDCP.Print("Set ChatLineThreshold="$ChatLineThreshold);
+	}
+}
+
+exec function CDAlphaGlitter( optional string b = "" )
+{
+	if ( b == "" )
+	{
+		Client_CDCP.Print("AlphaGlitter="$AlphaGlitter);
+	}
+	else
+	{
+		AlphaGlitterBool = bool( b );
+		AlphaGlitter = string( AlphaGlitterBool );
+		SaveConfig();
+		Client_CDCP.Print("Set AlphaGlitter="$AlphaGlitter);
 	}
 }
 
