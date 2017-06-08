@@ -14,7 +14,7 @@ BUILD_TYPE         := Rel
 FRIENDLY_DATE      := $(shell date -u '+%b %e %Y')
 
 IS_RELEASE               := true
-IS_WORKING_DIR_DIRTY     := $(shell git diff-index --quiet HEAD -- ; echo $?)
+IS_WORKING_DIR_DIRTY     := $(shell git diff-index --quiet HEAD -- ; echo $$?)
 CURRENT_COMMIT_TAG_COUNT := $(shell git tag -l --points-at HEAD | wc -l)
 
 LINEFEED           := $(shell echo -e '\r')
@@ -36,7 +36,7 @@ ifeq ($(CURRENT_COMMIT_TAG_COUNT),0)
 	GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
 	BUILD_TYPE              := BETA
 endif
-ifeq ($(IS_WORKING_DIR_DIRTY),0)
+ifeq ($(IS_WORKING_DIR_DIRTY),1)
 	IS_RELEASE              := false
 	WSUP_TITLE              := Controlled Difficulty Beta
 	WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
@@ -68,6 +68,7 @@ define BUILDINFO_UCI
 `define CD_AUTHOR_DATE "$(GIT_UTC_DATE)"
 `define CD_AUTHOR "$(GIT_AUTHOR)"
 endef
+
 
 #
 # Targets/rules/recipes
