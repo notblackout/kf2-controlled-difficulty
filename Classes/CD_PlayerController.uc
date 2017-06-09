@@ -2,13 +2,18 @@ class CD_PlayerController extends KFPlayerController;
 
 `include(CD_Log.uci)
 
-var config int ChatCharThreshold;
-var config int ChatLineThreshold;
 var config string AlphaGlitter;
 var bool AlphaGlitterBool;
 
+var config int ChatCharThreshold;
+
+var config int ChatLineThreshold;
+
+var config bool ClientLogging;
+
+
+
 var CD_ConsolePrinter Client_CDCP;
-var bool ClientLogging;
 
 var const string CDEchoMessageColor;
 
@@ -44,9 +49,10 @@ simulated event PostBeginPlay()
 
 	if ( "" == AlphaGlitter )
 	{
-		AlphaGlitterBool = true;
-		AlphaGlitter = string( AlphaGlitterBool );
+		AlphaGlitter = "true";
 	}
+
+	AlphaGlitterBool = bool( AlphaGlitter );
 }
 
 reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type, optional float MsgLifeTime  )
@@ -118,63 +124,6 @@ reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, n
 	{
 		// Everything else is processed as usual
 		super.TeamMessage( PRI, S, Type, MsgLifeTime );
-	}
-}
-
-exec function CDChatCharThreshold( optional int i = -2147483648 )
-{
-	if ( i == -2147483648 )
-	{
-		Client_CDCP.Print("ChatCharThreshold="$ChatCharThreshold);
-	}
-	else
-	{
-		ChatCharThreshold = Clamp(i, 40, 2147483647);
-		SaveConfig();
-		Client_CDCP.Print("Set ChatCharThreshold="$ChatCharThreshold);
-	}
-}
-
-exec function CDClientLogging( optional string b = "" )
-{
-	if ( b == "" )
-	{
-		Client_CDCP.Print("ClientLogging="$ClientLogging);
-	}
-	else
-	{
-		ClientLogging = bool(b);
-		SaveConfig();
-		Client_CDCP.Print("Set ClientLogging="$ClientLogging);
-	}
-}
-
-exec function CDChatLineThreshold( optional int i = -2147483648 )
-{
-	if ( i == -2147483648 )
-	{
-		Client_CDCP.Print("ChatLineThreshold="$ChatLineThreshold);
-	}
-	else
-	{
-		ChatLineThreshold = Clamp(i, 1, 2147483647);
-		SaveConfig();
-		Client_CDCP.Print("Set ChatLineThreshold="$ChatLineThreshold);
-	}
-}
-
-exec function CDAlphaGlitter( optional string b = "" )
-{
-	if ( b == "" )
-	{
-		Client_CDCP.Print("AlphaGlitter="$AlphaGlitter);
-	}
-	else
-	{
-		AlphaGlitterBool = bool( b );
-		AlphaGlitter = string( AlphaGlitterBool );
-		SaveConfig();
-		Client_CDCP.Print("Set AlphaGlitter="$AlphaGlitter);
 	}
 }
 
