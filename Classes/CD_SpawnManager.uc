@@ -168,7 +168,7 @@ function string GetWaveAverageSpawnrate()
 	}
 	else
 	{
-		SpawnrateString = FormatFloatToTwoDecimalPlaces( WaveTotalAI / ( FinalSpawnTimestamp - FirstSpawnTimestamp) ) $ " avg zed/s spawnrate";
+		SpawnrateString = FormatFloatToTwoDecimalPlaces( NumAISpawnsQueued / ( FinalSpawnTimestamp - FirstSpawnTimestamp) ) $ " avg zed/s spawnrate";
 	}
 
 
