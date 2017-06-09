@@ -14,6 +14,7 @@ including configurations much harder than Tripwire's top-end Hell on Earth diffi
 ## Reference Documentation
 
 * [chat.md - Chat Commands](chat.md)
+* [client_config.md - Client-Side Config Options](client_config.md)
 * [console.md - Console Commands](console.md)
 * [dynamic_settings.md - Dynamic Settings Reference](dynamic_settings.md)
 * [faq.md - Frequently Asked Questions](faq.md)
