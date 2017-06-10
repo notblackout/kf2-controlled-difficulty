@@ -15,7 +15,7 @@ FRIENDLY_DATE      := $(shell date -u '+%b %e %Y')
 
 IS_RELEASE               := true
 IS_WORKING_DIR_DIRTY     := $(shell git diff-index --quiet HEAD -- ; echo $$?)
-CURRENT_COMMIT_TAG_COUNT := $(shell git tag -l --points-at HEAD | wc -l)
+RELEASE_TAG_COUNT        := $(shell git tag -l --points-at HEAD | grep -v beta | wc -l)
 
 LINEFEED           := $(shell echo -e '\r')
 
@@ -29,7 +29,7 @@ wsup_specfile.txt : WSUP_TMPDIR_ABS_WIN   := $(shell cygpath --windows --absolut
 
 # If the git working directory has changes, tweak the version string
 # and branding information for the workshop item
-ifeq ($(CURRENT_COMMIT_TAG_COUNT),0)
+ifeq ($(RELEASE_TAG_COUNT),0)
 	IS_RELEASE              := false
 	WSUP_TITLE              := Controlled Difficulty Beta
 	WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
