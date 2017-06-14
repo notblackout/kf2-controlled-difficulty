@@ -154,6 +154,18 @@ Playing CD solo automatically and unconditionally enables all chat commands.  Th
 
 *Auth level:* [CDAUTH_WRITE]
 
+### !cdfleshpoundragespawns 
+
+*Description:* Get FleshpoundRageSpawns
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdfleshpoundragespawns <true|false> 
+
+*Description:* Set FleshpoundRageSpawns
+
+*Auth level:* [CDAUTH_WRITE]
+
 ### !cdmaxmonsters 
 
 *Alternate name(s):* !cdmm

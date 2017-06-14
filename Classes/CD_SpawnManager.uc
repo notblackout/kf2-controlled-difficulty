@@ -845,6 +845,34 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		                 class'ControlledDifficulty.CD_Pawn_ZedGorefast_Regular',
 		                 AISpawnList );
 	}
+
+	if ( !FleshpoundRageSpawnsBool )
+	{
+		`cdlog("FleshpoundRageSpawns="$FleshpoundRageSpawnsBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
+
+		// Replace all standard fleshpound classes with forced-lazy gorefasts
+		MatchClasses.Length = 2;
+		MatchClasses[0] = AIClassList[AT_FleshPound];
+		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedFleshpound_RS';
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedFleshpound_NRS',
+		                 AISpawnList );
+
+		// Same, but for minis
+		MatchClasses.Length = 2;
+		MatchClasses[0] = AIClassList[AT_FleshpoundMini];
+		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedFleshpoundMini_RS';
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedFleshpoundMini_NRS',
+		                 AISpawnList );
+
+		// Same, but for FleshpoundKing
+		MatchClasses.Length = 1;
+		MatchClasses[0] = class'ControlledDifficulty.CD_Pawn_ZedFleshpound_Spec_RS';
+		ReplaceZedClass( MatchClasses,
+		                 class'ControlledDifficulty.CD_Pawn_ZedFleshpound_Spec_NRS',
+		                 AISpawnList );
+	}
 }
 
 function ReplaceZedClass( const array< class< KFPawn_Monster > > MatchClasses,

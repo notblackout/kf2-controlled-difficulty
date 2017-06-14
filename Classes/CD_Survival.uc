@@ -221,6 +221,25 @@ var bool AlbinoGorefastsBool;
 var config string Boss;
 var ECDBossChoice BossEnum;
 
+// #### FleshpoundRageSpawns
+//
+// Controls whether fleshpounds and mini fleshpounds can spawn already enraged.
+//
+// true allows fleshpounds and mini fleshpounds to spawn enraged.  When
+// SpawnCycle=unmodded, this happens randomly, with a chance that depends on
+// difficulty, just like in vanilla KF2.  If SpawnCycle is not unmodded, then
+// fleshpounds and mini fleshpounds spawn according to the SpawnCycle.  If the
+// configured SpawnCycle has no fleshpounds or mini fleshpounds designated to
+// spawn enraged (with a trailing ! character), then none will spawn even if
+// this option is set to true.
+//
+// false prevents fleshpounds and mini fleshpounds from spawning enraged at.
+// Even if the SpawnCycle mandates a fleshpound or mini fleshpound that would
+// spawn enraged, when this is false, it spawns unenraged.
+var config string FleshpoundRageSpawns;
+var bool FleshpoundRageSpawnsBool;
+
+
 // #### SpawnCycle
 //
 // Says whether to use a SpawnCycle (and if so, which one).
@@ -462,6 +481,7 @@ var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
 var CD_BasicSetting BossSetting;
 var CD_BasicSetting FakePlayersModeSetting;
+var CD_BasicSetting FleshpoundRageSpawnsSetting;
 var CD_BasicSetting SpawnCycleSetting;
 var CD_BasicSetting TraderTimeSetting;
 var CD_BasicSetting WeaponTimeoutSetting;
@@ -585,6 +605,9 @@ private function SetupBasicSettings()
 
 	FakePlayersModeSetting = new(self) class'CD_BasicSetting_FakePlayersMode';
 	RegisterBasicSetting( FakePlayersModeSetting );
+
+	FleshpoundRageSpawnsSetting = new(self) class'CD_BasicSetting_FleshpoundRageSpawns';
+	RegisterBasicSetting( FleshpoundRageSpawnsSetting );
 
 	SpawnCycleSetting = new(self) class'CD_BasicSetting_SpawnCycle';
 	RegisterBasicSetting( SpawnCycleSetting );

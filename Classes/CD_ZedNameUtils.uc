@@ -48,6 +48,10 @@ static function EAIType GetZedType( string ZedName )
 	{
 		return AT_FleshPound;
 	}
+	else if ( ZedName == "MF" || ZedName == "MFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName == Left("MINIFLESHPOUND", ZedLen)) )
+	{
+		return AT_FleshpoundMini;
+	}
 	// DG(F) / DoubleGorefast reserved
 	else if ( ZedName == "G" || ZedName == "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName == Left("GOREFAST", ZedLen)) )
 	{
@@ -101,6 +105,10 @@ static function GetZedFullName( const AISquadElement SquadElement, out string Ze
 	{
 		ZedName = "Fleshpound";
 	}
+	else if ( SquadElement.Type == AT_FleshpoundMini )
+	{
+		ZedName = "MiniFleshpound";
+	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
 		ZedName = "Gorefast";
@@ -130,7 +138,7 @@ static function GetZedFullName( const AISquadElement SquadElement, out string Ze
 		ZedName = "Siren";
 	}
 
-	AppendAsteriskIfSpecialZedClass( SquadElement.CustomClass, ZedName );
+	AppendModifierChars( SquadElement.CustomClass, ZedName );
 }
 
 static function GetZedTinyName( const AISquadElement SquadElement, out string ZedName )
@@ -152,6 +160,10 @@ static function GetZedTinyName( const AISquadElement SquadElement, out string Ze
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
 		ZedName = "F";
+	}
+	else if ( SquadElement.Type == AT_FleshpoundMini )
+	{
+		ZedName = "MF";
 	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
@@ -182,7 +194,7 @@ static function GetZedTinyName( const AISquadElement SquadElement, out string Ze
 		ZedName = "SI";
 	}
 
-	AppendAsteriskIfSpecialZedClass( SquadElement.CustomClass, ZedName );
+	AppendModifierChars( SquadElement.CustomClass, ZedName );
 }
 
 static function GetZedShortName( const AISquadElement SquadElement, out string ZedName )
@@ -204,6 +216,10 @@ static function GetZedShortName( const AISquadElement SquadElement, out string Z
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
 		ZedName = "FP";
+	}
+	else if ( SquadElement.Type == AT_FleshpoundMini )
+	{
+		ZedName = "MF";
 	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
@@ -234,20 +250,30 @@ static function GetZedShortName( const AISquadElement SquadElement, out string Z
 		ZedName = "SI";
 	}
 
-	AppendAsteriskIfSpecialZedClass( SquadElement.CustomClass, ZedName );
+	AppendModifierChars( SquadElement.CustomClass, ZedName );
 }
 
-static function AppendAsteriskIfSpecialZedClass( const class CustomClass, out string ZedName )
+static function AppendModifierChars( const class CustomClass, out string ZedName )
 {
 	local string s;
 
 	if ( CustomClass != None )
 	{
-	 	s = string( CustomClass.name );
+	 	s = Locs( string( CustomClass.name ) );
 
-		if ( Left(s, 7) == "CD_Pawn" && Right(s, 8) == "_Special" )
+		if ( Left(s, 7) != "cd_pawn")
+		{
+			return;
+		}
+
+		if ( 0 < InStr( s, "_spec" ) )
 		{
 			ZedName = ZedName $ "*";
+		}
+
+		if ( 0 < InStr( s, "_rs" ) )
+		{
+			ZedName = ZedName $ "!";
 		}
 	}
 }
@@ -286,7 +312,6 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 
 	NewClass = OrigClass;
 
-	// This really should be an associative array, but unrealscript is kind of barbaric
 	if ( OrigClass == class'CD_Pawn_ZedCrawler_Special' || 
 	     OrigClass == class'CD_Pawn_ZedCrawler_Regular' )
 	{
@@ -301,6 +326,21 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 	          OrigClass == class'CD_Pawn_ZedGorefast_Regular' )
 	{
 		NewClass = class'KFPawn_ZedGorefast';
+	}
+	else if ( OrigClass == class'CD_Pawn_ZedFleshpound_NRS' ||
+	          OrigClass == class'CD_Pawn_ZedFleshpound_RS' )
+	{
+		NewClass = class'KFPawn_ZedFleshpound';
+	}
+	else if ( OrigClass == class'CD_Pawn_ZedFleshpoundMini_NRS' ||
+	          OrigClass == class'CD_Pawn_ZedFleshpoundMini_RS' )
+	{
+		NewClass = class'KFPawn_ZedFleshpoundMini';
+	}
+	else if ( OrigClass == class'CD_Pawn_ZedFleshpound_Spec_NRS' ||
+	          OrigClass == class'CD_Pawn_ZedFleshpound_Spec_RS' )
+	{
+		NewClass = class'KFPawn_ZedFleshpoundKing';
 	}
 
 	// Log what we just did

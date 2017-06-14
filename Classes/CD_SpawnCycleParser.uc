@@ -213,12 +213,13 @@ private function CD_AIWaveInfo ParseSpawnCycleDef( const string rawSchedule, con
  */
 private function bool ParseSquadElement( const out String ElemDef, out AISquadElement SquadElement )
 {
-	local int ElemStrLen, UnicodePoint, ElemCount, i;
-	local string ElemType;
+	local int ElemStrLen, UnicodePoint, ElemCount, ModifierCharIndex, i;
+	local string ElemType, MaybeModifierChar;
 	local EAIType ElemEAIType;
-	local bool IsSpecial;
+	local bool IsSpecial, IsRagedOnSpawn;
 
 	IsSpecial = false;
+	IsRagedOnSpawn = false;
 	ElemStrLen = Len( ElemDef );
 
 	if ( 0 == ElemStrLen )
@@ -253,15 +254,38 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	// at least).  We will have to check that constraint later so
 	// that we correctly reject requests for nonexistent specials,
 	// e.g. albino scrake.
-	if ( "*" == Right( ElemDef, 1 ) )
+	for ( ModifierCharIndex = ElemStrLen - 1; 0 <= ModifierCharIndex; ModifierCharIndex-- )
 	{
-		IsSpecial = true;
+		MaybeModifierChar = Mid( ElemDef, ModifierCharIndex, 1 );
 
-		// Check that the zed name is not empty
-		if ( i >= ElemStrLen - 1)
+		if ( "*" == MaybeModifierChar )
 		{
-			return PrintElemParseError("Spawn element \""$ ElemDef $"\" could not be parsed.");
+			IsSpecial = true;
+
+			// Check that the zed name is not empty
+			if ( ModifierCharIndex <= i )
+			{
+				return PrintElemParseError("Spawn element \""$ ElemDef $"\" could not be parsed.");
+			}
+
+			continue;
 		}
+
+		if ( "!" == MaybeModifierChar )
+		{
+			IsRagedOnSpawn = true;
+
+			// Check that the zed name is not empty
+			if ( ModifierCharIndex <= i )
+			{
+				return PrintElemParseError("Spawn element \""$ ElemDef $"\" could not be parsed.");
+			}
+
+			continue;
+		}
+
+		// This char did not match any known modifiers chars.  We've started cutting into the zed name.
+		break;
 	}
 
 	// Cut string into two parts.
@@ -273,7 +297,7 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	// totally unverified at this stage.  We exclude the * suffix
 	// (if it was detected above).
 	ElemCount = int( Mid( ElemDef, 0, i ) );
-	ElemType  = Mid( ElemDef, i, ElemStrLen - i - ( IsSpecial ? 1 : 0 ) );
+	ElemType  = Mid( ElemDef, i, ElemStrLen - i - ( IsSpecial ? 1 : 0 ) - ( IsRagedOnSpawn ? 1 : 0 ) );
 
 	// Check value range for ElemCount
 	if ( ElemCount < MinZedsInElement )
@@ -300,11 +324,18 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	// If the ElemDef requested a special zed, then we need to
 	// check that the zed described by ElemType actually has a
 	// special/albino variant.
-	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler || ElemEAIType == AT_GoreFast ) )
+	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler || ElemEAIType == AT_GoreFast || ElemEAIType == AT_FleshPound ) )
 	{
 		return PrintElemParseError("\""$ ElemType $"\" does not have a special variant."$
-		      "  Remove the trailing asterisk from \""$ ElemDef $"\" to spawn a non-special equivalent.");
+		      "  Remove the asterisk from \""$ ElemDef $"\" for a non-special equivalent.");
 	}
+
+	if ( IsRagedOnSpawn && !( ElemEAIType == AT_FleshPound || ElemEAIType == AT_FleshpoundMini ) )
+	{
+		return PrintElemParseError("\""$ ElemType $"\" does not have a raged-on-spawn variant."$
+		      "  Remove the exclamation point from \""$ ElemDef $"\" for a non raged-on-spawn equivalent.");
+	}
+
 
 	SquadElement.Type = ElemEAIType;
 	SquadElement.Num = ElemCount;
@@ -327,6 +358,27 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 		SquadElement.CustomClass = IsSpecial ?
 			class'CD_Pawn_ZedGorefast_Special' :
 			class'CD_Pawn_ZedGorefast_Regular' ;
+	}
+	else if ( ElemEAIType == AT_FleshpoundMini )
+	{
+		SquadElement.CustomClass = IsRagedOnSpawn ?
+			class'CD_Pawn_ZedFleshpoundMini_RS' :
+			class'CD_Pawn_ZedFleshpoundMini_NRS' ;
+	}
+	else if ( ElemEAIType == AT_FleshPound )
+	{
+		if ( IsRagedOnSpawn )
+		{
+			SquadElement.CustomClass = IsSpecial ?
+				class'CD_Pawn_ZedFleshpound_Spec_RS' :
+				class'CD_Pawn_ZedFleshpound_RS' ;
+		}
+		else
+		{
+			SquadElement.CustomClass = IsSpecial ?
+				class'CD_Pawn_ZedFleshpound_Spec_NRS' :
+				class'CD_Pawn_ZedFleshpound_NRS' ;
+		}
 	}
 	else
 	{
