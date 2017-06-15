@@ -1,124 +1,54 @@
 [h1]Summary[/h1]
 
-This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival, which supports the following:
+This open source mod creates a custom game mode called ControlledDifficulty.CD_Survival.  This game mode stays close to TWI's vanilla gameplay, but puts you in control of aspects TWI hardcoded or made random.  CD can be configured to present much harder difficulty than Hell on Earth.  That is CD's main purpose.  However, CD is offers powerful configuration mechanisms, so it can also be configured to present easy difficulty, or exotic difficulties, such as large groups of infrequently spawning zeds (e.g. 64 zeds every 30 seconds).
+
+[h1]Feature Overview[/h1]
 
 * Disabling the game conductor's variation of the zed spawn intensity and move speed
-* "Faking" players; this increases the zed count (but not zed health) as though additional players were present
+* 'Faking' players; this increases the zed count (but not zed health) as though additional players were present
 * Setting an arbitrary, fixed spawn intensity, without conductor interference
 * Setting the max amount live zeds
+* Multiple parameters for fine-tuning the spawn system, allowing a continuum of spawnrates ranging from more than 192 zeds a second to less than one zed a second
 * Setting a SpawnCycle, which controls exactly which zeds spawn and in what order
-* Setting trader time
+* Chat commands to read and modify the configuration
+* Configuring and/or pausing trader time
+* Displaying live stats after each wave showing the true spawnrate and squad/cohort count
+* Optionally automatically scaling difficulty parameters in response to playercount and wave number
 * Setting the dropped weapon timeout
 * Selectively disabling albino crawlers, alphas, and gorefasts
+* Optionally disabling the glitter-like alpha clot's red particle effects
+* Controlling whether fleshpounds are allowed to spawn already enraged
 * Controlling which boss spawns
-* Chat commands to read and modify the configuration
+
+[h1]Current Release Info[/h1]
 
 [b]Version[/b]: $MOD_VERSION
 [b]Date[/b]: $MOD_DATE
-[b]Last Tested KF2 Version[/b]: KF2 v1050
+[b]Last Tested KF2 Version[/b]: KF2 v1053
 [b]Source[/b]: https://github.com/notblackout/kf2-controlled-difficulty
-
-This mod is intended to support solo faked-player HOE challenges.
-
-In the vanilla game, the Game Conductor controls spawn intensity. This is expressed as a floating point number, where smaller numbers result in more frequent zed spawns and larger numbers result in less frequent zed spawns.
-
-The vanilla GC varies the spawn intensity value based on some crude heuristics about how well the player is supposedly doing.  In this mod, you set a specific intensity value before starting the game.  It does not change during play.  Values from 0 to 1, inclusive, are supported (since version e048b0e, built 2016-09-15), where smaller numbers are more intense, i.e. more frequent spawns.  For reference, the standard game conductor varies this number between 1.0 (easiest) and 0.75 (hardest) on HOE.
 
 [h1]Installation[/h1]
 
 Click subscribe.  Restart the game if it is running (to make the game sync workshop items).  That's it.  You don't have to edit any files or manually download anything.
 
-To play, paste one of the console commands listed in the next section.  You can run those commands from KF2's main menu.
+To play, paste one of the console commands from the "getting started" documentation link below.
 
-This mod only activates when you run an 'open' console command and specify the '?game=ControlledDifficulty.CD_Survival' parameter as shown in the next section.  Mulitplayer games and solo games started through the GUI are not affected by this mod.
+[h1]Documentation[/h1]
 
-[h1]Console Command Examples (Start Here)[/h1]
+[b] CD Manual Table of Contents: [/b]
 
-The easiest way to get started is to open the KF2 console at the main menu (using the ` or ~ key on US keyboards) and to paste one of the following commands.  Change the map name as desired.
+(also at: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/readme.md )
 
-[code]open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?Difficulty=3?GameLength=2?TraderTime=30?FakePlayers=1?MaxMonsters=24?SpawnMod=0.85?AlbinoCrawlers=false[/code]
-
-For complete documentation of available options and their values, see this page:
-
-[b]Option Documentation[/b]
-https://github.com/notblackout/kf2-controlled-difficulty/blob/master/options.md
-
-[h1]What's a SpawnCycle?[/h1]
-
-SpawnCycle is a CD feature that lets you specify exactly which types of zeds spawn, in what amounts, an what squad compositions, and in what order.  You completely control the order in which zeds appear when using a SpawnCycle.  This removes a major random aspect of the unmodded game, which selects random squads and spawns them in a random order.  That can be very annoying during challenge runs, since a huge aspect of difficulty is what sorts of big zeds spawn and when the spawn, and the vanilla game just varies that aspect randomly.  SpawnCycle takes this random element and puts it under your control.
-
-You can write your own SpawnCycle from scratch, if you want absolute control.  You can also select from a set of built-in SpawnCycle 'presets' contributed by community members.  These presets are easier to use than writing your own cycle from scratch, but don't offer much configurability.
-
-For complete documentation of SpawnCycles, see this page:
-
-[b]SpawnCycle Documentation[/b]
-https://github.com/notblackout/kf2-controlled-difficulty/blob/master/spawn.md
-
-[h1]KFGame.ini Section: [ControlledDifficulty.CD_Survival][/h1]
-
-CD does not require .ini edits to get started.  You can paste one of the console commands listed in the preceding section if you just want to play.
-
-Whenever you run the mod, it writes its settings to KFGame.ini under the [ControlledDifficulty.CD_Survival] section, if KFGame.ini is not readonly.  This KFGame.ini section merely remembers the last options explicitly specified in the console, so that you don't have to repeatedly type parameters that you never change.  You don't have to edit it directly, though you can.
-
-For instance, if you run
-
-[b]open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?FakePlayers=5[/b]
-
-then FakePlayers=5 will be written to CD's section in KFGame.ini.
-
-If you subsequently run
-
-[b]open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival[/b]
-
-then CD will read the saved FakePlayers=5 value from KFGame.ini and apply it automatically.  Likewise for the other CD options.
-
-KFGame.ini is usually in [b]<your homedir>\Documents\My Games\KillingFloor2\KFGame\Config[/b].
-
-When the KFGame.ini section is missing or incomplete, CD assumes:
-
-* no faked players
-* standard trader time for the difficulty level
-* standard weapon timeout (currently five minutes)
-* standard MaxMonsters (generally 16 in standalone/solo, compared to 32 on multiplayer servers)
-* SpawnMod = 1.0
-* no SpawnCycle
-* no albinos disabled
-
-This default state is nearly identical to the standard game.  The only difference under default settings is CD's constant SpawnMod compared to the unmodded game's variable SpawnMod.
-
-[h1]Logging[/h1]
-
-Configure Controlled Difficulty's logging output by either:
-
-* Setting bLogControlledDifficulty=<true|false> in KFGame.ini's [ControlledDifficulty.CD_Survival] KFGame.ini section
-* Running logControlledDifficulty <true|false> in the console
-
-To see this logging output in realtime, add '-log' to KF2's launch options. This makes KF2 open two windows instead of one: one white-on-black text terminal for logging output, one for the regular game.
-
-Optionally, consider also enabling AISpawnManager logging of zed/squad spawns.  Enable it by adding this to your KFGame.ini:
-
-[KFGame.KFAISpawnManager]
-bLogAISpawning=true
-
-[h1]How does CD relate to Skell's Faked Suite and Project One mods?[/h1]
-
-I made this mod after P1 went unmaintained, but before Skell returned to make FS.  There is significant feature overlap, though some things are unique on each side. Both mods are good.
-
-[h1]Where can I get KF-Hillside?[/h1]
-
-http://forums.tripwireinteractive.com/forum/killing-floor-2/killing-floor-2-modifications/level-design-ac/beta-map-releases-aa/114043-kf-hillside
-
-CD works with any map, not just Hillside.  But Hillside is good for a lot of solo challenges.
-
-[h1]Why doesn't this work with the 'FP Legs + Backpack Weapons' mutator?[/h1]
-
-CD doesn't work with https://steamcommunity.com/sharedfiles/filedetails/?id=679113913.  At a minimum, that mutator appears to break CD's chat commands.  For all I know, it breaks other things too; I haven't checked.
-
-That mutator's description says that it 'is not compatible with mods that replace the pawn or controller such as ServerExt,' and CD does indeed subclass the player controller.  I can only speculate as to what's going on here, because that mutator's source is, as best I can tell, closed.  CD is open source for all.
-
-[h1]Changelog[/h1]
-
-Changelog: https://github.com/notblackout/kf2-controlled-difficulty/blob/master/changelog.txt
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/getting_started.md]Getting Started[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/recommended_cfg.md]Advice on CD configuration tuning[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/chat.md]Chat Command Reference[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/client_config.md]Client-side Config Options[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/console.md]Console Commands[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/dynamic_settings.md]Dynamic Settings Reference[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/faq.md]Frequently Asked Questions[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/options.md]Configuration Option Reference[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/server.md]Basic Server Setup[/url]
+* [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/spawn.md]SpawnCycle reference[/url]
 
 [h1]Special Thanks[/h1]
 
@@ -126,4 +56,4 @@ Thanks to the following people for variously testing the mod, helping find bugs,
 
 dandyboy66, Fat Cat, Kore, mike5879, Nam, Trance, Skell
 
-All bugs are still my fault :)
+All bugs are still my fault.
