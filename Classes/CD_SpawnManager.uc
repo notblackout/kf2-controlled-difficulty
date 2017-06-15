@@ -795,6 +795,13 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		}
 	}
 
+	MatchClasses.Length = 1;
+	MatchClasses[0] = AIClassList[AT_Scrake];
+	ReplaceZedClass( MatchClasses,
+	                 class'ControlledDifficulty.CD_Pawn_ZedScrake_v1053Hotfix',
+	                 AISpawnList );
+
+
 	if ( !AlbinoCrawlersBool )
 	{
 		`cdlog("AlbinoCrawlers="$AlbinoCrawlersBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);

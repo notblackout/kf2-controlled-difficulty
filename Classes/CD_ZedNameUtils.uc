@@ -342,6 +342,10 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 	{
 		NewClass = class'KFPawn_ZedFleshpoundKing';
 	}
+	else if ( OrigClass == class'CD_Pawn_ZedScrake_v1053Hotfix' )
+	{
+		NewClass = class'KFPawn_ZedScrake';
+	}
 
 	// Log what we just did
 	if ( OrigClass != NewClass )
