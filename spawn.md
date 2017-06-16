@@ -154,7 +154,7 @@ In v1053, TWI introduced a random chance for fleshpounds to rage when they spawn
 
 However, if a FP squad in a SpawnCycle has the "!" suffix character, then its members spawn raged.  This works on both fleshpounds and mini fleshpounds (also known in-game as "Quarter Pounds").
 
-For example, `1FP!` would spawn a fleshpound that is raged from the instant it spawns.  `2MFP!` would spawn a pair of fleshpounds that are both raged from the instant they spawn.
+For example, `1FP!` would spawn a fleshpound that is raged from the instant it spawns.  `2MFP!` would spawn a pair of minifleshpounds that are both raged from the instant they spawn.
 
 When CD`s `FleshpoundRageSpawns` option is set to false, then fleshpounds never spawn raged, even if the SpawnCycle says so.  When that option is set to true, then behavior depends on the SpawnCycle setting.  If the SpawnCycle includes some FP squads with the "!" suffix, then those will spawn enraged.  If the SpawnCycle does not include any FP squads with the "!", then no enraged FPs will spawn, even though `FleshpoundRageSpawns` is true.  If SpawnCycle is unmodded and this option is true, then each FP will randomly decide whether to spawn enraged using a chance dependent on the difficulty, just like in TWI's vanilla game.
 
