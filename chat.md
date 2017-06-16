@@ -6,11 +6,13 @@ These commands all start with the string **"!cd"**.
 
 #### How Chat Commands Work
 
-Chat commands may be issued at any time: in the warmup session before a game starts, during a wave, during trader time, or after a game has ended.
+Chat commands may be issued at any time CD is loaded: in the warmup session before a game starts, during a wave, during trader time, or after a game has ended.
 
-Chat commands that do not modify the configuration always respond immediately.
+Every chat command belongs to exactly one of two categories: `CDAUTH_READ` or `CDAUTH_WRITE`.  An example of a `CDAUTH_READ` command is **"!cdfakeplayers"**, which prints the current FakePlayers setting.  An example of a `CDAUTH_WRITE` command is **"!cdfakeplayers 5"**, which sets FakePlayers to 5.
 
-Chat commands that would modify the configuration take effect immediately when issued outside a wave.  However, when executed inside a wave, modifying commands do something called "staging".  This means the command writes your modification to temporary storage without applying it right away.  When a command issued mid-wave stages your change, it will immediately respond with a string like "Staged: FakePlayers=5".  As soon as the wave ends -- either due to the trader opening, the team winning, or the team dying -- your changes are applied, and CD displays a reminder notification displaying the option name and new value.
+`CDAUTH_WRITE` commands apply immediately when issued outside a wave (i.e. in pregame warmup, trader time, or after a game has ended).  However, when a `CDAUTH_WRITE` command is issued mid-wave, it delays application via a mechanism called "staging".  This means the command writes your modification to temporary storage without applying it to the live game configuration.  It immediately responds with a string like "Staged: FakePlayers=5".  As soon as the wave ends -- either due to the trader opening, the team winning, or the team dying -- your changes are applied, and CD displays a reminder notification displaying the option name and the new value that it has just copied from temporary storage to the live game configuration.
+
+`CDAUTH_READ` commands always respond immediately.  `CDAUTH_READ` commands are aware of the staging mechanism.  If a `CDAUTH_READ` command is issued mid-wave after relevant configuration writes have been staged, it will report both the actual and staged values.
 
 #### Configuring Chat Command Access on Servers
 
@@ -21,7 +23,7 @@ If `DefaultAuthLevel` is set to `CDAUTH_WRITE`, then any user may run any comman
 If `DefaultAuthLevel` is set to `CDAUTH_READ` (the default), then anonymous users may only run commands that read the configuration.  They cannot run chat commands that modify the configuration.
 However, a user whose SteamID is listed in any of one or more optional `AuthorizedUsers` lines may run any command, including those that modify the configuration.
 
-Here's a config snippet illustrating how `DefaultAuthLevel=CDAUTH_READ` works with `AuthorizedUsers`.  This snippet authorizes two users to run any chat command; anyone else can only run chat commands that just read the configuration.
+Here's a config snippet illustrating how `DefaultAuthLevel=CDAUTH_READ` works with `AuthorizedUsers`.  This snippet authorizes two users to run any chat command.  Anyone besides the two listed users can run chat commands that read the configuration, but not those that would modify it.
 
 ```
 [ControlledDifficulty.CD_Survival]
@@ -34,7 +36,7 @@ The AuthorizedUsers line may appear as many times as needed. Each line specifies
 
 #### Chat Commands are Always Accessible in Solo
 
-Playing CD solo automatically and unconditionally enables all chat commands.  There's no need to edit your KFGame.ini to configure `DefaultAuthLevel` or `AuthorizedUsers` if you just want to use chat commands in solo mode on your own machine.
+Playing CD solo automatically and unconditionally enables all chat commands, both `CDAUTH_READ` and `CDAUTH_WRITE`.  There's no need to edit your KFGame.ini to configure `DefaultAuthLevel` or `AuthorizedUsers` if you just want to use chat commands in solo mode.
 
 ## Option Chat Command Reference
 
