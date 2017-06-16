@@ -6,7 +6,7 @@ CD can be configured three ways.
 * Editing KFGame.ini on the client or PCServer-KFGame.ini on the server
 * Chat commands (only a subset of settings can be modified this way)
 
-*Configuring CD via `open`*
+#### Configuring CD via `open`
 
 Whenever you invoke `open <map>?game=ControlledDifficulty.CD_Survival`,
 you may append additional "?"-separated key-value pairs of CD setting
@@ -16,7 +16,7 @@ For example, to set CohortSize to 6 and SpawnPoll to 0.75 on Outpost:
 
 `open KF-Outpost?game=ControlledDifficulty.CD_Survival?SpawnPoll=0.75?CohortSize=6` 
 
-*Configuring CD through INI files*
+#### Configuring CD through INI files
 
 Controlled Difficulty automatically saves its settings every time they
 are modified.
@@ -38,7 +38,7 @@ On the server, this file is usually
 If these files are not writable, then CD cannot and will not write any
 of its settings to them.
 
-*Configuring CD through Chat Commands*
+#### Configuring CD through Chat Commands
 
 Most CD configuration settings may be viewed and changed at runtime by
 typing a special string into the game's public chat.  For example,
