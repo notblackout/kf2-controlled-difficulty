@@ -48,7 +48,10 @@ To set it to 24, type `!cdmaxmonsters 24` in chat.
 CD can automatically generate a list of every chat commands name,
 accepted parameters (if any), and a short description of what it does.
 Type `CDChatHelp` in the console (not in the chat window!) to see this
-information.
+information.  Due to technical limitations, this command currently only
+works in the solo console or console of a dedicated server (`admin
+CDChatHelp`).  It might become executable on clients of a dedicated
+server in a future release.
 
 CD's chat commands are controlled by an authentication and authorization
 system when CD is running on a dedicated server.  These options are 
