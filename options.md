@@ -65,6 +65,35 @@ For details about available Chat Commands and how they work, see
 The maximum number of zeds that CD's SpawnManager may spawn simultaneously
 (i.e. on one invocation of the SpawnManager's update function).
 
+When CohortSize is positive, CD's spawnmanager spawns as many squads as
+necessary until either CohortSize zeds have spawned on that attempt, the
+MaxMonsters limit is reached, or the map's available spawnvolumes have been
+filled. CD will use as many of the map's spawnvolumes as necessary to spawn
+the cohort, iterating from most to least preferred by
+spawnvolume-preference-score.  On larger maps (e.g. Outpost), this makes it
+possible to spawn something like 64 zeds instantaneously.
+
+For example, let's say CohortSize=12. Let's also say that no zeds are
+currently alive, that MaxMonsters=20, and that the SpawnCycle dictates
+squads with alternating sizes 4, 5, 4, 5, etc. When the spawnmanager next
+wakes up, it will spawn the first squad of 4 zeds at the most-preferred
+spawnvolume, the next squad of 5 zeds at the second-most-preferred
+spawnvolume, and the first 3 of 4 zeds in the third squad at the
+third-most-preferred spawnvolume. The 1 zed leftover from the final squad
+goes into LeftoverSpawnSquad and becomes a new singleton squad that attempts
+to spawn on the following spawnmanager wakeup, just like in vanilla KF2. All
+three squads just described appear to spawn simultaneously from the player
+point of view; a "spawnmanager wakeup" is effectively instantaneous to us.
+Let's continue the example and consider the next spawnmanager wakeup. Assume
+no zeds were killed.  We have 12 alive and MaxMonsters is 20. The single-zed
+LeftoverSpawnSquad spawns at the most-preferred spawnvolume. Now we resume
+the spawncycle at a squad of size 5.  This spawns at the
+second-most-preferred spawnvolume. There are now 12 + 1 + 5 = 18 zeds alive.
+The spawnmanager finishes this cohort by spawning 2 of the 4 zeds in the
+next squad, putting the 2 other zeds that could not spawn into
+LeftoverSpawnSquad. This cohort was only 1 + 5 + 2 = 8 zeds, not 12,
+because we reached the MaxMonsters limit of 20.
+
 If this is set to 0, then the cohort spawn logic is inactive, and the game
 instead spawns one squad per invocation of the update function.  That
 behavior (i.e.  when set to 0) is how unmodded KF2 works: the spawn manager
