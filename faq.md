@@ -16,7 +16,7 @@ CD will save some of its settings to pair of separate subsections in your KFGame
 * `[ControlledDifficulty.CD_Survival]`
 * `[ControlledDifficulty.CD_PlayerController]`
 
-By saving its settings to only these sections, CD avoids touch settings that affect the vanilla game.
+By saving its settings to only these sections, CD avoids touching settings that affect the vanilla game.
 
 ### Where can I get KF-Hillside?
 
