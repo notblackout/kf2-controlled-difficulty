@@ -50,7 +50,7 @@ SpawnPoll=1.0
 ; smaller=less intensity, bigger=more intensity
 CohortSize=4
 ; MaxMonsters is the hardcap on live zeds.  Once MaxMonsters zeds
-; are alive, no more can spawn until some die.
+; are alive, no more can spawn until at least one dies.
 MaxMonsters=32 ; 32 is TWI's standard multiplayer cap
 ; ...or...
 MaxMonsters=16 ; 16 is TWI's standard solo cap
@@ -60,13 +60,14 @@ Assuming the map's spawn areas are big enough to keep zeds flowing,
 under this configuration, zeds enter the map at a rate of approximately:
 
 ```
-(CohortSize * SpawnPoll) zeds/sec = 5 zeds/sec
+(CohortSize * SpawnPoll) zeds/sec = 4 zeds/sec
 ```
 
-CD retains TWI's hardcoded 5 second delay between when the wave starts
+CD retains TWI's hardcoded 4 to 5 second delay between when the wave starts
 and when the zeds begin spawning.  So there's always a slight lull in
 those first five seconds or so.  But then the spawnrate equation above
-starts reflecting reality.
+starts reflecting reality.  This lull is reported in the automatic
+post-wave recap stats.  It is called "pre" time in that recap.
 
 That equation is an upper bound.  Once the MaxMonsters cap is reached,
 spawning is suspended until some zeds die.  Also, on extremely cramped
@@ -99,7 +100,7 @@ SpawnPoll=1.0 ; spawn new zeds as equally often as in the unmodded game
 ; smaller=less intensity, bigger=more intensity
 CohortSize=10 ; roughly 2x the size of unmodded game's squads
 ; MaxMonsters is the hardcap on live zeds.  Once MaxMonsters zeds
-; are alive, no more can spawn until some die.
+; are alive, no more can spawn until at least one dies.
 MaxMonsters=64 ; 2x TWI's default multiplayer cap of 32
 ```
 
@@ -132,7 +133,7 @@ SpawnPoll=0.500 ; spawn new zeds twice as often as unmodded game
 ; smaller=less intensity, bigger=more intensity
 CohortSize=20 ; roughly 5x the size of unmodded game's squads
 ; MaxMonsters is the hardcap on live zeds.  Once MaxMonsters zeds
-; are alive, no more can spawn until some die.
+; are alive, no more can spawn until at least one dies.
 MaxMonsters=96 ; 3x TWI's default multiplayer cap of 32, hard to kite
 ```
 Now let's move towards the easier end of the difficulty spectrum.
@@ -233,10 +234,16 @@ value `max`.
 
 `ZedsTeleportCloser` is the most controversial one in this section.
 It controls whether zeds can teleport around the map in an attempt
-to get closer to human players.  However, even when this is false,
+to get closer to human players.  In vanilla KF2, zeds can teleport
+to get closer to human players, and this option's default matches
+that behavior (i.e. it defaults to true).  False prevents zeds from
+teleporting to try to get closer to human players.
+
+However, even when this is false,
 it does not remove the impression of zeds hiding around corners and
 behind doors, since the spawnpoint selection algorithm for brand new
 zeds sometimes places those zeds where others might have teleported.
+
 This option has no effect on whether zeds can teleport when they
 think they've become stuck.  That's always allowed.
 
