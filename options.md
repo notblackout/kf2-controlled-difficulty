@@ -1,6 +1,6 @@
 # Option Reference
 
-CD can be configured three ways.
+CD's options (also known interchangeably as settings) can be configured three ways.
 
 * Parameters to the `open` command in the client or server console
 * Editing KFGame.ini on the client or PCServer-KFGame.ini on the server
