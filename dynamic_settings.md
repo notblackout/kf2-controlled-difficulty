@@ -10,9 +10,9 @@ It's also useful solo for ratcheting difficulty wave-by-wave.  Want spawn freque
 increase from one wave to the next, slowly turning the screws?  Dynamic Settings help you do this automatically
 with precision and repeatability.
 
-### Supported Options
+### Supported Settings
 
-The following CD options support dynamism:
+The following CD settings support dynamism:
 
 * `BossFP`
 * `CohortSize`
@@ -64,12 +64,12 @@ wave 2, to 32 on wave 3, to 36 on waves 4 through the rest of the game.
 
 Technically, this system even applies to boss waves, although most settings are not meaningful in
 boss waves.  This system applies to boss waves mainly so that one `BossFP` line is sufficient to
-control Boss HP no matter the gamelength, and to keep the system with potential future options that
+control Boss HP no matter the gamelength, and to keep the system open to potential future options that
 might influence both boss and non-boss waves.
 
 The `-Defs` configuration suffix convention may seem a bit odd.  It was chosen for its resemblance to
 the `SpawnCycleDefs` which came first (more info on that in [spawn.md](spawn.md)).  The conceptual
-model is similar but not identical.
+model here is similar, though not identical.
 
 ### Bilinear Dynamic Setting Configuration
 
@@ -82,17 +82,18 @@ The function spec is an extremely restricted syntax.  CD does not have a general
 
 Parameters *A*, *B*, *X*, *Y*, and *Z* may assume any floating point number value.  Floats should be
 written using only numerals, up to one decimal point, and up to one leading minus sign.  Do not use
-exponent notation or append an "f".
+exponent notation and do not append an "f" or "F".
 
 The parts written in square brackets are optional.  The "P" and "W" characters are shorthands for
-player and wave, signifying what the preceding part of the specifier scales.  The position of these
-characters cannot be swapped.  The letter P must always come first (or be omitted, in which case
+player and wave, signifying what the immediately preceding part of the specifier scales.
+The position of these "P" and "W" characters cannot be swapped.
+The letter P must always come first (or be omitted, in which case
 it is assumed) and the letter W must always come second (or be omitted, in which case it is assumed).
 
 This syntax resolves to the following internal result:
 
 ```
-   Min( Lerp(A, B, PlayerAlpha) * Lerp(X, Y, WaveAlpha), Z )
+   FMin( Lerp(A, B, PlayerAlpha) * Lerp(X, Y, WaveAlpha), Z )
 ```
 
 `Lerp` is Unreal's builtin linear interpolation function.  Its return value varies linearly from the
@@ -103,7 +104,7 @@ then dividing by `(MaxPlayers - 1)` or the `(total number of waves - 1)`.  The "
 waves" excludes the boss wave.  For example, in a long game, the "total number of waves" is 10,
 and `(total number of waves - 1) = 9`.  On wave one of this long game, `WaveAlpha=0`.  On the second
 wave of this game, `WaveAlpha=.1111`.  On the third wave, `WaveAlpha=.2222`.  And so on to wave 10,
-where `WaveAlpha=1.0`.  This the following boss wave also has `WaveAlpha=1.0`.
+where `WaveAlpha=1.0`.  The boss wave also has `WaveAlpha=1.0`.
 
 If the optional maximum *Z* was omitted, then the `Min` function above is not executed.  The product
 of linear interpolations is used directly.
