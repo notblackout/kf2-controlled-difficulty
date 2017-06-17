@@ -15,15 +15,13 @@ FRIENDLY_DATE      := $(shell date -u '+%b %e %Y')
 IS_WORKING_DIR_DIRTY     := $(shell git diff-index --quiet HEAD -- ; echo $$?)
 RELEASE_TAG_COUNT        := $(shell git tag -l --points-at HEAD | grep -v beta | wc -l)
 
-LINEFEED           := $(shell echo -e '\r')
-
 WSUP_TITLE                      := Controlled Difficulty
 WSUP_BRANDING_PICTURE           := img/doubleblack.png
 WSUP_DESCRIPTION_FILE           := steam_description.txt
 WSUP_SPECFILE                   := wsup_specfile.txt
 
-deploy : WSUP_TMPDIR           := $(shell mktemp -d)
-deploy : WSUP_TMPDIR_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_TMPDIR)")
+ws-upload : WSUP_TMPDIR           := $(shell mktemp -d)
+ws-upload : WSUP_TMPDIR_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_TMPDIR)")
 
 # If the git working directory has changes, tweak the version string
 # and branding information for the workshop item
@@ -61,16 +59,6 @@ export CD_TAG_NAME
 export CD_RELEASE_NAME
 export CD_IS_PRERELEASE
 
-# Multiline variable for the contents of wsup_specfile.txt
-define WSUP_SPECFILE_CONTENTS
-$$Description "$(WSUP_DESCRIPTION)"$(LINEFEED)
-$$Title "$(WSUP_TITLE)"$(LINEFEED)
-$$PreviewFile "$(WSUP_BRANDING_PICTURE_ABS_WIN)"$(LINEFEED)
-$$Tags ""$(LINEFEED)
-$$MicroTxItem "false"$(LINEFEED)
-$$PackageDirectory "$(WSUP_TMPDIR_ABS_WIN)"$(LINEFEED)
-endef
-
 # Multiline variable for the contents of CD_BuildInfo.uci
 define BUILDINFO_UCI
 `define CD_COMMIT_HASH "$(GIT_HASH_ABBREV)"
@@ -103,11 +91,11 @@ ws-upload: compile
 	mkdir -p "$(WSUP_TMPDIR)"/Unpublished/BrewedPC
 	cp -a ../../Unpublished/BrewedPC/Script/ControlledDifficulty.u "$(WSUP_TMPDIR)"/Unpublished/BrewedPC
 	echo -n '$$Description "' > "$(WSUP_SPECFILE)"
-	cat "$(WSUP_DESCRIPTION_FILE)" | tr \" \' | sed -r 's/\$$MOD_VERSION/$(GIT_HASH_ABBREV)/; s/\$$MOD_DATE/$(FRIENDLY_DATE)/; $$ s/$$/"/' >> "$(WSUP_SPECFILE)"
-	echo '$$Title "$(WSUP_TITLE)"' >> "$(WSUP_SPECFILE)"
-	echo '$$PreviewFile "$(WSUP_BRANDING_PICTURE_ABS_WIN)"' >> "$(WSUP_SPECFILE)"
-	echo '$$Tags ""' >> "$(WSUP_SPECFILE)"
-	echo '$$MicroTxItem "false"' >> "$(WSUP_SPECFILE)"
-	echo '$$PackageDirectory "$(WSUP_TMPDIR_ABS_WIN)"' >> "$(WSUP_SPECFILE)"
+	cat "$(WSUP_DESCRIPTION_FILE)" | tr \" \' | sed -r 's/\$$MOD_VERSION/$(GIT_HASH_ABBREV)/; s/\$$MOD_DATE/$(FRIENDLY_DATE)/; $$ s/$$/"\r/' >> "$(WSUP_SPECFILE)"
+	echo -e '$$Title "$(WSUP_TITLE)"\r' >> "$(WSUP_SPECFILE)"
+	echo '$$PreviewFile "$(WSUP_BRANDING_PICTURE_ABS_WIN)"' | sed -r 's/$$/\r/' >> "$(WSUP_SPECFILE)"
+	echo -e '$$Tags ""\r' >> "$(WSUP_SPECFILE)"
+	echo -e '$$MicroTxItem "false"\r' >> "$(WSUP_SPECFILE)"
+	echo '$$PackageDirectory "$(WSUP_TMPDIR_ABS_WIN)"' | sed -r 's/$$/\r/' >> "$(WSUP_SPECFILE)"
 	[ -z "$$CD_DRY_RUN" ] && { cd "$(KF2BIN)" && cmd /C 'cd /D $(KF2BIN_ABS_WIN) & WorkshopUserTool.exe $(WSUP_SPECFILE_RELATIVE_WIN)' ; } || { echo 'Workshop upload skipped (dry run)' ; }
 	rm -rf "$(WSUP_TMPDIR)"
