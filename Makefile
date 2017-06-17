@@ -10,10 +10,8 @@ GIT_HASH_ABBREV    := $(shell git rev-parse --short=6 HEAD)
 GIT_AUTHOR         := $(shell git log -n 1 --pretty=format:%an)
 GIT_RAW_TIMESTAMP  := $(shell git log -n 1 --pretty=format:%ai)
 GIT_UTC_TIMESTAMP  := $(shell date -d "$(GIT_RAW_TIMESTAMP)" -u --iso-8601=seconds)
-BUILD_TYPE         := Rel
 FRIENDLY_DATE      := $(shell date -u '+%b %e %Y')
 
-IS_RELEASE               := true
 IS_WORKING_DIR_DIRTY     := $(shell git diff-index --quiet HEAD -- ; echo $$?)
 RELEASE_TAG_COUNT        := $(shell git tag -l --points-at HEAD | grep -v beta | wc -l)
 
@@ -29,19 +27,20 @@ deploy : WSUP_TMPDIR_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_T
 
 # If the git working directory has changes, tweak the version string
 # and branding information for the workshop item
-ifeq ($(RELEASE_TAG_COUNT),0)
-	IS_RELEASE              := false
-	WSUP_TITLE              := Controlled Difficulty Beta
-	WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
-	GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
-	BUILD_TYPE              := BETA
-endif
-ifeq ($(IS_WORKING_DIR_DIRTY),1)
-	IS_RELEASE              := false
-	WSUP_TITLE              := Controlled Difficulty Beta
-	WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
-	GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
-	BUILD_TYPE              := DEVTEST
+ifeq ($(CD_BUILD_TYPE),)
+	CD_BUILD_TYPE := Rel
+	ifeq ($(RELEASE_TAG_COUNT),0)
+		WSUP_TITLE              := Controlled Difficulty Beta
+		WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
+		GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
+		CD_BUILD_TYPE           := BETA
+	endif
+	ifeq ($(IS_WORKING_DIR_DIRTY),1)
+		WSUP_TITLE              := Controlled Difficulty Beta
+		WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
+		GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
+		CD_BUILD_TYPE           := DEVTEST
+	endif
 endif
 
 WSUP_BRANDING_PICTURE_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_BRANDING_PICTURE)")
@@ -63,7 +62,7 @@ endef
 # Multiline variable for the contents of CD_BuildInfo.uci
 define BUILDINFO_UCI
 `define CD_COMMIT_HASH "$(GIT_HASH_ABBREV)"
-`define CD_BUILD_TYPE "$(BUILD_TYPE)"
+`define CD_BUILD_TYPE "$(CD_BUILD_TYPE)"
 `define CD_AUTHOR_TIMESTAMP "$(GIT_UTC_TIMESTAMP)"
 `define CD_AUTHOR_DATE "$(GIT_UTC_DATE)"
 `define CD_AUTHOR "$(GIT_AUTHOR)"
@@ -82,7 +81,7 @@ compile: CD_BuildInfo.uci
 CD_BuildInfo.uci:
 	$(file > CD_BuildInfo.uci,$(BUILDINFO_UCI))
 
-deploy: # compile
+deploy: compile
 	echo "Deploying..."
 	mkdir -p "$(WSUP_TMPDIR)"/Unpublished/BrewedPC
 	cp -a ../../Unpublished/BrewedPC/Script/ControlledDifficulty.u "$(WSUP_TMPDIR)"/Unpublished/BrewedPC
@@ -93,5 +92,5 @@ deploy: # compile
 	echo '$$Tags ""' >> "$(WSUP_SPECFILE)"
 	echo '$$MicroTxItem "false"' >> "$(WSUP_SPECFILE)"
 	echo '$$PackageDirectory "$(WSUP_TMPDIR_ABS_WIN)"' >> "$(WSUP_SPECFILE)"
-	cd "$(KF2BIN)" && cmd /C 'cd /D $(KF2BIN_ABS_WIN) & WorkshopUserTool.exe $(WSUP_SPECFILE_RELATIVE_WIN)'
+	[ -z "$$CD_DRY_RUN" ] && { cd "$(KF2BIN)" && cmd /C 'cd /D $(KF2BIN_ABS_WIN) & WorkshopUserTool.exe $(WSUP_SPECFILE_RELATIVE_WIN)' ; } || { echo 'Workshop upload skipped (dry run)' ; }
 	rm -rf "$(WSUP_TMPDIR)"
