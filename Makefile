@@ -30,19 +30,18 @@ deploy : WSUP_TMPDIR_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_T
 ifeq ($(CD_BUILD_TYPE),)
 	CD_BUILD_TYPE := Rel
 	ifeq ($(RELEASE_TAG_COUNT),0)
-		WSUP_TITLE              := Controlled Difficulty Beta
-		WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
-		GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
 		CD_BUILD_TYPE           := BETA
 	endif
 	ifeq ($(IS_WORKING_DIR_DIRTY),1)
-		WSUP_TITLE              := Controlled Difficulty Beta
-		WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
-		GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
 		CD_BUILD_TYPE           := DEVTEST
 	endif
 endif
 
+ifneq ($(CD_BUILD_TYPE),Rel)
+	WSUP_TITLE              := Controlled Difficulty Beta
+	WSUP_BRANDING_PICTURE   := img/doubleblack_wrench.png
+	GIT_UTC_TIMESTAMP       := $(shell date -u --iso-8601=seconds)
+endif
 
 WSUP_BRANDING_PICTURE_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_BRANDING_PICTURE)")
 WSUP_DESCRIPTION                := $(shell cat "$(WSUP_DESCRIPTION_FILE)" | sed -r 's/\"/'"'"'/g' | sed -r 's/\$$MOD_VERSION/'$(GIT_HASH_ABBREV)'/; s/\$$MOD_DATE/'"$(FRIENDLY_DATE)"'/' )
