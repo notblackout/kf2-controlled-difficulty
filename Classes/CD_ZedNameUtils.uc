@@ -52,6 +52,10 @@ static function EAIType GetZedType( string ZedName )
 	{
 		return AT_FleshpoundMini;
 	}
+	else if ( ZedName == "KF" || ZedName == "KFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName == Left("KINGFLESHPOUND", ZedLen)) )
+	{
+		return AT_BossRandom;
+	}
 	// DG(F) / DoubleGorefast reserved
 	else if ( ZedName == "G" || ZedName == "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName == Left("GOREFAST", ZedLen)) )
 	{
@@ -109,6 +113,10 @@ static function GetZedFullName( const AISquadElement SquadElement, out string Ze
 	{
 		ZedName = "MiniFleshpound";
 	}
+	else if ( SquadElement.Type == AT_BossRandom )
+	{
+		ZedName = "KingFleshpound";
+	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
 		ZedName = "Gorefast";
@@ -165,6 +173,10 @@ static function GetZedTinyName( const AISquadElement SquadElement, out string Ze
 	{
 		ZedName = "MF";
 	}
+	else if ( SquadElement.Type == AT_BossRandom )
+	{
+		ZedName = "KF";
+	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
 		ZedName = "G";
@@ -220,6 +232,10 @@ static function GetZedShortName( const AISquadElement SquadElement, out string Z
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
 		ZedName = "MF";
+	}
+	else if ( SquadElement.Type == AT_BossRandom )
+	{
+		ZedName = "KF";
 	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
@@ -337,8 +353,7 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 	{
 		NewClass = class'KFPawn_ZedFleshpoundMini';
 	}
-	else if ( OrigClass == class'CD_Pawn_ZedFleshpound_Spec_NRS' ||
-	          OrigClass == class'CD_Pawn_ZedFleshpound_Spec_RS' )
+	else if ( OrigClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
 	{
 		NewClass = class'KFPawn_ZedFleshpoundKing';
 	}

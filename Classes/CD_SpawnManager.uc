@@ -857,7 +857,7 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	{
 		`cdlog("FleshpoundRageSpawns="$FleshpoundRageSpawnsBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);
 
-		// Replace all standard fleshpound classes with forced-lazy gorefasts
+		// Replace all standard fleshpound classes with forced-lazy fleshpounds
 		MatchClasses.Length = 2;
 		MatchClasses[0] = AIClassList[AT_FleshPound];
 		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedFleshpound_RS';
@@ -871,13 +871,6 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 		MatchClasses[1] = class'ControlledDifficulty.CD_Pawn_ZedFleshpoundMini_RS';
 		ReplaceZedClass( MatchClasses,
 		                 class'ControlledDifficulty.CD_Pawn_ZedFleshpoundMini_NRS',
-		                 AISpawnList );
-
-		// Same, but for FleshpoundKing
-		MatchClasses.Length = 1;
-		MatchClasses[0] = class'ControlledDifficulty.CD_Pawn_ZedFleshpound_Spec_RS';
-		ReplaceZedClass( MatchClasses,
-		                 class'ControlledDifficulty.CD_Pawn_ZedFleshpound_Spec_NRS',
 		                 AISpawnList );
 	}
 }

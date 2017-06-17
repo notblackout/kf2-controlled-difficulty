@@ -107,9 +107,10 @@ The following zed names are accepted in `SpawnCycleDefs`:
 * CR(AWLER)
 * CY(ST), CC, ClotC
 * F(LESHPOUND), FP
-* MI(NIFLESHPOUND), MF, MFP
 * G(OREFAST), GF
 * H(USK)
+* KI(NGFLESHPOUND), KF, KFP (EXPERIMENTAL, might be changed or removed)
+* MI(NIFLESHPOUND), MF, MFP
 * SC(RAKE)
 * SI(REN)
 * SL(ASHER), CS, ClotS
@@ -142,23 +143,22 @@ At the time this document was last updated, there are several albino zed variant
 * AL(PHA)\*, CA\*, ClotA\* (Albino Alpha Clot)
 * CR(AWLER)\* (Albino Crawler)
 * G(OREFAST)\*, GF* (Albino Gorefast -- two blades)
-* F(LESHPOUND)\*, FP* (EXPERIMENTAL: King Fleshpound, CD's support for this might change or be removed!)
 
 The asterisk suffix makes these zeds albino/special.  For example, "Crawler\*" would spawn a gas grawler and "AL\*" would spawn an albino alpha clot.  Appending a * character to a zed that has no albino variant generates an error message and causes the SpawnCycle to be rejected.
 
-When CD's `AlbinoCrawlers`, `AlbinoAlphas`, and `AlbinoGorefasts` options are set to false, the associated zed albino type cannot spawn, even if the SpawnCycle says so.  When those options are set to true, the associated albino zed type spawns whenever the SpawnCycle dictates.  If the SpawnCycle does not include any albino zeds, then none will spawn even if one of the `Albino...` options is set to true.  The random spawnchance for the albino fleshpound is normally zero, because it spawns only during a weekly event, so there is no associated AlbinoFleshpounds option.
+When CD's `AlbinoCrawlers`, `AlbinoAlphas`, and `AlbinoGorefasts` options are set to false, the associated zed albino type cannot spawn, even if the SpawnCycle says so.  When those options are set to true, the associated albino zed type spawns whenever the SpawnCycle dictates.  If the SpawnCycle does not include any albino zeds, then none will spawn even if one of the `Albino...` options is set to true.
 
 ### Fleshpounds that Rage at Spawntime
 
 In v1053, TWI introduced a random chance for fleshpounds to rage when they spawn.  SpawnCycles let you control this behavior.  Ordinarily, a fleshpound squad will not spawn raged.  Its members have to go through the traditional FP rage process: either become raged due to damage taken, or see a target and eventually hit the enrage timer.
 
-However, if a FP squad in a SpawnCycle has the "!" suffix character, then its members spawn raged.  This works on both fleshpounds and mini fleshpounds (also known in-game as "Quarter Pounds").
+However, if a FP squad in a SpawnCycle has the "!" suffix character, then its members spawn raged.  This works on both fleshpounds and mini fleshpounds (also known in-game as "Quarter Pounds").  It does not currently work with king fleshpounds.
 
 For example, `1FP!` would spawn a fleshpound that is raged from the instant it spawns.  `2MFP!` would spawn a pair of minifleshpounds that are both raged from the instant they spawn.
 
 When CD's `FleshpoundRageSpawns` option is set to false, then fleshpounds never spawn raged, even if the SpawnCycle says so.  When that option is set to true, then behavior depends on the SpawnCycle setting.  If the SpawnCycle includes some FP squads with the "!" suffix, then those will spawn enraged.  If the SpawnCycle does not include any FP squads with the "!", then no enraged FPs will spawn, even though `FleshpoundRageSpawns` is true.  If SpawnCycle is unmodded and this option is true, then each FP will randomly decide whether to spawn enraged using a chance dependent on the difficulty, just like in TWI's vanilla game.
 
-The `FleshpoundRageSpawns` option affects fleshpounds, mini fleshpounds, and king fleshpounds.  Note that CD's current support for king fleshpounds is tentative and could be removed or altered.
+The `FleshpoundRageSpawns` option affects only fleshpounds and mini fleshpounds, not kings.  Note that CD's current support for king fleshpounds is tentative and could be removed or altered.
 
 ## Sample Configuration: `basic_moderate` Preset
 

@@ -21,6 +21,7 @@ var int Sirens;
 var int Fleshpounds;
 var int FleshpoundMinis;
 var int Scrakes;
+var int FleshpoundKings;
 
 function Increment( EAIType type, int count )
 {
@@ -38,6 +39,7 @@ function Increment( EAIType type, int count )
 		case AT_Scrake:          Scrakes         += count; break;
 		case AT_FleshpoundMini:  FleshpoundMinis += count; break;
 		case AT_FleshPound:      FleshPounds     += count; break;
+		case AT_BossRandom:      FleshpoundKings += count; break;
 	};
 }
 
@@ -57,24 +59,26 @@ function Clear()
 	Scrakes = 0;
 	FleshpoundMinis = 0;
 	Fleshpounds = 0;
+	FleshpoundKings = 0;
 }
 
 function string GetString()
 {
 	local string s;
 
-	s =	"Crawl="$class'CD_StringUtils'.static.ZeroPadIntString(Crawlers, 4)$
-		" Cyst="$class'CD_StringUtils'.static.ZeroPadIntString(Cysts, 4)$
-		" Alpha="$class'CD_StringUtils'.static.ZeroPadIntString(Alphas, 4)$
-		" Slash="$class'CD_StringUtils'.static.ZeroPadIntString(Slashers, 4)$
-		" Stalk="$class'CD_StringUtils'.static.ZeroPadIntString(Stalkers, 4)$
-		" Gore="$class'CD_StringUtils'.static.ZeroPadIntString(Gorefasts, 4)$
-		" Bloat="$class'CD_StringUtils'.static.ZeroPadIntString(Bloats, 3)$
-		" Husk="$class'CD_StringUtils'.static.ZeroPadIntString(Husks, 3)$
-		" Siren="$class'CD_StringUtils'.static.ZeroPadIntString(Sirens, 3)$
+	s =	"CR="$class'CD_StringUtils'.static.ZeroPadIntString(Crawlers, 4)$
+		" CY="$class'CD_StringUtils'.static.ZeroPadIntString(Cysts, 4)$
+		" AL="$class'CD_StringUtils'.static.ZeroPadIntString(Alphas, 4)$
+		" SL="$class'CD_StringUtils'.static.ZeroPadIntString(Slashers, 4)$
+		" ST="$class'CD_StringUtils'.static.ZeroPadIntString(Stalkers, 4)$
+		" GF="$class'CD_StringUtils'.static.ZeroPadIntString(Gorefasts, 4)$
+		" BL="$class'CD_StringUtils'.static.ZeroPadIntString(Bloats, 3)$
+		" HU="$class'CD_StringUtils'.static.ZeroPadIntString(Husks, 3)$
+		" SI="$class'CD_StringUtils'.static.ZeroPadIntString(Sirens, 3)$
 		" SC="$class'CD_StringUtils'.static.ZeroPadIntString(Scrakes, 2)$
 		" MF="$class'CD_StringUtils'.static.ZeroPadIntString(FleshpoundMinis, 2)$
 		" FP="$class'CD_StringUtils'.static.ZeroPadIntString(Fleshpounds, 2)$
+		" KF="$class'CD_StringUtils'.static.ZeroPadIntString(FleshpoundKings, 2)$
 		" // TOTALS:"$
 		" Trash="$class'CD_StringUtils'.static.ZeroPadIntString(GetTrash(), 4)$
 		" Medium="$class'CD_StringUtils'.static.ZeroPadIntString(GetMedium(), 3)$
@@ -100,6 +104,7 @@ function AddParamToSelf( CD_WaveSummary addend )
 	Scrakes += addend.Scrakes;
 	FleshpoundMinis += addend.FleshpoundMinis;
 	Fleshpounds += addend.Fleshpounds;
+	FleshpoundKings += addend.FleshpoundKings;
 }
 
 function int GetTrash()
@@ -114,7 +119,7 @@ function int GetMedium()
 
 function int GetBig()
 {
-	return Scrakes + Fleshpounds + FleshpoundMinis;
+	return Scrakes + Fleshpounds + FleshpoundMinis + FleshpoundKings;
 }
 
 function int GetTotal()

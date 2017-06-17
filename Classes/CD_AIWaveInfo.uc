@@ -6,16 +6,12 @@
 // user-provided SpawnCycles.
 //=============================================================================
 
+class CD_AIWaveInfo extends Object;
 
-class CD_AIWaveInfo extends KFAIWaveInfo;
-
-// TWI declared all of these vars const in KFAIWaveInfo,
-// which makes this a completely hideous nightmare.
-// It's difficult to work around the constness of these
-// vars without either preparing a shitload of archetypes
-// (for each cfg permutation) or bytecode editing.  There's
-// no deep reason it has to be this way; a mere interface
-// could have avoided all of this idiocy.
+// TWI declared KFAIWaveInfo's state const, which makes it a pain in the ass to
+// use with SpawnCycles, since SpawnCycles involve parsing and setting up wave
+// info dynamically at runtime in response to user input that is not known at
+// compile time.
 
 /** List of available squads to spawn for each wave */
 var array<CD_AISpawnSquad> CustomSquads;

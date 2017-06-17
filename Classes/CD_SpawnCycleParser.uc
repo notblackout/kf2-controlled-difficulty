@@ -324,7 +324,7 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	// If the ElemDef requested a special zed, then we need to
 	// check that the zed described by ElemType actually has a
 	// special/albino variant.
-	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler || ElemEAIType == AT_GoreFast || ElemEAIType == AT_FleshPound ) )
+	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler || ElemEAIType == AT_GoreFast ) )
 	{
 		return PrintElemParseError("\""$ ElemType $"\" does not have a special variant."$
 		      "  Remove the asterisk from \""$ ElemDef $"\" for a non-special equivalent.");
@@ -367,18 +367,14 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	}
 	else if ( ElemEAIType == AT_FleshPound )
 	{
-		if ( IsRagedOnSpawn )
-		{
-			SquadElement.CustomClass = IsSpecial ?
-				class'CD_Pawn_ZedFleshpound_Spec_RS' :
-				class'CD_Pawn_ZedFleshpound_RS' ;
-		}
-		else
-		{
-			SquadElement.CustomClass = IsSpecial ?
-				class'CD_Pawn_ZedFleshpound_Spec_NRS' :
-				class'CD_Pawn_ZedFleshpound_NRS' ;
-		}
+		SquadElement.CustomClass = IsRagedOnSpawn ?
+			class'CD_Pawn_ZedFleshpound_RS' :
+			class'CD_Pawn_ZedFleshpound_NRS' ;
+	}
+	else if ( ElemEAIType == AT_BossRandom )
+	{
+		SquadElement.CustomClass = class'CD_Pawn_ZedFleshpoundKing_NoMinions';
+		// TODO: check ElemBossType here if Volter and Patty get SpawnCycle support
 	}
 	else
 	{
