@@ -312,12 +312,6 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 ## Miscellaneous Chat Command Reference
 
-### !cdhelp 
-
-*Description:* Information about CD's chat commands
-
-*Auth level:* [CDAUTH_READ]
-
 ### !cdpausetrader 
 
 *Alternate name(s):* **!cdpt**
