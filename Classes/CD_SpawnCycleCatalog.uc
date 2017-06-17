@@ -199,7 +199,9 @@ private function InitSpawnCyclePresetList()
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v1');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v2');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v3');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v4');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_semi_pro');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_semi_pro_v2');
 	}
 }
 
