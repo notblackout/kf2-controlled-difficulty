@@ -801,7 +801,6 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 	                 class'ControlledDifficulty.CD_Pawn_ZedScrake_v1053Hotfix',
 	                 AISpawnList );
 
-
 	if ( !AlbinoCrawlersBool )
 	{
 		`cdlog("AlbinoCrawlers="$AlbinoCrawlersBool$": scanning AISpawnList of length "$AISpawnList.Length$" at squadidx "$SquadIdx, bLogControlledDifficulty);

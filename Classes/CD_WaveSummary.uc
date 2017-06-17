@@ -23,9 +23,9 @@ var int FleshpoundMinis;
 var int Scrakes;
 var int FleshpoundKings;
 
-function Increment( EAIType type, int count )
+function Increment( const out AISquadElement SquadElement, const int count )
 {
-	switch (type)
+	switch (SquadElement.Type)
 	{
 		case AT_Crawler:         Crawlers        += count; break;
 		case AT_Clot:            Cysts           += count; break;
@@ -38,8 +38,16 @@ function Increment( EAIType type, int count )
 		case AT_Siren:           Sirens          += count; break;
 		case AT_Scrake:          Scrakes         += count; break;
 		case AT_FleshpoundMini:  FleshpoundMinis += count; break;
-		case AT_FleshPound:      FleshPounds     += count; break;
-		case AT_BossRandom:      FleshpoundKings += count; break;
+		case AT_FleshPound:
+			if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
+			{
+				FleshpoundKings += count;
+			}
+			else
+			{
+				Fleshpounds += count;
+			}
+			break;
 	};
 }
 

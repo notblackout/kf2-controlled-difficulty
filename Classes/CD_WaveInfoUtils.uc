@@ -158,7 +158,7 @@ private static function GetCDWaveSummary(
 
 			zedsFromElement = Min( CustomMonsterList[elemIndex].Num, remainingBudget );
 
-			result.Increment( CustomMonsterList[elemIndex].Type, zedsFromElement );
+			result.Increment( CustomMonsterList[elemIndex], zedsFromElement );
 		}
 	}
 }

@@ -25,68 +25,120 @@ class CD_ZedNameUtils extends Object
     5. I have no need for the "friendly-to-player" zed AI names here, and I want to accept the absolute
        minimum universe of correct inputs, so that this is easy to maintain.  Same for "TestHusk".
 */
-static function EAIType GetZedType( string ZedName )
+
+enum ECDZedNameResolv
+{
+	ZNR_OK,
+	ZNR_INVALID_NAME,
+	ZNR_INVALID_SPECIAL,
+	ZNR_INVALID_RAGE
+};
+
+static function ECDZedNameResolv GetZedType(
+	/* Input parameters */
+	const out string ZedName, const bool IsSpecial, const bool IsRagedOnSpawn,
+	/* Output parameters */
+	out EAIType ZedType, out class<KFPawn_Monster> ZedClass )
 {
 	local int ZedLen;
+	local bool ZedTypeCanBeSpecial, ZedTypeCanBeRaged;
 
-	ZedName = Caps( ZedName );
 	ZedLen = Len( ZedName );
+	ZedClass = None;
+	ZedTypeCanBeSpecial = false;
+	ZedTypeCanBeRaged = false;
 	
-	if ( ZedName == "CLOTA" || ZedName == "CA" || (2 <= ZedLen && ZedLen <= 5 && ZedName == Left("ALPHA", ZedLen)) )
+	if ( ZedName ~= "CLOTA" || ZedName ~= "CA" || (2 <= ZedLen && ZedLen <= 5 && ZedName ~= Left("ALPHA", ZedLen)) )
 	{
-		return AT_AlphaClot;
+		ZedType = AT_AlphaClot;
+		ZedClass = IsSpecial ?
+			class'CD_Pawn_ZedClot_Alpha_Special' :
+			class'CD_Pawn_ZedClot_Alpha_Regular' ;
+		ZedTypeCanBeSpecial = true;
 	}
-	else if ( ZedName == "CLOTS" || ZedName == "CS" || (2 <= ZedLen && ZedLen <= 7 && ZedName == Left("SLASHER", ZedLen)) )
+	else if ( ZedName ~= "CLOTS" || ZedName ~= "CS" || (2 <= ZedLen && ZedLen <= 7 && ZedName ~= Left("SLASHER", ZedLen)) )
 	{
-		return AT_SlasherClot;
+		ZedType = AT_SlasherClot;
 	}
-	else if ( ZedName == "CLOTC" || ZedName == "CC" || (2 <= ZedLen && ZedLen <= 4 && ZedName == Left("CYST", ZedLen)) )
+	else if ( ZedName ~= "CLOTC" || ZedName ~= "CC" || (2 <= ZedLen && ZedLen <= 4 && ZedName ~= Left("CYST", ZedLen)) )
 	{
-		return AT_Clot;
+		ZedType = AT_Clot;
 	}
-	else if ( ZedName == "FP" || (1 <= ZedLen && ZedLen <= 10 && ZedName == Left("FLESHPOUND", ZedLen)) )
+	else if ( ZedName ~= "FP" || (1 <= ZedLen && ZedLen <= 10 && ZedName ~= Left("FLESHPOUND", ZedLen)) )
 	{
-		return AT_FleshPound;
+		ZedType = AT_FleshPound;
+		ZedClass = IsRagedOnSpawn ?
+			class'CD_Pawn_ZedFleshpound_RS' :
+			class'CD_Pawn_ZedFleshpound_NRS' ;
+		ZedTypeCanBeRaged = true;
 	}
-	else if ( ZedName == "MF" || ZedName == "MFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName == Left("MINIFLESHPOUND", ZedLen)) )
+	else if ( ZedName ~= "MF" || ZedName ~= "MFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName ~= Left("MINIFLESHPOUND", ZedLen)) )
 	{
-		return AT_FleshpoundMini;
+		ZedType = AT_FleshpoundMini;
+		ZedClass = IsRagedOnSpawn ?
+			class'CD_Pawn_ZedFleshpoundMini_RS' :
+			class'CD_Pawn_ZedFleshpoundMini_NRS' ;
+		ZedTypeCanBeRaged = true;
 	}
-	else if ( ZedName == "KF" || ZedName == "KFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName == Left("KINGFLESHPOUND", ZedLen)) )
+	else if ( ZedName ~= "KF" || ZedName ~= "KFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName ~= Left("KINGFLESHPOUND", ZedLen)) )
 	{
-		return AT_BossRandom;
+		ZedType = AT_FleshPound;
+		ZedClass = class'CD_Pawn_ZedFleshpoundKing_NoMinions';
 	}
-	// DG(F) / DoubleGorefast reserved
-	else if ( ZedName == "G" || ZedName == "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName == Left("GOREFAST", ZedLen)) )
+	else if ( ZedName ~= "G" || ZedName ~= "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName ~= Left("GOREFAST", ZedLen)) )
 	{
-		return AT_GoreFast;
+		ZedType = AT_GoreFast;
+		ZedClass = IsSpecial ?
+			class'CD_Pawn_ZedGorefast_Special' :
+			class'CD_Pawn_ZedGorefast_Regular' ;
+		ZedTypeCanBeSpecial = true;
 	}
-	else if ( 2 <= ZedLen && ZedLen <= 7 && ZedName == Left("STALKER", ZedLen) )
+	else if ( 2 <= ZedLen && ZedLen <= 7 && ZedName ~= Left("STALKER", ZedLen) )
 	{
-		return AT_Stalker;
+		ZedType = AT_Stalker;
 	}
-	else if ( 1 <= ZedLen && ZedLen <= 5 && ZedName == Left("BLOAT", ZedLen) )
+	else if ( 1 <= ZedLen && ZedLen <= 5 && ZedName ~= Left("BLOAT", ZedLen) )
 	{
-		return AT_Bloat;
+		ZedType = AT_Bloat;
 	}
-	else if ( 2 <= ZedLen && ZedLen <= 6 && ZedName == Left("SCRAKE", ZedLen) )
+	else if ( 2 <= ZedLen && ZedLen <= 6 && ZedName ~= Left("SCRAKE", ZedLen) )
 	{
-		return AT_Scrake;
+		ZedType = AT_Scrake;
 	}
-	else if ( 2 <= ZedLen && ZedLen <= 7 && ZedName == Left("CRAWLER", ZedLen) )
+	else if ( 2 <= ZedLen && ZedLen <= 7 && ZedName ~= Left("CRAWLER", ZedLen) )
 	{
-		return AT_Crawler;
+		ZedType = AT_Crawler;
+		ZedClass = IsSpecial ?
+			class'CD_Pawn_ZedCrawler_Special' :
+			class'CD_Pawn_ZedCrawler_Regular' ;
+		ZedTypeCanBeSpecial = true;
 	}
-	else if ( 1 <= ZedLen && ZedLen <= 4 && ZedName == Left("HUSK", ZedLen) )
+	else if ( 1 <= ZedLen && ZedLen <= 4 && ZedName ~= Left("HUSK", ZedLen) )
 	{
-		return AT_Husk;
+		ZedType = AT_Husk;
 	}
-	else if ( 2 <= ZedLen && ZedLen <= 5 && ZedName == Left("SIREN", ZedLen) )
+	else if ( 2 <= ZedLen && ZedLen <= 5 && ZedName ~= Left("SIREN", ZedLen) )
 	{
-		return AT_Siren;
+		ZedType = AT_Siren;
+	}
+	else
+	{
+		return ZNR_INVALID_NAME;
 	}
 
-	return 255;
+	// Return OK only if this zed type is allowed to be raged/albino
+
+	if ( IsSpecial && !ZedTypeCanBeSpecial )
+	{
+		return ZNR_INVALID_SPECIAL;
+	}
+
+	if ( IsRagedOnSpawn && !ZedTypeCanBeRaged )
+	{
+		return ZNR_INVALID_RAGE;
+	}
+
+	return ZNR_OK;
 }
 
 static function GetZedFullName( const AISquadElement SquadElement, out string ZedName )
@@ -107,15 +159,18 @@ static function GetZedFullName( const AISquadElement SquadElement, out string Ze
 	}
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		ZedName = "Fleshpound";
+		if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
+		{
+			ZedName = "KingFleshpound";
+		}
+		else
+		{
+			ZedName = "Fleshpound";
+		}
 	}
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
 		ZedName = "MiniFleshpound";
-	}
-	else if ( SquadElement.Type == AT_BossRandom )
-	{
-		ZedName = "KingFleshpound";
 	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
@@ -167,15 +222,18 @@ static function GetZedTinyName( const AISquadElement SquadElement, out string Ze
 	}
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		ZedName = "F";
+		if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
+		{
+			ZedName = "KF";
+		}
+		else
+		{
+			ZedName = "F";
+		}
 	}
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
 		ZedName = "MF";
-	}
-	else if ( SquadElement.Type == AT_BossRandom )
-	{
-		ZedName = "KF";
 	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{
@@ -227,15 +285,18 @@ static function GetZedShortName( const AISquadElement SquadElement, out string Z
 	}
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		ZedName = "FP";
+		if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
+		{
+			ZedName = "KF";
+		}
+		else
+		{
+			ZedName = "FP";
+		}
 	}
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
 		ZedName = "MF";
-	}
-	else if ( SquadElement.Type == AT_BossRandom )
-	{
-		ZedName = "KF";
 	}
 	else if ( SquadElement.Type == AT_Gorefast )
 	{

@@ -4,7 +4,8 @@
 // Turns a SpawnCycle represented by array<string> into  array<CD_AIWaveInfo>
 //=============================================================================
 
-class CD_SpawnCycleParser extends Object;
+class CD_SpawnCycleParser extends Object
+	DependsOn(CD_ZedNameUtils);
 
 `include(CD_Log.uci)
 
@@ -215,8 +216,8 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 {
 	local int ElemStrLen, UnicodePoint, ElemCount, ModifierCharIndex, i;
 	local string ElemType, MaybeModifierChar;
-	local EAIType ElemEAIType;
 	local bool IsSpecial, IsRagedOnSpawn;
+	local ECDZedNameResolv ZedNameResolv;
 
 	IsSpecial = false;
 	IsRagedOnSpawn = false;
@@ -299,6 +300,8 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	ElemCount = int( Mid( ElemDef, 0, i ) );
 	ElemType  = Mid( ElemDef, i, ElemStrLen - i - ( IsSpecial ? 1 : 0 ) - ( IsRagedOnSpawn ? 1 : 0 ) );
 
+	SquadElement.Num = ElemCount;
+
 	// Check value range for ElemCount
 	if ( ElemCount < MinZedsInElement )
 	{
@@ -311,11 +314,15 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 		           "Must be between "$ MinZedsInElement $" to "$ MaxZedsInElement $" (inclusive).");
 	}
 
-	// Convert user-provided zed type name into a zed type enum
-	ElemEAIType = class'CD_ZedNameUtils'.static.GetZedType( ElemType );
+	// Convert user-provided zed info into a EAIType enum and possibly custom class
+	ZedNameResolv = class'CD_ZedNameUtils'.static.GetZedType(
+		/* const input params */
+		ElemType, IsSpecial, IsRagedOnSpawn,
+		/* mutable output params */
+		SquadElement.Type, SquadElement.CustomClass );
 
 	// Was it a valid zed type name?
-	if ( 255 == ElemEAIType )
+	if ( ZedNameResolv == ZNR_INVALID_NAME )
 	{
 		return PrintElemParseError("\""$ ElemType $"\" does not appear to be a zed name."$
 		              "  Must be a zed name or abbreviation like cyst, fp, etc.");
@@ -324,62 +331,25 @@ private function bool ParseSquadElement( const out String ElemDef, out AISquadEl
 	// If the ElemDef requested a special zed, then we need to
 	// check that the zed described by ElemType actually has a
 	// special/albino variant.
-	if ( IsSpecial && !( ElemEAIType == AT_AlphaClot || ElemEAIType == AT_Crawler || ElemEAIType == AT_GoreFast ) )
+	if ( ZedNameResolv == ZNR_INVALID_SPECIAL )
 	{
 		return PrintElemParseError("\""$ ElemType $"\" does not have a special variant."$
 		      "  Remove the asterisk from \""$ ElemDef $"\" for a non-special equivalent.");
 	}
 
-	if ( IsRagedOnSpawn && !( ElemEAIType == AT_FleshPound || ElemEAIType == AT_FleshpoundMini ) )
+	if ( ZedNameResolv == ZNR_INVALID_RAGE )
 	{
 		return PrintElemParseError("\""$ ElemType $"\" does not have a raged-on-spawn variant."$
 		      "  Remove the exclamation point from \""$ ElemDef $"\" for a non raged-on-spawn equivalent.");
 	}
 
-
-	SquadElement.Type = ElemEAIType;
-	SquadElement.Num = ElemCount;
+	// Should have ZNR_OK == ZedNameResolve by process of elimination here,
+	// but check just in case we add a new ZNR enum entry and forget to
+	// update this function.
+	if ( ZedNameResolv != ZNR_OK )
+	{
+		return PrintElemParseError("\""$ ElemDef $"\" could not be parsed: " $ ZedNameResolv);
+	}
 	
-	// Apply custom class overrides that control albinism
-	if ( ElemEAIType == AT_AlphaClot )
-	{
-		SquadElement.CustomClass = IsSpecial ?
-			class'CD_Pawn_ZedClot_Alpha_Special' :
-			class'CD_Pawn_ZedClot_Alpha_Regular' ;
-	}
-	else if ( ElemEAIType == AT_Crawler )
-	{
-		SquadElement.CustomClass = IsSpecial ?
-			class'CD_Pawn_ZedCrawler_Special' :
-			class'CD_Pawn_ZedCrawler_Regular' ;
-	}
-	else if ( ElemEAIType == AT_GoreFast )
-	{
-		SquadElement.CustomClass = IsSpecial ?
-			class'CD_Pawn_ZedGorefast_Special' :
-			class'CD_Pawn_ZedGorefast_Regular' ;
-	}
-	else if ( ElemEAIType == AT_FleshpoundMini )
-	{
-		SquadElement.CustomClass = IsRagedOnSpawn ?
-			class'CD_Pawn_ZedFleshpoundMini_RS' :
-			class'CD_Pawn_ZedFleshpoundMini_NRS' ;
-	}
-	else if ( ElemEAIType == AT_FleshPound )
-	{
-		SquadElement.CustomClass = IsRagedOnSpawn ?
-			class'CD_Pawn_ZedFleshpound_RS' :
-			class'CD_Pawn_ZedFleshpound_NRS' ;
-	}
-	else if ( ElemEAIType == AT_BossRandom )
-	{
-		SquadElement.CustomClass = class'CD_Pawn_ZedFleshpoundKing_NoMinions';
-		// TODO: check ElemBossType here if Volter and Patty get SpawnCycle support
-	}
-	else
-	{
-		SquadElement.CustomClass = None;
-	}
-
 	return true;
 }
