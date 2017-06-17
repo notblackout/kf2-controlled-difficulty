@@ -3,4 +3,5 @@ CD_BuildInfo.uci
 local_paths.sh.in
 local_paths.mk
 wsup_specfile.txt
+gh-release-tmp
 *.swp

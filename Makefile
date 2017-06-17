@@ -43,11 +43,24 @@ ifeq ($(CD_BUILD_TYPE),)
 	endif
 endif
 
+
 WSUP_BRANDING_PICTURE_ABS_WIN   := $(shell cygpath --windows --absolute "$(WSUP_BRANDING_PICTURE)")
 WSUP_DESCRIPTION                := $(shell cat "$(WSUP_DESCRIPTION_FILE)" | sed -r 's/\"/'"'"'/g' | sed -r 's/\$$MOD_VERSION/'$(GIT_HASH_ABBREV)'/; s/\$$MOD_DATE/'"$(FRIENDLY_DATE)"'/' )
 WSUP_SPECFILE_RELATIVE_WIN      := KFGame\Src\ControlledDifficulty\$(WSUP_SPECFILE)
 
-GIT_UTC_DATE            := $(shell echo $(GIT_UTC_TIMESTAMP) | sed 's/T.*//')
+GIT_UTC_DATE     := $(shell echo $(GIT_UTC_TIMESTAMP) | sed 's/T.*//')
+
+CD_DOT_U_FILE    := ../../Unpublished/BrewedPC/Script/ControlledDifficulty.u
+
+CD_TAG_NAME         := $(shell echo $(CD_BUILD_TYPE) | tr A-Z a-z | sed 's/rel/release/')-$(GIT_UTC_DATE)-$(GIT_HASH_ABBREV)
+CD_RELEASE_NAME     := $(shell echo $(CD_BUILD_TYPE) | tr a-z A-Z | sed 's/REL/RELEASE/'): CD $(GIT_UTC_DATE) $(GIT_HASH_ABBREV)
+CD_IS_PRERELEASE    := true
+ifeq ($(CD_BUILD_TYPE),Rel)
+   CD_IS_PRERELEASE := false
+endif
+export CD_TAG_NAME
+export CD_RELEASE_NAME
+export CD_IS_PRERELEASE
 
 # Multiline variable for the contents of wsup_specfile.txt
 define WSUP_SPECFILE_CONTENTS
@@ -73,15 +86,20 @@ endef
 # Targets/rules/recipes
 #
 
-.PHONY: compile deploy CD_BuildInfo.uci
+.PHONY: compile deploy gh-release ws-deploy CD_BuildInfo.uci
 
-compile: CD_BuildInfo.uci
+compile: CD_BuildInfo.uci Classes/*.uc
 	cmd /C 'cd /D $(KF2BIN_ABS_WIN)\Win64 & KFEditor.exe make -unattended -full'
 
 CD_BuildInfo.uci:
 	$(file > CD_BuildInfo.uci,$(BUILDINFO_UCI))
 
-deploy: compile
+deploy: gh-release ws-upload
+
+gh-release: compile
+	./github_draft_release.sh
+
+ws-upload: compile
 	echo "Deploying..."
 	mkdir -p "$(WSUP_TMPDIR)"/Unpublished/BrewedPC
 	cp -a ../../Unpublished/BrewedPC/Script/ControlledDifficulty.u "$(WSUP_TMPDIR)"/Unpublished/BrewedPC
