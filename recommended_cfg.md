@@ -60,7 +60,7 @@ Assuming the map's spawn areas are big enough to keep zeds flowing,
 under this configuration, zeds enter the map at a rate of approximately:
 
 ```
-(CohortSize * SpawnPoll) zeds/sec = 4 zeds/sec
+(CohortSize / SpawnPoll) zeds/sec = 4 zeds/sec
 ```
 
 CD retains TWI's hardcoded 4 to 5 second delay between when the wave starts
