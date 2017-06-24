@@ -1,4 +1,4 @@
-class CD_SpawnCycle_Preset_nam_semi_pro_v1point5
+class CD_SpawnCycle_Preset_nam_semi_pro_v2
 	extends CD_SpawnCycle_PresetBase
 	implements (CD_SpawnCycle_Preset);
 
