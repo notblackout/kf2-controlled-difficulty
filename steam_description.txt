@@ -24,7 +24,7 @@ This open source mod creates a custom game mode called ControlledDifficulty.CD_S
 
 [b]Version[/b]: $MOD_VERSION
 [b]Date[/b]: $MOD_DATE
-[b]Last Tested KF2 Version[/b]: KF2 v1053
+[b]Last Tested KF2 Version[/b]: KF2 v1054
 [b]Source[/b]: https://github.com/notblackout/kf2-controlled-difficulty
 
 [h1]Installation[/h1]
