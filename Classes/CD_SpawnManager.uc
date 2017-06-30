@@ -90,7 +90,7 @@ function Update()
 
 		SpawnEventsThisWave += 1;
 
-		LatestSpawnTimestamp = Outer.Worldinfo.TimeSeconds;
+		LatestSpawnTimestamp = Outer.Worldinfo.RealTimeSeconds;
 
 		if ( 0 > FirstSpawnTimestamp )
 		{
@@ -223,7 +223,7 @@ private function string FormatFloatToTwoDecimalPlaces( const float f )
 function SetupNextWave(byte NextWaveIndex)
 {
 	super.SetupNextWave(NextWaveIndex);
-	WaveSetupTimestamp = Outer.WorldInfo.TimeSeconds;
+	WaveSetupTimestamp = Outer.WorldInfo.RealTimeSeconds;
 	FirstSpawnTimestamp = -1.f;
 	FinalSpawnTimestamp = -1.f;
 	LatestSpawnTimestamp = -1.f;
@@ -233,7 +233,7 @@ function SetupNextWave(byte NextWaveIndex)
 
 function WaveEnded()
 {
-	WaveEndTimestamp = Outer.WorldInfo.TimeSeconds;
+	WaveEndTimestamp = Outer.WorldInfo.RealTimeSeconds;
 }
 
 // This function is invoked by the spawning system in the base game.
