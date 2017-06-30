@@ -43,7 +43,9 @@ function bool ParseSquadCyclePreset( const string CycleName, const int GameLengt
 {
 	local array<string> CycleDefs;
 	local CD_SpawnCycleParser SCParser;
-	
+
+	WaveInfos.Length = 0;
+
 	if ( None == ResolvePreset( CycleName, GameLength, CycleDefs ) )
 	{
 		`cdlog("Unable to map SpawnCycle="$ CycleName $" to a preset", EnableLogging);

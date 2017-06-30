@@ -824,7 +824,8 @@ function TuneSpawnManagerTimer()
 		{
 			// if zed time is running out, interpolate between [1.0, ZTSS] using the same lerp-alpha-factor that TickZedTime uses
 			// When zed time first starts to fade, we will use a divisor slightly less than ZTSS
-			// When zed time is on the last tick before it is completly over, we will use slightly more than 1.0
+			// When zed time is on the last tick before it is completely over, we will use a divisor slightly more than 1.0
+			// IOW, the divisor decreases towards one as zed time fades out
 			// See TickZedTime in KFGameInfo for background
 			SlowDivisor = Lerp(1.0, ZTSpawnSlowdownFloat, ZedTimeRemaining / ZedTimeBlendOutTime);
 		}
@@ -1239,10 +1240,7 @@ protected function LoadSpawnCycle( const out string OverrideSpawnCycle, out arra
 	}
 	else
 	{
-		if ( !SpawnCycleCatalog.ParseSquadCyclePreset( OverrideSpawnCycle, GameLength, OutWaveInfos ) )
-		{
-			OutWaveInfos.Length = 0;
-		}
+		SpawnCycleCatalog.ParseSquadCyclePreset( OverrideSpawnCycle, GameLength, OutWaveInfos );
 	}
 }
 
