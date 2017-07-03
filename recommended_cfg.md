@@ -33,7 +33,10 @@ This config is not exactly the same as vanilla HOE; this config
 is probably somewhat more difficult.  Such a comparison is
 somewhat subjective, and there are a lot of variables left undefined
 here (for instance, there's a big difference between SpawnCycle
-basic_moderate and nam_pro_v3).  So think of the difficulty
+basic_moderate and nam_pro_v3).  Also, vanilla KF2 has a lot of
+variability in difficulty -- a map-specific spawnrate modifier, an
+early wave modifier, a sine wave modifier -- and all of those things
+are constants in CD.  So think of the difficulty
 comparison as very loose and approximate.
 
 ```
