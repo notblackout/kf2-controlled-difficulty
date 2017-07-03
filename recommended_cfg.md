@@ -29,6 +29,9 @@ form of a KFGame.ini snippet that could be copy-pasted, but you
 could also configure these settings through parameters to the
 `open` command used to start CD, or through chat commands.
 
+This config is not exactly the same as vanilla HOE; this config
+is probably somewhat more difficult.
+
 ```
 [ControlledDifficulty.CD_Survival]
 ; You can use any SpawnCycle, but these tips were written
@@ -45,7 +48,7 @@ SpawnMod=0 ; Leave this alone
 ;
 ; SpawnPoll controls how often the game spawns new zeds (seconds)
 ; smaller=more intensity, bigger=less intensity
-SpawnPoll=1.0
+SpawnPoll=1.25
 ; CohortSize controls how many zeds spawn every SpawnPoll seconds
 ; smaller=less intensity, bigger=more intensity
 CohortSize=4
@@ -60,7 +63,7 @@ Assuming the map's spawn areas are big enough to keep zeds flowing,
 under this configuration, zeds enter the map at a rate of approximately:
 
 ```
-(CohortSize / SpawnPoll) zeds/sec = 4 zeds/sec
+(CohortSize / SpawnPoll) zeds/sec = 4/1.25 = 3.2 zeds/sec
 ```
 
 CD retains TWI's hardcoded 4 to 5 second delay between when the wave starts
@@ -137,7 +140,7 @@ CohortSize=20 ; roughly 5x the size of unmodded game's squads
 MaxMonsters=96 ; 3x TWI's default multiplayer cap of 32, hard to kite
 ```
 Now let's move towards the easier end of the difficulty spectrum.
-Here's a more relaxed solo-oriented configuration.
+Here's a rather relaxed solo-oriented configuration.
 Assuming the SpawnCycle isn't something crazy (like all fleshpounds),
 a competent solo player can probably handle this without kiting (e.g.
 on hillside).  It's comparable to vanilla HOE, and probably even a
@@ -157,7 +160,7 @@ SpawnMod=0 ; Leave this alone
 ;
 ; SpawnPoll controls how often the game spawns new zeds (seconds)
 ; smaller=more intensity, bigger=less intensity
-SpawnPoll=1.0
+SpawnPoll=2.0
 ; CohortSize controls how many zeds spawn every SpawnPoll seconds
 ; smaller=less intensity, bigger=more intensity
 CohortSize=4
