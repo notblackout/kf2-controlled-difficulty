@@ -30,7 +30,11 @@ could also configure these settings through parameters to the
 `open` command used to start CD, or through chat commands.
 
 This config is not exactly the same as vanilla HOE; this config
-is probably somewhat more difficult.
+is probably somewhat more difficult.  Such a comparison is
+somewhat subjective, and there are a lot of variables left undefined
+here (for instance, there's a big difference between SpawnCycle
+basic_moderate and nam_pro_v3).  So think of the difficulty
+comparison as very loose and approximate.
 
 ```
 [ControlledDifficulty.CD_Survival]
