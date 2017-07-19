@@ -187,8 +187,8 @@ seconds).  This means zed time does not slow down or speed up spawns in real
 terms at all.
 
 When ZTSpawnSlowdown is greater than 1, the spawn manager wakeup timer is
-dilated to make it run that many times slower.  It takes floating point
-values -- it need not necessarily assume an integer value.
+dilated to make it run that many times slower than a real-world clock.
+It takes floating point values.
 
 For example, say ZTSpawnMode is set to clockwork, ZTSpawnSlowdown is set to
 2, SpawnPoll is set to 5, and SpawnMod is set to 0.  The spawn manager
