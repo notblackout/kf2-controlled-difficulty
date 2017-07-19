@@ -173,27 +173,37 @@ var float SpawnPollFloat;
 //
 // "clockwork" prevents the spawn manager wakeup timer from being destroyed
 // every time zed time starts.  "clockwork" also applies ZTSpawnSlowdown to the
-// spawn manager timer's dilation factor.  
+// spawn manager timer's dilation factor.   "clockwork" effectively makes the
+// spawn manager's timer run ZTSpawnSlowdown times slower than real time.  If
+// ZTSpawnSlowdown is 1, then the spawn manager's timer is immune to the
+// effects of zed time.  If ZTSpawnSlowdown is greater than 1, then the spawn
+// manager runs that many times slower than a real-world clock when zed time is
+// in effect.
 var config string ZTSpawnMode;
 var ECDZTSpawnMode ZTSpawnModeEnum;
 
 // #### ZTSpawnSlowdown
 //
-// If ZTSpawnSlowdown is 1.0, then the timer is not dilated, which means that
+// This option is only meaningful when ZTSpawnMode is set to clockwork.  If
+// ZTSpawnMode is not set to clockwork, then this option is effectively
+// ignored.
+//
+// If ZTSpawnSlowdown is 1, then the timer is not dilated, which means that
 // the spawn manager continues to wakeup every SpawnPoll (in real
 // seconds).  This means zed time does not slow down or speed up spawns in real
 // terms at all.
 //
 // When ZTSpawnSlowdown is greater than 1, the spawn manager wakeup timer is
-// dilated to make it run that many times slower.
+// dilated to make it run that many times slower.  It takes floating point
+// values -- it need not necessarily assume an integer value.
 //
-// For example, say ZTSpawnSlowdown is set to 2.0, SpawnPoll is set to
-// 5.0, and SpawnMode is set to 0.  The spawn manager wakes up, spawns some
-// zeds, and Zed Time starts one millisecond later.  Zed Time lasts 4 seconds.
-// The spawn manager's next wakeup will occur about 9 seconds after its last:
-// the spawn manager perceived 4 real seconds of zed time as only 2 seconds due
-// to ZTSpawnSlowdown, and then 3 more seconds elapsed during normal time, for
-// a total of 5 seconds.
+// For example, say ZTSpawnMode is set to clockwork, ZTSpawnSlowdown is set to
+// 2, SpawnPoll is set to 5, and SpawnMod is set to 0.  The spawn manager
+// wakes up and spawns some zeds.  Zed Time starts one millisecond later.  Zed
+// Time lasts 4 real seconds.  The spawn manager perceives these 4 real seconds
+// as only 2 seconds due to ZTSpawnSlowdown=2.  Zed time ends.  An additional
+// 3 seconds elapse in normal time, and the spawn manager wakes up again.  In
+// all, 7 seconds elapsed between spawn manager wakeups in this example.
 var config string ZTSpawnSlowdown;
 var config const array<string> ZTSpawnSlowdownDefs;
 var float ZTSpawnSlowdownFloat;
