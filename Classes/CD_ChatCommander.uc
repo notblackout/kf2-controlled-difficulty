@@ -345,7 +345,7 @@ function string GetCDInfoChatString( const string Verbosity )
 	{
 		Result =
 			MaxMonstersSetting.GetBriefChatLine() $ "\n" $
-			FakePlayersSetting.GetBriefChatLine() $ "\n" $
+			WaveSizeFakesSetting.GetBriefChatLine() $ "\n" $
 			SpawnPollSetting.GetBriefChatLine() $ "\n" $
 			SpawnModSetting.GetBriefChatLine() $ "\n" $
 			CohortSizeSetting.GetBriefChatLine() $ "\n" $

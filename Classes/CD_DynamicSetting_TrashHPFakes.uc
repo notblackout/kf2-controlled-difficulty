@@ -1,24 +1,24 @@
-class CD_DynamicSetting_BossFP extends CD_DynamicSetting
+class CD_DynamicSetting_TrashHPFakes extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.BossFP;
+	return Outer.TrashHPFakes;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.BossFP = Ind;
+	Outer.TrashHPFakes = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.BossFPInt);
+	return float(Outer.TrashHPFakesInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.BossFPInt = Round(Val);
+	Outer.TrashHPFakesInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="BossFPDefs"
-	OptionName="BossFP"
+	IniDefsArrayName="TrashHPFakesDefs"
+	OptionName="TrashHPFakes"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32
 
-	ChatCommandNames=("!cdbossfp")
+	ChatCommandNames=("!cdtrashhpfakes","!cdthpf")
 	ChatWriteParamHintFragment="int"
 }

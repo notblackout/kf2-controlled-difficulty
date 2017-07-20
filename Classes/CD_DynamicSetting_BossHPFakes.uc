@@ -1,24 +1,24 @@
-class CD_DynamicSetting_ScrakeFP extends CD_DynamicSetting
+class CD_DynamicSetting_BossHPFakes extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.ScrakeFP;
+	return Outer.BossHPFakes;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.ScrakeFP = Ind;
+	Outer.BossHPFakes = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.ScrakeFPInt);
+	return float(Outer.BossHPFakesInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.ScrakeFPInt = Round(Val);
+	Outer.BossHPFakesInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="ScrakeFPDefs"
-	OptionName="ScrakeFP"
+	IniDefsArrayName="BossHPFakesDefs"
+	OptionName="BossHPFakes"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32
 
-	ChatCommandNames=("!cdscrakefp")
+	ChatCommandNames=("!cdbosshpfakes","!cdbhpf")
 	ChatWriteParamHintFragment="int"
 }

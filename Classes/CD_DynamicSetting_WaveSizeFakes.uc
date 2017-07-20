@@ -1,24 +1,24 @@
-class CD_DynamicSetting_TrashFP extends CD_DynamicSetting
+class CD_DynamicSetting_WaveSizeFakes extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.TrashFP;
+	return Outer.WaveSizeFakes;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.TrashFP = Ind;
+	Outer.WaveSizeFakes = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.TrashFPInt);
+	return float(Outer.WaveSizeFakesInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.TrashFPInt = Round(Val);
+	Outer.WaveSizeFakesInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="TrashFPDefs"
-	OptionName="TrashFP"
+	IniDefsArrayName="WaveSizeFakesDefs"
+	OptionName="WaveSizeFakes"
 	DefaultSettingValue=0
 	MinSettingValue=0
-	MaxSettingValue=32
+	MaxSettingValue=160
 
-	ChatCommandNames=("!cdtrashfp")
+	ChatCommandNames=("!cdwavesizefakes","!cdwsf")
 	ChatWriteParamHintFragment="int"
 }

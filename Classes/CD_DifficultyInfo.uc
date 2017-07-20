@@ -26,7 +26,7 @@ function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
  * GetDamageResistanceModifierForZedType (a CD-specific extension).
  *
  * Nothing should ever call this function.  It's intrinsically unsafe because it
- * can't tell which of BossFP/FleshpoundFP/ScrakeFP/TrashFP/etc to apply to its
+ * can't tell which of Boss/Fleshpound/Scrake/TrashHPFakes to apply to its
  * return value.
  */
 function float GetDamageResistanceModifier( byte NumLivingPlayers )

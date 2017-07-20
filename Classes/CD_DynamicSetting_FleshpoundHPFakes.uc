@@ -1,24 +1,24 @@
-class CD_DynamicSetting_FleshpoundFP extends CD_DynamicSetting
+class CD_DynamicSetting_FleshpoundHPFakes extends CD_DynamicSetting
 	within CD_Survival;
 
 protected function string ReadIndicator()
 {
-	return Outer.FleshpoundFP;
+	return Outer.FleshpoundHPFakes;
 }
 
 protected function WriteIndicator( const out string Ind )
 {
-	Outer.FleshpoundFP = Ind;
+	Outer.FleshpoundHPFakes = Ind;
 }
 
 protected function float ReadValue()
 {
-	return float(Outer.FleshpoundFPInt);
+	return float(Outer.FleshpoundHPFakesInt);
 }
 
 protected function WriteValue( const out float Val )
 {
-	Outer.FleshpoundFPInt = Round(Val);
+	Outer.FleshpoundHPFakesInt = Round(Val);
 }
 
 protected function string PrettyValue( const float RawValue )
@@ -28,12 +28,12 @@ protected function string PrettyValue( const float RawValue )
 
 defaultproperties
 {
-	IniDefsArrayName="FleshpoundFPDefs"
-	OptionName="FleshpoundFP"
+	IniDefsArrayName="FleshpoundHPFakesDefs"
+	OptionName="FleshpoundHPFakes"
 	DefaultSettingValue=0
 	MinSettingValue=0
 	MaxSettingValue=32
 
-	ChatCommandNames=("!cdfleshpoundfp")
+	ChatCommandNames=("!cdfleshpoundhpfakes","!cdfphpf")
 	ChatWriteParamHintFragment="int"
 }

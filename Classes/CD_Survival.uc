@@ -16,7 +16,7 @@ enum ECDWaveInfoStatus
 	WIS_SPAWNCYCLE_NOT_MODDED
 };
 
-enum ECDFakePlayersMode
+enum ECDFakesMode
 {
 	FPM_ADD,
 	FPM_REPLACE
@@ -295,86 +295,83 @@ var array<CD_AIWaveInfo> SpawnCycleWaveInfos;
 
 
 //
-// ### FakePlayers Settings
+// ### Fakes Settings
 //
 
-// #### FakePlayers
+// #### WaveSizeFakes
 //
 // Increase zed count (but not hp) as though this many additional players were
 // present.  The game normally increases dosh rewards for each zed at
 // numplayers >= 3, and faking players this way does the same.  You can always
 // refrain from buying if you want an extra challenge, but if the mod denied
 // you that bonus dosh, it could end up being gamebreaking for some runs.  In
-// short, FakePlayers increases both your budget and the zed count in each
+// short, WaveSizeFakes increases both your budget and the zed count in each
 // wave.
-//
-// The name "FakePlayers" is something of a historical artifact at this point.
-// This option might better be called "ExtraWaveSize" where the units are
-// phantom players.
-var config string FakePlayers; 
-var config const array<string> FakePlayersDefs; 
-var int FakePlayersInt;
+var config string WaveSizeFakes; 
+var config const array<string> WaveSizeFakesDefs; 
+var int WaveSizeFakesInt;
 
-// #### FakePlayersMode
+// #### FakesMode
 //
-// Controls how the values of the FakePlayers, BossFP, FleshpoundFP,
-// ScrakeFP, and TrashFP settings interact with the human player count.
+// Controls how the values of the WaveSizeFakes, BossHPFakes,
+// FleshpoundHPFakes, ScrakeHPFakes, and TrashHPFakes settings interact with
+// the human player count.
 //
-// If set to "add", then the values of various fake options are added to the
-// human player count value.  For example, playing solo with FakePlayers=1,
-// each wave will be sized as though two real humans were playing.
+// If set to "add_with_humans", then the values of various fake options are
+// added to the human player count value.  For example, playing solo long with
+// WaveSizeFakes=1 results in the first wave having 85 zeds.
 //
-// If set to "replace", then only the value of a specific fake option is
+// If set to "ignore_humans", then only the value of a specific fakes option is
 // considered in its context, and the human player count value is ignored.  For
-// example, playing solo with FakePlayers=2, each wave will be sized as though
-// two real humans were playing.  If this is set to "replace" and any fake
-// option is set to zero, then that option is treated as though it had been set
-// to one instead.  
-var config string FakePlayersMode;
-var ECDFakePlayersMode FakePlayersModeEnum;
+// example, setting "ignore_humans" and WaveSizeFakes=2 is equivalent to
+// setting "add_with_humans" and playing solo with WaveSizeFakes=1.
+//
+// If this is set to "ignore_humans" and any fake option is set to zero, then
+// that option is treated as though it had been set to one instead.  
+var config string FakesMode;
+var ECDFakesMode FakesModeEnum;
 
-// #### BossFP
+// #### BossHPFakes
 //
-// The FakePlayers modifier applied when scaling boss head and body health.
+// The fakes modifier applied when scaling boss head and body health.
 //
-// This is affected by FakePlayersMode.
-var config string BossFP;
-var config const array<string> BossFPDefs;
-var int BossFPInt;
+// This is affected by FakesMode.
+var config string BossHPFakes;
+var config const array<string> BossHPFakesDefs;
+var int BossHPFakesInt;
 
-// #### FleshpoundFP
+// #### FleshpoundHPFakes
 //
-// The FakePlayers modifier applied when scaling fleshpound head and body
-// health.
+// The fakes modifier applied when scaling fleshpound head and body health.
 //
-// This is affected by FakePlayersMode.
-var config string FleshpoundFP;
-var config const array<string> FleshpoundFPDefs;
-var int FleshpoundFPInt;
+// This is affected by FakesMode.
+var config string FleshpoundHPFakes;
+var config const array<string> FleshpoundHPFakesDefs;
+var int FleshpoundHPFakesInt;
 
-// #### ScrakeFP
+// #### ScrakeHPFakes
 //
-// The FakePlayers modifier applied when scaling scrake head and body health.
+// The fakes modifier applied when scaling scrake head and body health.
 //
-// This is affected by FakePlayersMode.
-var config string ScrakeFP;
-var config const array<string> ScrakeFPDefs;
-var int ScrakeFPInt;
+// This is affected by FakesMode.
+var config string ScrakeHPFakes;
+var config const array<string> ScrakeHPFakesDefs;
+var int ScrakeHPFakesInt;
 
-// #### TrashFP
+// #### TrashHPFakes
 //
-// The FakePlayers modifier applied when scaling trash zed head and body
-// health.  The trash HP scaling algorithm is a bit screwy compared to the
-// other zed HP scaling algorithms, and this parameter only generally matters
-// when the net count exceeds 6.
+// The fakes modifier applied when scaling trash zed head and body health.  The
+// trash HP scaling algorithm is a bit screwy compared to the other zed HP
+// scaling algorithms, and this parameter only generally matters when the net
+// count exceeds 6.
 //
 // "Trash" in this context means any zed that is not a boss, a scrake, or a
 // fleshpound.
 //
-// This is affected by FakePlayersMode.
-var config string TrashFP;
-var config const array<string> TrashFPDefs;
-var int TrashFPInt;
+// This is affected by FakesMode.
+var config string TrashHPFakes;
+var config const array<string> TrashHPFakesDefs;
+var int TrashHPFakesInt;
 
 
 //
@@ -502,15 +499,15 @@ var config bool bLogControlledDifficulty;
 // Internal runtime state (no config options below this line) //
 ////////////////////////////////////////////////////////////////
 
-var CD_DynamicSetting BossFPSetting;
+var CD_DynamicSetting BossHPFakesSetting;
 var CD_DynamicSetting CohortSizeSetting;
-var CD_DynamicSetting FakePlayersSetting;
-var CD_DynamicSetting FleshpoundFPSetting;
+var CD_DynamicSetting WaveSizeFakesSetting;
+var CD_DynamicSetting FleshpoundHPFakesSetting;
 var CD_DynamicSetting MaxMonstersSetting;
 var CD_DynamicSetting SpawnPollSetting;
-var CD_DynamicSetting ScrakeFPSetting;
+var CD_DynamicSetting ScrakeHPFakesSetting;
 var CD_DynamicSetting SpawnModSetting;
-var CD_DynamicSetting TrashFPSetting;
+var CD_DynamicSetting TrashHPFakesSetting;
 var CD_DynamicSetting ZTSpawnSlowdownSetting;
 
 var array<CD_DynamicSetting> DynamicSettings;
@@ -519,7 +516,7 @@ var CD_BasicSetting AlbinoAlphasSetting;
 var CD_BasicSetting AlbinoCrawlersSetting;
 var CD_BasicSetting AlbinoGorefastsSetting;
 var CD_BasicSetting BossSetting;
-var CD_BasicSetting FakePlayersModeSetting;
+var CD_BasicSetting FakesModeSetting;
 var CD_BasicSetting FleshpoundRageSpawnsSetting;
 var CD_BasicSetting SpawnCycleSetting;
 var CD_BasicSetting TraderTimeSetting;
@@ -642,8 +639,8 @@ private function SetupBasicSettings()
 	BossSetting = new(self) class'CD_BasicSetting_Boss';
 	RegisterBasicSetting( BossSetting );
 
-	FakePlayersModeSetting = new(self) class'CD_BasicSetting_FakePlayersMode';
-	RegisterBasicSetting( FakePlayersModeSetting );
+	FakesModeSetting = new(self) class'CD_BasicSetting_FakesMode';
+	RegisterBasicSetting( FakesModeSetting );
 
 	FleshpoundRageSpawnsSetting = new(self) class'CD_BasicSetting_FleshpoundRageSpawns';
 	RegisterBasicSetting( FleshpoundRageSpawnsSetting );
@@ -666,17 +663,17 @@ private function SetupBasicSettings()
 
 private function SetupDynamicSettings()
 {
-	BossFPSetting = new(self) class'CD_DynamicSetting_BossFP';
-	BossFPSetting.IniDefsArray = BossFPDefs;
-	RegisterDynamicSetting( BossFPSetting );
+	BossHPFakesSetting = new(self) class'CD_DynamicSetting_BossHPFakes';
+	BossHPFakesSetting.IniDefsArray = BossHPFakesDefs;
+	RegisterDynamicSetting( BossHPFakesSetting );
 
 	CohortSizeSetting = new(self) class'CD_DynamicSetting_CohortSize';
 	CohortSizeSetting.IniDefsArray = CohortSizeDefs;
 	RegisterDynamicSetting( CohortSizeSetting );
 
-	FakePlayersSetting = new(self) class'CD_DynamicSetting_FakePlayers';
-	FakePlayersSetting.IniDefsArray = FakePlayersDefs;
-	RegisterDynamicSetting( FakePlayersSetting );
+	WaveSizeFakesSetting = new(self) class'CD_DynamicSetting_WaveSizeFakes';
+	WaveSizeFakesSetting.IniDefsArray = WaveSizeFakesDefs;
+	RegisterDynamicSetting( WaveSizeFakesSetting );
 
 	MaxMonstersSetting = new(self) class'CD_DynamicSetting_MaxMonsters';
 	MaxMonstersSetting.IniDefsArray = MaxMonstersDefs;
@@ -690,17 +687,17 @@ private function SetupDynamicSettings()
 	SpawnPollSetting.IniDefsArray = SpawnPollDefs;
 	RegisterDynamicSetting( SpawnPollSetting );
 
-	ScrakeFPSetting = new(self) class'CD_DynamicSetting_ScrakeFP';
-	ScrakeFPSetting.IniDefsArray = ScrakeFPDefs;
-	RegisterDynamicSetting( ScrakeFPSetting );
+	ScrakeHPFakesSetting = new(self) class'CD_DynamicSetting_ScrakeHPFakes';
+	ScrakeHPFakesSetting.IniDefsArray = ScrakeHPFakesDefs;
+	RegisterDynamicSetting( ScrakeHPFakesSetting );
 
-	FleshpoundFPSetting = new(self) class'CD_DynamicSetting_FleshpoundFP';
-	FleshpoundFPSetting.IniDefsArray = FleshpoundFPDefs;
-	RegisterDynamicSetting( FleshpoundFPSetting );
+	FleshpoundHPFakesSetting = new(self) class'CD_DynamicSetting_FleshpoundHPFakes';
+	FleshpoundHPFakesSetting.IniDefsArray = FleshpoundHPFakesDefs;
+	RegisterDynamicSetting( FleshpoundHPFakesSetting );
 
-	TrashFPSetting = new(self) class'CD_DynamicSetting_TrashFP';
-	TrashFPSetting.IniDefsArray = TrashFPDefs;
-	RegisterDynamicSetting( TrashFPSetting );
+	TrashHPFakesSetting = new(self) class'CD_DynamicSetting_TrashHPFakes';
+	TrashHPFakesSetting.IniDefsArray = TrashHPFakesDefs;
+	RegisterDynamicSetting( TrashHPFakesSetting );
 
 	ZTSpawnSlowdownSetting = new(self) class'CD_DynamicSetting_ZTSpawnSlowdown';
 	ZTSpawnSlowdownSetting.IniDefsArray = ZTSpawnSlowdownDefs;
@@ -1113,7 +1110,7 @@ function InitGameConductor()
 {
 	super.InitGameConductor();
 
-	`cdlog("FakePlayers in InitGameConductor(): "$ FakePlayers, bLogControlledDifficulty);
+	`cdlog("WaveSizeFakes in InitGameConductor(): "$ WaveSizeFakes, bLogControlledDifficulty);
 
 	if ( GameConductor.isA( 'CD_DummyGameConductor' ) )
 	{
@@ -1140,7 +1137,7 @@ function CreateDifficultyInfo(string Options)
 }
 
 /*
- * We override this function to apply FakePlayers modifier
+ * We override this function to apply WaveSizeFakes modifier
  * to dosh rewards for killing zeds.
  */
 function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
@@ -1157,49 +1154,54 @@ function ModifyAIDoshValueForPlayerCount( out float ModifiedValue )
 
 	ModifiedValue *= DoshMod;
 
-	`cdlog("DoshCalc: ModifiedValue="$ ModifiedValue $" FakePlayers="$ FakePlayersInt $" FakePlayersMode="$ FakePlayersMode $
+	`cdlog("DoshCalc: ModifiedValue="$ ModifiedValue $" WaveSizeFakes="$ WaveSizeFakesInt $" FakesMode="$ FakesMode $
 	       " RealPlayers="$ LocalNumPlayers $" computed MaxAIDoshDenominator="$ LocalMaxAIMod, bLogControlledDifficulty);
 }
 
 /*
- * Get param + FakePlayers (not BossFP, FleshpoundFP, or any other *FP value).
- * This automatically accounts for FakePlayersMode.  If FPM_REPLACE is
- * active and FakePlayersInt is 0, then this method returns 1.
+ * Get param + WaveSizeFakes (not BossHPFakes, FleshpoundHPFakes, or any other
+ * *FP value).  This automatically accounts for FakesMode.  If FPM_REPLACE is
+ * active and WaveSizeFakesInt is 0, then this method returns 1.
  */
 final function int GetEffectivePlayerCount( int HumanPlayers )
 {
-	if ( FakePlayersModeEnum == FPM_ADD )
+	if ( FakesModeEnum == FPM_ADD )
 	{
-		return FakePlayersInt + HumanPlayers;
+		return WaveSizeFakesInt + HumanPlayers;
 	}
 	else
 	{
-		return 0 < FakePlayersInt ? FakePlayersInt : 1;
+		return 0 < WaveSizeFakesInt ? WaveSizeFakesInt : 1;
 	}
 }
 
+/*
+ * Get the playercount applied to a specific zed's HP scaling.  This accounts
+ * for FakesMode and whichever Boss/Fleshpound/Scrake/TrashHPFakes option is
+ * applicable.
+ */
 final function int GetEffectivePlayerCountForZedType( KFPawn_Monster P, int HumanPlayers )
 {
 	local int FakeValue, EffectiveNumPlayers;
 
 	if ( None != KFPawn_MonsterBoss( P ) )
 	{
-		FakeValue = BossFPInt;
+		FakeValue = BossHPFakesInt;
 	}
 	else if ( None != KFPawn_ZedFleshpound( P ) )
 	{
-		FakeValue = FleshpoundFPInt;
+		FakeValue = FleshpoundHPFakesInt;
 	}
 	else if ( None != KFPawn_ZedScrake( P ) )
 	{
-		FakeValue = ScrakeFPInt;
+		FakeValue = ScrakeHPFakesInt;
 	}
 	else
 	{
-		FakeValue = TrashFPInt;
+		FakeValue = TrashHPFakesInt;
 	}
 
-	if ( FakePlayersModeEnum == FPM_ADD )
+	if ( FakesModeEnum == FPM_ADD )
 	{
 		EffectiveNumPlayers = HumanPlayers + FakeValue;
 	}
@@ -1310,7 +1312,7 @@ function WaveEnded( EWaveEndCondition WinCondition )
  *    function float GetDamageResistanceModifier( byte NumLivingPlayers )
  *
  * This function is inherently incompatible with zed-type-specific HP
- * scaling (e.g. FleshpoundFP).  It's being asked to calculate
+ * scaling (e.g. FleshpoundHPFakes).  It's being asked to calculate
  * KFPawn_Monster.GameResistancePct without knowing the zed type.
  * This calculation is sensitive to zed-type HP-fakeplayers values,
  * but there's no way for the function to know which zed-type
