@@ -267,69 +267,66 @@ All other values are reserved for current and future preset names.  Type
 CDSpawnPresets to see available preset names.
 
 
-### FakePlayers Settings
+### Fakes Settings
 
 
-#### FakePlayers
+#### WaveSizeFakes
 
 Increase zed count (but not hp) as though this many additional players were
 present.  The game normally increases dosh rewards for each zed at
 numplayers >= 3, and faking players this way does the same.  You can always
 refrain from buying if you want an extra challenge, but if the mod denied
 you that bonus dosh, it could end up being gamebreaking for some runs.  In
-short, FakePlayers increases both your budget and the zed count in each
+short, WaveSizeFakes increases both your budget and the zed count in each
 wave.
 
-The name "FakePlayers" is something of a historical artifact at this point.
-This option might better be called "ExtraWaveSize" where the units are
-phantom players.
+#### FakesMode
 
-#### FakePlayersMode
+Controls how the values of the WaveSizeFakes, BossHPFakes,
+FleshpoundHPFakes, ScrakeHPFakes, and TrashHPFakes settings interact with
+the human player count.
 
-Controls how the values of the FakePlayers, BossFP, FleshpoundFP,
-ScrakeFP, and TrashFP settings interact with the human player count.
+If set to "add_with_humans", then the values of various fake options are
+added to the human player count value.  For example, playing solo long with
+WaveSizeFakes=1 results in the first wave having 85 zeds.
 
-If set to "add", then the values of various fake options are added to the
-human player count value.  For example, playing solo with FakePlayers=1,
-each wave will be sized as though two real humans were playing.
-
-If set to "replace", then only the value of a specific fake option is
+If set to "ignore_humans", then only the value of a specific fakes option is
 considered in its context, and the human player count value is ignored.  For
-example, playing solo with FakePlayers=2, each wave will be sized as though
-two real humans were playing.  If this is set to "replace" and any fake
-option is set to zero, then that option is treated as though it had been set
-to one instead.  
+example, setting "ignore_humans" and WaveSizeFakes=2 is equivalent to
+setting "add_with_humans" and playing solo with WaveSizeFakes=1.
 
-#### BossFP
+If this is set to "ignore_humans" and any fake option is set to zero, then
+that option is treated as though it had been set to one instead.  
 
-The FakePlayers modifier applied when scaling boss head and body health.
+#### BossHPFakes
 
-This is affected by FakePlayersMode.
+The fakes modifier applied when scaling boss head and body health.
 
-#### FleshpoundFP
+This is affected by FakesMode.
 
-The FakePlayers modifier applied when scaling fleshpound head and body
-health.
+#### FleshpoundHPFakes
 
-This is affected by FakePlayersMode.
+The fakes modifier applied when scaling fleshpound head and body health.
 
-#### ScrakeFP
+This is affected by FakesMode.
 
-The FakePlayers modifier applied when scaling scrake head and body health.
+#### ScrakeHPFakes
 
-This is affected by FakePlayersMode.
+The fakes modifier applied when scaling scrake head and body health.
 
-#### TrashFP
+This is affected by FakesMode.
 
-The FakePlayers modifier applied when scaling trash zed head and body
-health.  The trash HP scaling algorithm is a bit screwy compared to the
-other zed HP scaling algorithms, and this parameter only generally matters
-when the net count exceeds 6.
+#### TrashHPFakes
+
+The fakes modifier applied when scaling trash zed head and body health.  The
+trash HP scaling algorithm is a bit screwy compared to the other zed HP
+scaling algorithms, and this parameter only generally matters when the net
+count exceeds 6.
 
 "Trash" in this context means any zed that is not a boss, a scrake, or a
 fleshpound.
 
-This is affected by FakePlayersMode.
+This is affected by FakesMode.
 
 
 ### Chat Command Authorization

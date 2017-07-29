@@ -22,5 +22,5 @@ Just want to jump into CD solo?  Here's how:
    You can add options to customize CD.  Options key-value pairs separated from one another by "?" signs.
    For example:
    ```
-   open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?CohortSize=8?SpawnPoll=2.0?FakePlayers=2
+   open KF-Hillside-B4?game=ControlledDifficulty.CD_Survival?CohortSize=8?SpawnPoll=2.0?WaveSizeFakes=2
    ```

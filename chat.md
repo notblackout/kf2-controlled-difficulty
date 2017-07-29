@@ -8,9 +8,9 @@ These commands all start with the string **"!cd"**.
 
 Chat commands may be issued at any time CD is loaded: in the warmup session before a game starts, during a wave, during trader time, or after a game has ended.
 
-Every chat command belongs to exactly one of two categories: `CDAUTH_READ` or `CDAUTH_WRITE`.  An example of a `CDAUTH_READ` command is **"!cdfakeplayers"**, which prints the current FakePlayers setting.  An example of a `CDAUTH_WRITE` command is **"!cdfakeplayers 5"**, which sets FakePlayers to 5.
+Every chat command belongs to exactly one of two categories: `CDAUTH_READ` or `CDAUTH_WRITE`.  An example of a `CDAUTH_READ` command is **"!cdmaxmonsters"**, which prints the current MaxMonsters setting.  An example of a `CDAUTH_WRITE` command is **"!cdmaxmonsters 36"**, which sets MaxMonsters to 36.
 
-`CDAUTH_WRITE` commands apply immediately when issued outside a wave (i.e. in pregame warmup, trader time, or after a game has ended).  However, when a `CDAUTH_WRITE` command is issued mid-wave, it delays application via a mechanism called "staging".  This means the command writes your modification to temporary storage without applying it to the live game configuration.  It immediately responds with a string like "Staged: FakePlayers=5".  As soon as the wave ends -- either due to the trader opening, the team winning, or the team dying -- your changes are applied, and CD displays a reminder notification displaying the option name and the new value that it has just copied from temporary storage to the live game configuration.
+`CDAUTH_WRITE` commands apply immediately when issued outside a wave (i.e. in pregame warmup, trader time, or after a game has ended).  However, when a `CDAUTH_WRITE` command is issued mid-wave, it delays application via a mechanism called "staging".  This means the command writes your modification to temporary storage without applying it to the live game configuration.  It immediately responds with a string like "Staged: MaxMonsters=36".  As soon as the wave ends -- either due to the trader opening, the team winning, or the team dying -- your changes are applied, and CD displays a reminder notification displaying the option name and the new value that it has just copied from temporary storage to the live game configuration.
 
 `CDAUTH_READ` commands always respond immediately.  `CDAUTH_READ` commands are aware of the staging mechanism.  If a `CDAUTH_READ` command is issued mid-wave after relevant configuration writes have been staged, it will report both the actual and staged values.
 
@@ -46,7 +46,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdalbinoalphas <true|false> 
+### !cdalbinoalphas <true|false>
 
 *Description:* Set AlbinoAlphas
 
@@ -58,7 +58,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdalbinocrawlers <true|false> 
+### !cdalbinocrawlers <true|false>
 
 *Description:* Set AlbinoCrawlers
 
@@ -70,7 +70,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdalbinogorefasts <true|false> 
+### !cdalbinogorefasts <true|false>
 
 *Description:* Set AlbinoGorefasts
 
@@ -82,21 +82,25 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdboss <volter|patriarch|random> 
+### !cdboss <volter|patriarch|random>
 
 *Description:* Set Boss
 
 *Auth level:* [CDAUTH_WRITE]
 
-### !cdbossfp 
+### !cdbosshpfakes 
 
-*Description:* Get BossFP
+*Alternate name(s):* !cdbhpf
+
+*Description:* Get BossHPFakes
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdbossfp <ini|bilinear;<func>|int> 
+### !cdbosshpfakes <ini|bilinear;<func>|int>
 
-*Description:* Set BossFP
+*Alternate name(s):* !cdbhpf
+
+*Description:* Set BossHPFakes
 
 *Auth level:* [CDAUTH_WRITE]
 
@@ -108,7 +112,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdcohortsize <ini|bilinear;<func>|int, 0 disables cohort mode> 
+### !cdcohortsize <ini|bilinear;<func>|int, 0 disables cohort mode>
 
 *Alternate name(s):* !cdcs
 
@@ -116,43 +120,35 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_WRITE]
 
-### !cdfakeplayers 
+### !cdfakesmode 
 
-*Alternate name(s):* !cdfp
+*Alternate name(s):* !cdfm
 
-*Description:* Get FakePlayers
+*Description:* Get FakesMode
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdfakeplayers <ini|bilinear;<func>|int> 
+### !cdfakesmode <add_with_humans|ignore_humans>
 
-*Alternate name(s):* !cdfp
+*Alternate name(s):* !cdfm
 
-*Description:* Set FakePlayers
+*Description:* Set FakesMode
 
 *Auth level:* [CDAUTH_WRITE]
 
-### !cdfakeplayersmode 
+### !cdfleshpoundhpfakes 
 
-*Description:* Get FakePlayersMode
+*Alternate name(s):* !cdfphpf
 
-*Auth level:* [CDAUTH_READ]
-
-### !cdfakeplayersmode <add|replace> 
-
-*Description:* Set FakePlayersMode
-
-*Auth level:* [CDAUTH_WRITE]
-
-### !cdfleshpoundfp 
-
-*Description:* Get FleshpoundFP
+*Description:* Get FleshpoundHPFakes
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdfleshpoundfp <ini|bilinear;<func>|int> 
+### !cdfleshpoundhpfakes <ini|bilinear;<func>|int>
 
-*Description:* Set FleshpoundFP
+*Alternate name(s):* !cdfphpf
+
+*Description:* Set FleshpoundHPFakes
 
 *Auth level:* [CDAUTH_WRITE]
 
@@ -162,11 +158,23 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdfleshpoundragespawns <true|false> 
+### !cdfleshpoundragespawns <true|false>
 
 *Description:* Set FleshpoundRageSpawns
 
 *Auth level:* [CDAUTH_WRITE]
+
+### !cdinfo 
+
+*Description:* Display CD config summary
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdinfo <full|abbrev>
+
+*Description:* Display full CD config
+
+*Auth level:* [CDAUTH_READ]
 
 ### !cdmaxmonsters 
 
@@ -176,7 +184,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdmaxmonsters <ini|bilinear;<func>|int, 0 to use unmodded default> 
+### !cdmaxmonsters <ini|bilinear;<func>|int, 0 to use unmodded default>
 
 *Alternate name(s):* !cdmm
 
@@ -184,15 +192,27 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_WRITE]
 
-### !cdscrakefp 
+### !cdpausetrader 
 
-*Description:* Get ScrakeFP
+*Alternate name(s):* !cdpt
+
+*Description:* Pause TraderTime countdown
+
+*Auth level:* [CDAUTH_WRITE]
+
+### !cdscrakehpfakes 
+
+*Alternate name(s):* !cdschpf
+
+*Description:* Get ScrakeHPFakes
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdscrakefp <ini|bilinear;<func>|int> 
+### !cdscrakehpfakes <ini|bilinear;<func>|int>
 
-*Description:* Set ScrakeFP
+*Alternate name(s):* !cdschpf
+
+*Description:* Set ScrakeHPFakes
 
 *Auth level:* [CDAUTH_WRITE]
 
@@ -202,7 +222,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdspawncycle <ini|bilinear;<func>|name_of_spawn_cycle|unmodded> 
+### !cdspawncycle <ini|name_of_spawn_cycle|unmodded>
 
 *Description:* Set SpawnCycle
 
@@ -216,7 +236,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdspawnmod <ini|bilinear;<func>|float, default is 1.0> 
+### !cdspawnmod <ini|bilinear;<func>|float, default is 1.0>
 
 *Alternate name(s):* !cdsm
 
@@ -232,7 +252,7 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdspawnpoll <ini|bilinear;<func>|float, default is 1.0> 
+### !cdspawnpoll <ini|bilinear;<func>|float, default is 1.0>
 
 *Alternate name(s):* !cdsp
 
@@ -246,77 +266,19 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdtrashfp 
+### !cdtrashhpfakes 
 
-*Description:* Get TrashFP
+*Alternate name(s):* !cdthpf
 
-*Auth level:* [CDAUTH_READ]
-
-### !cdtrashfp <ini|bilinear;<func>|int> 
-
-*Description:* Set TrashFP
-
-*Auth level:* [CDAUTH_WRITE]
-
-### !cdweapontimeout 
-
-*Description:* Get WeaponTimeout
+*Description:* Get TrashHPFakes
 
 *Auth level:* [CDAUTH_READ]
 
-### !cdweapontimeout <int seconds, "max", or "unmodded"/-1> 
+### !cdtrashhpfakes <ini|bilinear;<func>|int>
 
-*Description:* Set WeaponTimeout
+*Alternate name(s):* !cdthpf
 
-*Auth level:* [CDAUTH_WRITE]
-
-### !cdztspawnmode 
-
-*Description:* Get ZTSpawnMode
-
-*Auth level:* [CDAUTH_READ]
-
-### !cdztspawnmode <clockwork|unmodded> 
-
-*Description:* Set ZTSpawnMode
-
-*Auth level:* [CDAUTH_WRITE]
-
-### !cdztspawnslowdown 
-
-*Description:* Get ZTSpawnSlowdown
-
-*Auth level:* [CDAUTH_READ]
-
-### !cdztspawnslowdown <ini|bilinear;<func>|float, default is 1.0> 
-
-*Description:* Set ZTSpawnSlowdown
-
-*Auth level:* [CDAUTH_WRITE]
-
-### !cdzedsteleportcloser 
-
-*Alternate name(s):* !cdztc
-
-*Description:* Get ZedsTeleportCloser
-
-*Auth level:* [CDAUTH_READ]
-
-### !cdzedsteleportcloser <true|false> 
-
-*Alternate name(s):* !cdztc
-
-*Description:* Set ZedsTeleportCloser
-
-*Auth level:* [CDAUTH_WRITE]
-
-## Miscellaneous Chat Command Reference
-
-### !cdpausetrader 
-
-*Alternate name(s):* **!cdpt**
-
-*Description:* Pause TraderTime countdown
+*Description:* Set TrashHPFakes
 
 *Auth level:* [CDAUTH_WRITE]
 
@@ -328,26 +290,82 @@ Playing CD solo automatically and unconditionally enables all chat commands, bot
 
 *Auth level:* [CDAUTH_WRITE]
 
-### !cdinfo 
-
-*Description:* Display CD config summary
-
-*Auth level:* [CDAUTH_READ]
-
-### !cdinfo <full|abbrev> 
-
-*Description:* Display full CD config
-
-*Auth level:* [CDAUTH_READ]
-
 ### !cdversion 
 
 *Description:* Display mod version
 
 *Auth level:* [CDAUTH_READ]
 
+### !cdwavesizefakes 
+
+*Alternate name(s):* !cdwsf
+
+*Description:* Get WaveSizeFakes
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdwavesizefakes <ini|bilinear;<func>|int>
+
+*Alternate name(s):* !cdwsf
+
+*Description:* Set WaveSizeFakes
+
+*Auth level:* [CDAUTH_WRITE]
+
+### !cdweapontimeout 
+
+*Description:* Get WeaponTimeout
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdweapontimeout <int seconds, "max", or "unmodded"/-1>
+
+*Description:* Set WeaponTimeout
+
+*Auth level:* [CDAUTH_WRITE]
+
 ### !cdwho 
 
 *Description:* Display names of connected players
 
 *Auth level:* [CDAUTH_READ]
+
+### !cdzedsteleportcloser 
+
+*Alternate name(s):* !cdztc
+
+*Description:* Get ZedsTeleportCloser
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdzedsteleportcloser <true|false>
+
+*Alternate name(s):* !cdztc
+
+*Description:* Set ZedsTeleportCloser
+
+*Auth level:* [CDAUTH_WRITE]
+
+### !cdztspawnmode 
+
+*Description:* Get ZTSpawnMode
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdztspawnmode <clockwork|unmodded>
+
+*Description:* Set ZTSpawnMode
+
+*Auth level:* [CDAUTH_WRITE]
+
+### !cdztspawnslowdown 
+
+*Description:* Get ZTSpawnSlowdown
+
+*Auth level:* [CDAUTH_READ]
+
+### !cdztspawnslowdown <ini|bilinear;<func>|float, default is 1.0>
+
+*Description:* Set ZTSpawnSlowdown
+
+*Auth level:* [CDAUTH_WRITE]

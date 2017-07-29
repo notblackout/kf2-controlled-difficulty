@@ -176,11 +176,19 @@ CohortSize=4
 MaxMonsters=16
 ```
 
-### Tuning Wave Size with `FakePlayers`
+### Tuning Wave Size with `WaveSizeFakes`
 
-FakePlayers only affects the number of zeds in a wave.
+WaveSizeFakes only affects the number of zeds in a wave.
 Basically, when it is time for the game to calculate the
-size of a wave, it pretends these FakePlayers were present.
+size of a wave, it pretends that WaveSizeFakes additional
+players were present.
+
+This option was called FakePlayers from CD's inception up
+until July 2017.  It was renamed around that time to
+WaveSizeFakes in an attempt to distinguish its role from
+other recently-introduced options that are also denominated
+in fake players, but which have other functions, such as
+FleshpoundHPFakes.
 
 This setting is mostly a matter of taste, but it has a
 substantial impact on difficulty, particularly in solo.
@@ -197,33 +205,38 @@ linearly with net player count.
 Larger waves tend to revert the player or team's kill rate
 to mean for a variety of reasons: fatigue, grenades,
 weapon swaps, long reloads, etc.  Both large and small
-waves can be difficult dependin on the settings, but all
+waves can be difficult depending on the settings, but all
 else equal, a longer wave tends to be harder than an a
 smaller one.
 
-Whether FakePlayers is added to the actual player count or
-whether it replaces the actual player counnt is controlled
-by FakePlayersMode.  For configurations between and including
-solo and 6-man, the default value `add` is usually
-preferable.  The other mode -- `replace` -- is aimed mainly
-at modded servers with huge MaxPlayers and at scaling zed
-health.
+WaveSizeFakes is affected by another option called FakesMode.
+This controls whether WaveSizeFakes overrides or is added to
+the human player count when sizing waves.  FakesMode also
+applies to the HP scaling options described in the next
+section.
+
+The default FakesMode value `add_with_humans` sums fakes
+with the human player count.  The other FakesMode value
+`ignore_humans` pretends as though only fakes were present.
+If there are zero fakes and `ignore_humans` is in effect,
+then CD instead behaves as though a single fake was present.
 
 ### Scaling Zed Health
 
-BossFP, FleshpoundFP, ScrakeFP, and TrashFP affect zed body
-and head health.  They do *not* affect the number of these
-types of zeds that spawn -- that's affected only by `SpawnCycle`.
-These options just affect HP.
+BossHPFakes, FleshpoundHPFakes, ScrakeHPFakes, and TrashHPFakes
+affect zed body and head health.  They do *not* affect the number
+of these types of zeds that spawn.  That's affected only by the
+SpawnCycle, WaveSizeFakes, and the number of human players present.
+These options with "HP" in the name only affect monster health.
 
 This is a matter of taste.  The discussion about spawn intensity
 at the top of this document assumed all of these parameters
 were set to 0 (that is, zed health scales only with real human
 players, just like in the unmodded game).
 
-The FleshpoundFP and ScrakeFP options are particularly useful
-to solo players who want to practice decapitation techniques on
-zeds with 6-player head and body health.  However, increasing
+The FleshpoundHPFakes and ScrakeHPFakes options are particularly
+useful to solo players who want to practice decapitation techniques
+on zeds with 6-player head and body health.  However, increasing
 these options is going to make waves that contain SC/FP more
 dangerous (all else equal), so other settings may have to be
 made easier to keep the configuration neutral.

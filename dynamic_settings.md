@@ -14,15 +14,15 @@ with precision and repeatability.
 
 The following CD settings support dynamism:
 
-* `BossFP`
+* `BossHPFakes`
 * `CohortSize`
-* `FakePlayers`
-* `FleshpoundFP`
+* `FleshpoundHPFakes`
 * `MaxMonsters`
-* `ScrakeFP`
+* `ScrakeHPFakes`
 * `SpawnMod`
 * `SpawnPoll`
-* `TrashFP`
+* `TrashHPFakes`
+* `WaveSizeFakes`
 * `ZTSpawnSlowdown`
 
 Dynamic settings is an optional feature that must be deliberately configured on an option-by-option basis.
@@ -63,7 +63,7 @@ above is used in a long game with 6 people.  MaxMonsters would progress from 26 
 wave 2, to 32 on wave 3, to 36 on waves 4 through the rest of the game.
 
 Technically, this system even applies to boss waves, although most settings are not meaningful in
-boss waves.  This system applies to boss waves mainly so that one `BossFP` line is sufficient to
+boss waves.  This system applies to boss waves mainly so that one `BossHPFakes` line is sufficient to
 control Boss HP no matter the gamelength, and to keep the system open to potential future options that
 might influence both boss and non-boss waves.
 
@@ -110,7 +110,7 @@ If the optional maximum *Z* was omitted, then the `Min` function above is not ex
 of linear interpolations is used directly.
 
 Bilinear functions always compute dynamic setting values at 32-bit float precision internally.
-If the controlled setting is integer-valued (e.g. MaxMonsters or FakePlayers), then the bilinear
+If the controlled setting is integer-valued (e.g. MaxMonsters or WaveSizeFakes), then the bilinear
 function is still computed using floating point arithmetic, then rounded at the last moment,
 right before assignment.  The implementation uses the engine's native Round( float ) function
 to round floats to ints.
