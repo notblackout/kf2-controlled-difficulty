@@ -194,14 +194,17 @@ private function InitSpawnCyclePresetList()
 {
 	if ( 0 == SpawnCyclePresetList.length )
 	{
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_albino_heavy');
 //		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_light');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_moderate');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_basic_heavy');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_dtf_v1');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_poundemonium');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v1');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v2');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v3');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v4');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_pro_v5');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_semi_pro');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_nam_semi_pro_v2');
 	}
