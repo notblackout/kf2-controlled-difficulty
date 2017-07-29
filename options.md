@@ -436,3 +436,56 @@ spawn behavior (yet).
 true enables additional CD-specific logging output at runtime.  This option
 is one of the earliest added to CD, before a naming convention was established,
 and its unusual name is retained today for backwards-compatibility.
+
+# Renamed Options
+
+Most of CD's options remain unchanged in both name and function after introduction.
+There are, however, some exceptions.
+
+The FakePlayers option was part of CD at inception.  This option only affected the
+number of zeds in the wave, not the HP of zeds.  Options to scale zed HP were added
+to CD later.  These HP scaling options were denominated in the same "imaginary friend"
+units as FakePlayers, but their names were different:
+BossFP, FleshpoundFP, ScrakeFP, and TrashFP.
+Some players were understandably confused about how these options did or did not
+interact with one another.  They were all independent from each other; for instance,
+increasing FakePlayers would not affect zed HP health, and increasing TrashFP would
+not change the number of zeds in a wave.
+
+Adding to the confusion, CD acquired an option called FakePlayersMode.  This affected
+how all of the preceding options interact with the human player count.  This option's
+name was misleading: it intentionally affected both FakePlayers and the four HP
+scaling options, even though the name suggests that it would only affect FakePlayers.
+
+Altogether, the result of this nomenclature was widespread confusion.  These options
+evolved one piece at a time, rather than being designed as a cohesive unit.
+
+In an attempt to rationalize these options and reduce future confusion, these options
+were mass-renamed in CD's July 29 2017 release.
+The option functions remain unchanged.  Only their names have changed.
+The following table shows a correspondence between old and new option names.
+
+New Name | Old Name
+-------- | --------
+WaveSizeFakes | FakePlayers
+BossHPFakes | BossFP
+FleshpoundHPFakes | FleshpoundFP
+ScrakeHPFakes | ScrakeFP
+TrashHPFakes | TrashFP
+FakesMode=add_with_humans or ignore_humans | FakePlayersMode=add or replace
+
+This renaming scheme extends to any dynamic option tables that might have been
+defined in KFGame.ini.  For example, a config that had `FakePlayersDefs` lines
+before this change should replace the string `FakePlayersDefs` with
+`WaveSizeFakesDefs`.  It also extends to chat commands and their shorthands.
+For example, `!cdfakeplayers` and `!cdfp` are no longer defined.
+`!cdwavesizefakes` and `!cdwsf` are available instead.
+
+Configuration migration must be done by hand.  CD does not maintain any backwards-
+compatibility with the old option names.  I realize this is a substantial nuisance,
+but the cost of adding and debugging a backwards-compat config layer had to be
+weighed against other things I could potentially do in CD.  All of the config options
+function the same as before, so if you do have a config you wish to migrate, it
+can be done with text search-and-replace on option names and values of 
+FakesMode/FakePlayersMode, according to the table above.  The resulting config
+will work the same as it did before the rename.
