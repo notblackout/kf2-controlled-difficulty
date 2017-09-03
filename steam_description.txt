@@ -50,6 +50,10 @@ To play, paste one of the console commands from the "getting started" documentat
 * [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/server.md]Basic Server Setup[/url]
 * [url=https://github.com/notblackout/kf2-controlled-difficulty/blob/master/spawn.md]SpawnCycle reference[/url]
 
+[b]Chinese CD Tutorial[/b]
+
+The following tutorial, with lots of screenshots, was written by Xylona: https://tieba.baidu.com/p/5303880631.  Please direct feedback about it to Xylona [http://steamcommunity.com/id/oldbird/].  I'm unable to review it for accuracy.
+
 [h1]Special Thanks[/h1]
 
 Thanks to the following people for variously testing the mod, helping find bugs, or sharing their insight (this does not imply that they endorse the mod):
