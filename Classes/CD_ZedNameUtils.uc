@@ -80,11 +80,6 @@ static function ECDZedNameResolv GetZedType(
 			class'CD_Pawn_ZedFleshpoundMini_NRS' ;
 		ZedTypeCanBeRaged = true;
 	}
-	else if ( ZedName ~= "KF" || ZedName ~= "KFP" || (2 <= ZedLen && ZedLen <= 14 && ZedName ~= Left("KINGFLESHPOUND", ZedLen)) )
-	{
-		ZedType = AT_FleshPound;
-		ZedClass = class'CD_Pawn_ZedFleshpoundKing_NoMinions';
-	}
 	else if ( ZedName ~= "G" || ZedName ~= "GF" || (1 <= ZedLen && ZedLen <= 8 && ZedName ~= Left("GOREFAST", ZedLen)) )
 	{
 		ZedType = AT_GoreFast;
@@ -159,14 +154,7 @@ static function GetZedFullName( const AISquadElement SquadElement, out string Ze
 	}
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
-		{
-			ZedName = "KingFleshpound";
-		}
-		else
-		{
-			ZedName = "Fleshpound";
-		}
+		ZedName = "Fleshpound";
 	}
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
@@ -222,14 +210,7 @@ static function GetZedTinyName( const AISquadElement SquadElement, out string Ze
 	}
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
-		{
-			ZedName = "KF";
-		}
-		else
-		{
-			ZedName = "F";
-		}
+		ZedName = "F";
 	}
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
@@ -285,14 +266,7 @@ static function GetZedShortName( const AISquadElement SquadElement, out string Z
 	}
 	else if ( SquadElement.Type == AT_FleshPound )
 	{
-		if ( SquadElement.CustomClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
-		{
-			ZedName = "KF";
-		}
-		else
-		{
-			ZedName = "FP";
-		}
+		ZedName = "FP";
 	}
 	else if ( SquadElement.Type == AT_FleshpoundMini )
 	{
@@ -413,10 +387,6 @@ static function class<KFPawn_Monster> CheckMonsterClassRemap( const class<KFPawn
 	          OrigClass == class'CD_Pawn_ZedFleshpoundMini_RS' )
 	{
 		NewClass = class'KFPawn_ZedFleshpoundMini';
-	}
-	else if ( OrigClass == class'CD_Pawn_ZedFleshpoundKing_NoMinions' )
-	{
-		NewClass = class'KFPawn_ZedFleshpoundKing';
 	}
 
 	// Log what we just did
