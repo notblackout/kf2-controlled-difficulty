@@ -741,12 +741,22 @@ function GetSpawnListFromSquad(byte SquadIdx, out array< KFAISpawnSquad > Squads
 					if ( BossEnum == CDBOSS_VOLTER )
 					{
 						`cdlog("Spawning Hans Volter (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
-						TempSpawnList.AddItem(AIBossClassList[0]);
+						TempSpawnList.AddItem(AIBossClassList[BAT_Hans]);
 					}
 					else if ( BossEnum == CDBOSS_PATRIARCH  )
 					{
 						`cdlog("Spawning Patriarch (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
-						TempSpawnList.AddItem(AIBossClassList[1]);
+						TempSpawnList.AddItem(AIBossClassList[BAT_Patriarch]);
+					}
+					else if ( BossEnum == CDBOSS_KINGFLESHPOUND  )
+					{
+						`cdlog("Spawning King Fleshpound (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
+						TempSpawnList.AddItem(AIBossClassList[BAT_KingFleshpound]);
+					}
+					else if ( BossEnum == CDBOSS_KINGBLOAT  )
+					{
+						`cdlog("Spawning King Bloat (config: Boss="$Outer.BossEnum$")", bLogControlledDifficulty);
+						TempSpawnList.AddItem(AIBossClassList[BAT_KingBloat]);
 					}
 					else
 					{

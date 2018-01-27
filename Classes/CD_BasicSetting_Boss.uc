@@ -18,6 +18,14 @@ protected function WriteIndicator( const out string Val )
 	{
 		BossEnum = CDBOSS_PATRIARCH;
 	}
+	else if ( IsKingFleshpoundBossString( Outer.Boss ) )
+	{
+		BossEnum = CDBOSS_KINGFLESHPOUND;
+	}
+	else if ( IsKingBloatBossString( Outer.Boss ) )
+	{
+		BossEnum = CDBOSS_KINGBLOAT;
+	}
 	else
 	{
 		BossEnum = CDBOSS_RANDOM;
@@ -36,7 +44,8 @@ protected function string SanitizeIndicator( const string Raw )
 
 private static function bool IsValidBossString( const out string bs )
 {
-	return IsRandomBossString(bs) || IsPatriarchBossString(bs) || IsVolterBossString(bs);
+	return IsRandomBossString(bs) || IsPatriarchBossString(bs) || IsVolterBossString(bs) ||
+	       IsKingFleshpoundBossString(bs) || IsKingBloatBossString(bs);
 }
 
 private static function bool IsRandomBossString( const out string s )
@@ -54,11 +63,21 @@ private static function bool IsVolterBossString( const out string s )
 	return s ~= "hans" || s ~= "volter" || s ~= "moregas";
 }
 
+private static function bool IsKingFleshpoundBossString( const out string s )
+{
+	return s ~= "kfp" || s ~= "kingfleshpound" || s ~= "kingfp";
+}
+
+private static function bool IsKingBloatBossString( const out string s )
+{
+	return s ~= "kb" || s ~= "kingbloat" || s ~= "abomination" || s ~= "abom";
+}
+
 defaultproperties
 {
 	OptionName="Boss"
 	DefaultSettingIndicator="random"
 
 	ChatCommandNames=("!cdboss")
-	ChatWriteParamHints=("volter|patriarch|random")
+	ChatWriteParamHints=("volter|patriarch|kfp|abomination|random")
 }
