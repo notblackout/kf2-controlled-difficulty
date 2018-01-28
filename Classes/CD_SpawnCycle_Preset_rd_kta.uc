@@ -59,5 +59,5 @@ function string GetDate()
 
 function string GetAuthor()
 {
-	return "???";
+	return "Extonix, Slayer and BardzBeast";
 }
