@@ -1,4 +1,4 @@
-class CD_SpawnCycle_Preset_GSO_v1
+class CD_SpawnCycle_Preset_gso_v1
 	extends CD_SpawnCycle_PresetBase
 	implements (CD_SpawnCycle_Preset);
 
