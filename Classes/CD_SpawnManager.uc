@@ -220,9 +220,9 @@ private function string FormatFloatToTwoDecimalPlaces( const float f )
 	return s;
 }
 
-function SetupNextWave(byte NextWaveIndex)
+function SetupNextWave(byte NextWaveIndex, int TimeToNextWaveBuffer = 0)
 {
-	super.SetupNextWave(NextWaveIndex);
+	super.SetupNextWave(NextWaveIndex, TimeToNextWaveBuffer);
 	WaveSetupTimestamp = Outer.WorldInfo.RealTimeSeconds;
 	FirstSpawnTimestamp = -1.f;
 	FinalSpawnTimestamp = -1.f;
