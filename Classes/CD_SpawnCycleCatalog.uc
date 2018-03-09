@@ -210,6 +210,7 @@ private function InitSpawnCyclePresetList()
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_rd_kta');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_rd_odt');
 		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_rd_sam');
+		SpawnCyclePresetList.AddItem(new class'CD_SpawnCycle_Preset_gso_v1');
 	}
 }
 
