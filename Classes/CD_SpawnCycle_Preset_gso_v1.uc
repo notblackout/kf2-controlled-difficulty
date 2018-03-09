@@ -50,7 +50,7 @@ function GetLongSpawnCycleDefs( out array<string> sink )
 	
 	// Wave 10 - Significantly reduced trash, significantly increased larges, significantly increased occurance of spawnrage
 	sink[i++] = "6MFP!_2FP_2FP!,4SC_4MFP!_2FP!,4FP_2SC,4FP_4MFP,8MFP_2SC,4FP!,2HU,1CA,2FP!_2SC,4MFP_2SC,2GF_2SC,4HU,6MFP_2FP!,6MFP_2FP,10ST,3GF*_2SC_4HU,2CC_2GF,3FP_2SC,1BL_2SI,4CR,2GF_1CS,1CA_1GF,2SC_8ST,2HU,4SC,4MFP_2FP,2FP,4BL_2HU_4MFP,3SC_4FP,6MFP_2FP";
-	
+}
 
 function string GetDate()
 {
